@@ -1,0 +1,84 @@
+{
+ "chart": {
+  "result": [
+   {
+    "meta": {
+     "currency": "USD",
+     "symbol": "^GSPC",
+     "exchangeName": "SNP",
+     "fullExchangeName": "SNP",
+     "instrumentType": "INDEX",
+     "firstTradeDate": -1325583000,
+     "regularMarketTime": 1794603600,
+     "hasPrePostMarketData": false,
+     "gmtoffset": -18000,
+     "timezone": "EST",
+     "exchangeTimezoneName": "America/New_York",
+     "regularMarketPrice": 6760.21,
+     "fiftyTwoWeekHigh": 6920.34,
+     "fiftyTwoWeekLow": 4835.04,
+     "regularMarketDayHigh": 6779.12,
+     "regularMarketDayLow": 6702.33,
+     "regularMarketVolume": 2614939000,
+     "longName": "S&P 500",
+     "shortName": "S&P 500",
+     "chartPreviousClose": 6760.21,
+     "previousClose": 6760.21,
+     "scale": 3,
+     "priceHint": 2,
+     "currentTradingPeriod": {
+      "pre": {
+       "timezone": "EST",
+       "start": 1794560400,
+       "end": 1794580200,
+       "gmtoffset": -18000
+      },
+      "regular": {
+       "timezone": "EST",
+       "start": 1794580200,
+       "end": 1794603600,
+       "gmtoffset": -18000
+      },
+      "post": {
+       "timezone": "EST",
+       "start": 1794603600,
+       "end": 1794618000,
+       "gmtoffset": -18000
+      }
+     },
+     "tradingPeriods": [
+      [
+       {
+        "timezone": "EST",
+        "start": 1794580200,
+        "end": 1794603600,
+        "gmtoffset": -18000
+       }
+      ]
+     ],
+     "dataGranularity": "5m",
+     "range": "1d",
+     "validRanges": [
+      "1d",
+      "5d",
+      "1mo",
+      "3mo",
+      "6mo",
+      "1y",
+      "2y",
+      "5y",
+      "10y",
+      "ytd",
+      "max"
+     ]
+    },
+    "indicators": {
+     "quote": [
+      {}
+     ]
+    }
+   }
+  ],
+  "error": null
+ }
+}

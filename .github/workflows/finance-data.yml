@@ -1,0 +1,77 @@
+# Refreshes data/finance.json for the Markets screen in Jarvis.
+# Runs on GitHub's free servers, so the app never needs API keys or a backend.
+# The site is served from the gh-pages branch, which must always equal main,
+# so after committing to main this job force-pushes the same commit to gh-pages.
+# No push trigger on purpose: it only runs on a schedule or by hand, and pushes made with
+# GITHUB_TOKEN never start other push workflows, so it can't loop. (They do still trigger
+# the GitHub Pages build for gh-pages, which is what we want.)
+name: Markets data
+
+on:
+  schedule:
+    # Times are UTC. US market hours are 13:30-21:00 UTC (summer) / 14:30-21:00 UTC (winter).
+    - cron: "15 11 * * 1-5"        # pre-market morning brief (about 6-7 AM New York)
+    - cron: "*/30 13-21 * * 1-5"   # every 30 minutes while the US market is open
+    - cron: "30 22 * * 1-5"        # after-hours wrap-up
+    - cron: "0 12,22 * * 0,6"      # twice a day on weekends (crypto, news, next week's calendar)
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: finance-data
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Test the data job
+        run: python -m unittest discover -s scripts/tests
+
+      - name: Fetch market data
+        run: python scripts/fetch_finance.py
+
+      - name: Make sure the file is valid
+        run: |
+          # Never commit a broken file: if it doesn't parse or has no prices, throw the change away.
+          if ! python -c "import json,sys; d=json.load(open('data/finance.json')); sys.exit(0 if isinstance(d.get('quotes'), dict) and d['quotes'] else 1)"; then
+            echo "::warning::data/finance.json failed validation; keeping the previous version."
+            git checkout -- data/finance.json
+          fi
+
+      - name: Commit to main and publish to gh-pages
+        run: |
+          git config user.name "jarvis-bot"
+          git config user.email "jarvis-bot@users.noreply.github.com"
+          git add data/finance.json
+          if git diff --cached --quiet; then
+            echo "Market data unchanged."
+          else
+            git commit -q -m "Update market data $(date -u +'%Y-%m-%d %H:%M UTC')"
+          fi
+          # main may have moved while we ran (e.g. Bilal pushed a new app version): rebase our one
+          # data commit on top of it. -X theirs = on a conflict in finance.json keep the fresh data.
+          pushed=""
+          for i in 1 2 3; do
+            git fetch -q origin main
+            if git rebase -q -X theirs origin/main && git push origin HEAD:main; then pushed=1; break; fi
+            git rebase --abort 2>/dev/null || true
+            sleep $((i * 5))
+          done
+          if [ -z "$pushed" ]; then echo "::error::Could not push to main"; exit 1; fi
+          # gh-pages always mirrors main exactly (the site is served from gh-pages).
+          git push -f origin HEAD:gh-pages

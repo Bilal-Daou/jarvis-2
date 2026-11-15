@@ -65,6 +65,8 @@ h2{font-size:26px;font-weight:800;letter-spacing:-.6px;margin:0 0 4px}
 .hero-stats div{background:rgba(255,255,255,.14);border-radius:14px;padding:10px}
 .hero-stats b{display:block;font-size:18px;font-weight:800}
 .hero-stats span{font-size:11.5px;opacity:.85}
+.home-flow{display:flex;flex-direction:column}
+.home-flow>.home-card:empty{display:none}
 .chips{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 6px;margin:16px -16px 0;padding-left:16px;padding-right:16px;scrollbar-width:none}
 .chips::-webkit-scrollbar{display:none}
 .chip{flex:none;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:9px 14px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:6px}
@@ -126,6 +128,12 @@ h2{font-size:26px;font-weight:800;letter-spacing:-.6px;margin:0 0 4px}
 .month-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .month-nav b{font-size:15px}
 
+/* apps grid */
+.app-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.app-tile{border:1px solid var(--line);background:var(--card);border-radius:22px;padding:16px 8px 14px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;font-weight:600;font-size:13px;text-align:center;transition:transform .15s var(--ease)}
+.app-tile:active{transform:scale(.96)}
+.app-tile .a-ic{width:54px;height:54px;border-radius:17px;display:grid;place-items:center;font-size:26px;box-shadow:0 8px 18px rgba(0,0,0,.18)}
+
 /* bottom nav */
 .nav{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(12px + var(--safe-b));width:calc(100% - 24px);max-width:496px;z-index:20;background:var(--glass);border:1px solid var(--line);border-radius:26px;backdrop-filter:blur(22px) saturate(1.4);-webkit-backdrop-filter:blur(22px) saturate(1.4);box-shadow:var(--shadow);display:grid;grid-template-columns:1fr 1fr 84px 1fr 1fr;align-items:center;height:70px;padding:0 6px}
 .nav button.tab{border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--faint);font-size:10.5px;font-weight:600;cursor:pointer;padding:8px 0}
@@ -143,6 +151,7 @@ h2{font-size:26px;font-weight:800;letter-spacing:-.6px;margin:0 0 4px}
 .sheet-bg.open{opacity:1;pointer-events:auto}
 .sheet{position:fixed;left:50%;bottom:0;transform:translate(-50%,105%);width:100%;max-width:520px;height:min(86vh,760px);z-index:31;background:var(--bg2);border:1px solid var(--line);border-bottom:0;border-radius:28px 28px 0 0;display:flex;flex-direction:column;transition:transform .42s var(--ease);box-shadow:0 -20px 60px rgba(0,0,0,.4)}
 .sheet.open{transform:translate(-50%,0)}
+.sheet:not(.open){visibility:hidden;transition:transform .42s var(--ease),visibility 0s linear .42s}
 .grab{width:42px;height:5px;border-radius:9px;background:var(--faint);opacity:.5;margin:10px auto 4px}
 .sheet-head{display:flex;align-items:center;justify-content:space-between;padding:6px 16px 8px}
 .sheet-head b{font-size:16px}
@@ -214,6 +223,16 @@ input[type=range]{width:120px;accent-color:var(--accent)}
 .modal textarea{min-height:110px;resize:vertical}
 .modal .row{display:flex;gap:8px;justify-content:flex-end;margin-top:6px}
 .banner{display:none;margin-bottom:14px}
+
+/* accessibility: visible keyboard focus, and comfortable (≥ 42px) tap areas for small icon buttons without changing the look */
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mini,.check,.link,.swatches button,.fin-range button{position:relative}
+.mini::after{content:"";position:absolute;inset:-5px}
+.check::after{content:"";position:absolute;inset:-8px}
+.link::after{content:"";position:absolute;inset:-8px -4px}
+.swatches{gap:12px}
+.swatches button::after{content:"";position:absolute;inset:-8px}
+.fin-range button::after{content:"";position:absolute;inset:-9px -2px}
 </style>
 </head>
 <body>
@@ -224,14 +243,14 @@ input[type=range]{width:120px;accent-color:var(--accent)}
     <div class="top">
       <div class="brand">
         <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M4 12h2l2-6 4 12 3-9 2 3h3"/></svg></div>
-        <div><b>Jarvis</b><small id="today"></small></div>
+        <div><b id="topTitle">Jarvis</b><small id="today"></small></div>
       </div>
       <button class="icon-btn" data-go="settings" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
     </div>
 
     <div class="card banner" id="noSpeech" style="border-color:var(--warn)">🎙️ Voice isn't available in this browser. Use <b>Safari</b> on iPhone or <b>Chrome</b> on Android. You can still type.</div>
 
-    <div class="hero">
+    <div class="hero" id="hero">
       <div class="hi" id="greet">Good morning</div>
       <div class="big" id="heroLine">What can I do for you today?</div>
       <div class="hero-stats">
@@ -241,16 +260,16 @@ input[type=range]{width:120px;accent-color:var(--accent)}
       </div>
     </div>
 
-    <div class="chips" id="homeChips"></div>
-
-    <div class="section-h"><h3>Budget</h3><button class="link" data-go="budget">Details</button></div>
-    <div class="card" id="homeBudget"></div>
-
-    <div class="section-h"><h3>Up next</h3><button class="link" data-go="reminders">All</button></div>
-    <div class="list" id="homeRem"></div>
-
-    <div class="section-h"><h3>Recent notes</h3><button class="link" data-go="notes">All</button></div>
-    <div class="list" id="homeNotes"></div>
+    <!-- Home is one curated flow: feature cards and core blocks are ordered together (see HOME_ORDER) -->
+    <div id="homeCards" class="home-flow">
+      <div class="chips home-block" id="homeChips" style="order:5"></div>
+      <div class="home-block" style="order:30"><div class="section-h"><h3>Budget</h3><button class="link" data-go="budget">Details</button></div>
+      <div class="card" id="homeBudget"></div></div>
+      <div class="home-block" style="order:40"><div class="section-h"><h3>Up next</h3><button class="link" data-go="reminders">All</button></div>
+      <div class="list" id="homeRem"></div></div>
+      <div class="home-block" style="order:60"><div class="section-h"><h3>Recent notes</h3><button class="link" data-go="notes">All</button></div>
+      <div class="list" id="homeNotes"></div></div>
+    </div>
   </section>
 
   <!-- ============ NOTES ============ -->
@@ -283,6 +302,14 @@ input[type=range]{width:120px;accent-color:var(--accent)}
     <div class="section-h"><h3>Transactions</h3><button class="link" id="addExpBtn">+ Add</button></div>
     <div class="list" id="txList"></div>
   </section>
+
+  <!-- ============ APPS ============ -->
+  <section class="view" id="v-apps">
+    <h2>Apps</h2><p class="lede">Everything Jarvis can do.</p>
+    <div class="app-grid" id="appGrid"></div>
+  </section>
+
+  <div id="pluginViews"></div>
 
   <!-- ============ SETTINGS ============ -->
   <section class="view" id="v-settings">
@@ -324,10 +351,10 @@ input[type=range]{width:120px;accent-color:var(--accent)}
 <!-- bottom nav -->
 <nav class="nav">
   <button class="tab active" data-go="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</button>
-  <button class="tab" data-go="notes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>Notes</button>
+  <button class="tab" data-go="budget"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20M6 15h4"/></svg>Budget</button>
   <button class="orb" id="orb" aria-label="Talk to Jarvis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="2.5" width="6" height="12" rx="3"/><path d="M5 10.5a7 7 0 0 0 14 0M12 17.5V21"/></svg></button>
   <button class="tab" data-go="reminders"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg>Reminders</button>
-  <button class="tab" data-go="budget"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20M6 15h4"/></svg>Budget</button>
+  <button class="tab" data-go="apps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>Apps</button>
 </nav>
 
 <!-- assistant sheet -->
@@ -428,10 +455,12 @@ function wordsToNumbers(s){
 function escRe(s){ return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
 function parseTime(text){
   const t = text.toLowerCase(); const now = new Date(); let d = null; const matched = []; let m; let repeat = 'none';
-  if ((m = t.match(/\b(every ?day|daily|each day)\b/))){ repeat='daily'; matched.push(m[0]); }
-  else if ((m = t.match(/\b(every week|weekly)\b/))){ repeat='weekly'; matched.push(m[0]); }
-  else if ((m = t.match(/\b(every month|monthly)\b/))){ repeat='monthly'; matched.push(m[0]); }
-  else if ((m = t.match(/\bevery (sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/))){ repeat='weekly'; matched.push('every'); }
+  // "daily/weekly/monthly" only count as a repeat when they are not describing a thing ("the weekly report")
+  const ADJ = '(?!\\s+(?:report|reports|meeting|meetings|review|call|update|summary|plan|check|check-in|post|newsletter|budget|goal|standup|sync|bill|payment|digest|recap|email|task|tasks)\\b)';
+  if ((m = t.match(/\bevery (sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/))){ repeat='weekly'; matched.push('every'); }
+  else if ((m = t.match(new RegExp('\\b(every ?day|each day|daily'+ADJ+')\\b')))){ repeat='daily'; matched.push(m[0]); }
+  else if ((m = t.match(new RegExp('\\b(every week|weekly'+ADJ+')\\b')))){ repeat='weekly'; matched.push(m[0]); }
+  else if ((m = t.match(new RegExp('\\b(every month|monthly'+ADJ+')\\b')))){ repeat='monthly'; matched.push(m[0]); }
   if ((m = t.match(/\bin (\d+(?:\.\d+)?) (seconds?|secs?|minutes?|mins?|hours?|hrs?|days?|weeks?)\b/))){
     const n = parseFloat(m[1]), u = m[2];
     const ms = /^s/.test(u)?1e3:/^m/.test(u)?6e4:/^h/.test(u)?36e5:/^d/.test(u)?864e5:6048e5;
@@ -489,7 +518,8 @@ function guessTag(text){ const t = (text||'').toLowerCase();
   return 'personal'; }
 const TAGS = {idea:{ic:'💡',c:'#f59e0b'}, work:{ic:'💼',c:'#0ea5e9'}, personal:{ic:'🏠',c:'#22c55e'}};
 
-const fmt = n => { const v = Math.abs(n); const s = v.toLocaleString('en-US',{minimumFractionDigits:(v%1?2:0),maximumFractionDigits:2}); const c = S.currency; return (n<0?'-':'') + (c.length>1? s+' '+c : c+s); };
+const NF0 = new Intl.NumberFormat('en-US',{maximumFractionDigits:2}), NF2 = new Intl.NumberFormat('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmt = n => { const v = Math.abs(n); const s = (v%1?NF2:NF0).format(v); const c = S.currency; return (n<0?'-':'') + (c.length>1? s+' '+c : c+s); };
 const monthKey = d => { d = new Date(d); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); };
 const inMonth = (key, type='expense') => db.expenses.filter(e=>monthKey(e.at)===key && e.type===type);
 const sum = arr => arr.reduce((s,e)=>s+e.amount,0);
@@ -512,15 +542,62 @@ function ago(ts){ const s = (Date.now()-ts)/1000; if (s<60) return 'just now'; i
 function handle(raw){
   const said = String(raw||'').trim(); if (!said) return;
   addMsg('me', said);
-  const reply = think(said);
+  let reply; renderHold++;
+  try { reply = think(said); } finally { renderHold--; renderWanted = false; }
   addMsg('ai', reply); speak(reply); renderAll();
 }
+/* =========================================================
+   PLUGIN API: each feature file (features/*.js) registers here
+   ========================================================= */
+const plugins = {views:[], intents:[], homeCards:[], suggestions:[], tiles:[]};
+/* Home order: Today card leads, then quick actions, today's habits + food, money, what's next, markets, notes */
+const HOME_ORDER = {brief:1, habits:10, food:20, receipts:35, finance:50};
+const Jarvis = window.Jarvis = {
+  get db(){ return db; }, get settings(){ return S; },
+  save, uid, esc, fmt, cap, toast, modal, closeModal, speak, go, whenText, whenSpoken, ago, greeting, monthKey, sum, inMonth,
+  categorize, CATS, wordsToNumbers, parseTime, handle, get icons(){ return ICON; },
+  renderAll: (...a)=>renderAll(...a),
+  addExpense(o){ const e = Object.assign({id:uid(), type:'expense', at:Date.now()}, o); if (!e.cat) e.cat = e.type==='income'?'Income':categorize(e.desc||''); e.desc = cap(e.desc|| (e.type==='income'?'Income':'Expense')); db.expenses.unshift(e); save(); renderAll(); return e; },
+  addReminder(o){ const r = Object.assign({id:uid(), done:false, repeat:'none', created:Date.now()}, o); db.reminders.push(r); save(); renderAll(); return r; },
+  addNote(text, tag){ addNote(text); if (tag) db.notes[0].tag = tag; save(); renderAll(); return db.notes[0]; },
+  /** store: namespaced persistent data for a feature, e.g. Jarvis.store('food') */
+  store(ns, defaults){ if (!db[ns]) db[ns] = defaults ? JSON.parse(JSON.stringify(defaults)) : {}; return db[ns]; },
+  /** addView({id, label, icon (emoji), color, render(el)}) adds a screen + an Apps tile */
+  addView(v){ plugins.views.push(v); const sec = document.createElement('section'); sec.className='view'; sec.id='v-'+v.id; $('pluginViews').appendChild(sec); v.el = sec; if (v.tile!==false) plugins.tiles.push({go:v.id, label:v.label, icon:v.icon, color:v.color, order:v.order||50}); },
+  /** addIntent(fn(said, lower) -> reply string | null). Checked before built-in commands. Be strict. */
+  addIntent(fn){ plugins.intents.push(fn); },
+  /** addHomeCard({id, order, render(el)}) adds a card to the Home dashboard (lower order = higher) */
+  addHomeCard(c){ plugins.homeCards.push(c); },
+  addSuggestions(list){ plugins.suggestions.push(...list); },
+  /** loadScript(url): load a library from a CDN only when needed */
+  loadScript(url){ return new Promise((res,rej)=>{ if (document.querySelector(`script[src="${url}"]`)) return res(); const s = document.createElement('script'); s.src = url; s.onload = res; s.onerror = rej; document.head.appendChild(s); }); },
+  /** css(text): inject feature styles */
+  css(text){ const st = document.createElement('style'); st.textContent = text; document.head.appendChild(st); },
+  get current(){ return current; }
+};
+function renderPlugins(full){
+  const cards = plugins.homeCards.slice().sort((a,b)=>(a.order||50)-(b.order||50));
+  const hc = $('homeCards');
+  cards.forEach(c=>{ let el = document.getElementById('hc-'+c.id); if (!el){ el = document.createElement('div'); el.id = 'hc-'+c.id; el.className='home-card'; el.style.order = HOME_ORDER[c.id] ?? (c.order||50); hc.appendChild(el); } try { c.render(el); } catch(e){ console.error(c.id, e); } });
+  // only the screen on show is redrawn (others redraw when you open them), so every command stays fast
+  plugins.views.forEach(v=>{ if (full || v.id===current) try { v.render(v.el); } catch(e){ console.error(v.id, e); } });
+  const tiles = [
+    {go:'notes', label:'Notes', icon:'📝', color:'#22c55e', order:10},
+    {go:'reminders', label:'Reminders', icon:'⏰', color:'#f59e0b', order:11},
+    {go:'budget', label:'Budget', icon:'💳', color:'#6d5dfc', order:12},
+    ...plugins.tiles,
+    {go:'settings', label:'Settings', icon:'⚙️', color:'#64748b', order:99}
+  ].sort((a,b)=>a.order-b.order);
+  $('appGrid').innerHTML = tiles.map(t=>`<button class="app-tile" data-go="${t.go}"><span class="a-ic" style="background:linear-gradient(135deg,${t.color},${t.color}bb)">${t.icon}</span>${esc(t.label)}</button>`).join('');
+}
+
 function think(said){
   const t = wordsToNumbers(said.toLowerCase()).replace(/(\d),(\d{3})/g,'$1$2').replace(/[!?]/g,'').replace(/,/g,' ').replace(/\s+/g,' ').trim();
   const key = monthKey(Date.now()); let m;
+  for (const fn of plugins.intents){ try { const r = fn(said, t); if (r) return r; } catch(e){ console.error(e); } }
 
   if (/^(hi|hello|hey|good (morning|afternoon|evening))( jarvis)?$/.test(t)) return `${greeting()}, ${S.name}. What can I do for you?`;
-  if (/\b(help|what can you do)\b/.test(t)) return 'I can take notes, set reminders, track spending and income, and tell you how your month is going. Try: remind me to pay rent tomorrow at 9 am.';
+  if (/\b(help|what can you do)\b/.test(t)) return 'I can give you a morning brief and the weather, take notes, set reminders, track spending and your budget, scan receipts, log food and water, track habits and goals, and follow the markets. Try: brief me, or remind me to pay rent tomorrow at 9 am.';
   if (/thank/.test(t)) return `Anytime, ${S.name}.`;
 
   // budget goal
@@ -529,6 +606,14 @@ function think(said){
     return `Done. Your monthly budget is now ${fmt(S.budget)}. You've used ${fmt(sum(inMonth(key)))} so far.`;
   }
   // spending questions
+  // spending on one category: "how much did I spend on food this month?"
+  if ((m = t.match(/(?:how much|what) (?:did|have) i (?:spend|spent)(?: so far)? (?:on|for|at) (.+?)(?: this month| so far| in total| lately)*$/))){
+    const q = m[1].replace(/^(the|my)\s+/,''); const cat = Object.keys(CATS).find(c=>c.toLowerCase().split(/ & /).some(w=>q.includes(w.replace(/s$/,'')))) || categorize(q);
+    if (cat !== 'Other'){
+      go('budget'); const list = inMonth(key).filter(e=>e.cat===cat); const v = sum(list);
+      return v ? `You've spent ${fmt(v)} on ${cat.toLowerCase()} this month, across ${list.length} payment${list.length===1?'':'s'}.` : `Nothing spent on ${cat.toLowerCase()} this month yet.`;
+    }
+  }
   if (/how much (did|have) i (spend|spent)|what did i spend|my spending|spending summary|budget summary|how('s| is) my (budget|month)|how am i doing/.test(t)){
     go('budget');
     const tot = sum(inMonth(key)); if (!tot) return 'No spending recorded this month yet.';
@@ -553,7 +638,7 @@ function think(said){
   if (/(dark|light) (mode|theme)/.test(t)){ S.theme = /dark/.test(t)?'dark':'light'; save(); applyTheme(); return `Switched to ${S.theme} mode.`; }
   // undo
   if (/(delete|remove|undo|cancel|scratch) (the |my )?last (note)/.test(t)){ const x = db.notes.sort((a,b)=>b.at-a.at).shift(); save(); return x?'Deleted your last note.':'No notes to delete.'; }
-  if ((m = t.match(/(delete|remove|undo|cancel|scratch) (the |my )?last (expense|payment|transaction|income)/))){ const want = m[3]==='income'?'income':m[3]==='transaction'?null:'expense'; const list = db.expenses.filter(e=>!want||e.type===want).sort((a,b)=>b.at-a.at); const x = list[0]; if (x) db.expenses = db.expenses.filter(e=>e!==x); save(); return x?`Removed ${fmt(x.amount)} for ${x.desc}.`:'Nothing to remove.'; }
+  if ((m = t.match(/(delete|remove|undo|cancel|scratch) (the |my )?last (expense|payment|transaction|income)/))){ const want = m[3]==='income'?'income':m[3]==='transaction'?null:'expense'; const list = db.expenses.filter(e=>!want||e.type===want).sort((a,b)=>b.at-a.at); const x = list[0]; if (x){ db.expenses = db.expenses.filter(e=>e!==x); expenseEvent('removed', x); go('budget'); } save(); return x?`Removed ${fmt(x.amount)} for ${x.desc}.`:'Nothing to remove.'; }
   if (/(delete|remove|undo|cancel|scratch) (the |my )?last (reminder)/.test(t)){ db.reminders.sort((a,b)=>b.created-a.created); const x = db.reminders.shift(); save(); return x?'Removed your last reminder.':'No reminders to remove.'; }
 
   // reminders
@@ -594,6 +679,8 @@ function think(said){
   addNote(said); go('notes');
   return 'I saved that as a note.';
 }
+/** tell features (e.g. receipts) that an expense was removed or put back */
+function expenseEvent(kind, e){ try { window.dispatchEvent(new CustomEvent('jarvis:expense-'+kind, {detail:{id:e.id, expense:e}})); } catch(err){} }
 function cap(s){ s = String(s).trim(); return s.charAt(0).toUpperCase()+s.slice(1); }
 function addNote(text){ db.notes.unshift({id:uid(), text:cap(text), tag:guessTag(text), pinned:false, at:Date.now()}); save(); }
 function upcoming(){ return db.reminders.filter(r=>!r.done && r.at>=Date.now()-6e4).sort((a,b)=>a.at-b.at); }
@@ -604,7 +691,7 @@ function greeting(){ const h = new Date().getHours(); return h<5?'Good evening':
    SCREENS
    ========================================================= */
 let viewMonth = new Date(); viewMonth.setDate(1);
-let noteFilter = 'all', remFilter = 'upcoming';
+let noteFilter = 'all', remFilter = 'upcoming', txAll = false;
 const ICON = {
   pin:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 3a1 1 0 0 1 .7 1.7L15 6.4v4.2l2.7 2.7A1 1 0 0 1 17 15h-4v6l-1 1-1-1v-6H7a1 1 0 0 1-.7-1.7L9 10.6V6.4L7.3 4.7A1 1 0 0 1 8 3z"/></svg>',
   trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
@@ -652,6 +739,9 @@ function renderHome(){
   const key = monthKey(Date.now()); const spent = sum(inMonth(key));
   $('today').textContent = new Date().toLocaleDateString([], {weekday:'long', month:'long', day:'numeric'});
   $('greet').textContent = `${greeting()}, ${S.name}`;
+  // when the Today card is there it leads the page, so the greeting moves up into the top bar
+  const todayCard = plugins.homeCards.some(c=>c.id==='brief');
+  $('hero').hidden = todayCard; $('topTitle').textContent = todayCard ? `${greeting()}, ${S.name}` : 'Jarvis';
   const up = upcoming(); const todayCount = up.filter(r=>new Date(r.at).toDateString()===new Date().toDateString()).length;
   const lines = [];
   if (up[0]) lines.push(`Next: ${up[0].text}`);
@@ -695,10 +785,9 @@ function renderBudget(){
   $('dailyCard').innerHTML = `<div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted)"><span>Average per day</span><b style="color:var(--text)">${fmt(Math.round(avg*100)/100)}</b></div>
     <div class="bars">${perDay.map(v=>`<i class="${v?'':'zero'}" style="height:${v?Math.max(v/mx*100,6):3}%"></i>`).join('')}</div>
     <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--faint);margin-top:4px"><span>1</span><span>${Math.ceil(days/2)}</span><span>${days}</span></div>`;
-  const tx = [...exp, ...inc].sort((a,b)=>b.at-a.at);
-  $('txList').innerHTML = tx.length ? tx.map(txHTML).join('') : emptyHTML('💳','No transactions. Say “Paid 15 dollars for groceries”.');
-  const sb = $('setBudgetBtn'); if (sb) sb.onclick = ()=>openBudgetModal();
-  document.querySelectorAll('#setBudgetBtn').forEach(b=>b.onclick=()=>openBudgetModal());
+  const tx = [...exp, ...inc].sort((a,b)=>b.at-a.at); const shown = txAll ? tx : tx.slice(0, 30);
+  $('txList').innerHTML = tx.length ? shown.map(txHTML).join('') + (tx.length > shown.length ? `<button class="btn ghost" id="txMore" style="width:100%">Show all ${tx.length} transactions</button>` : '') : emptyHTML('💳','No transactions. Say “Paid 15 dollars for groceries”.');
+  if ($('txMore')) $('txMore').onclick = ()=>{ txAll = true; renderBudget(); };
 }
 function renderVoices(){
   const el = $('voiceList'); if (!el) return;
@@ -709,19 +798,33 @@ function renderVoices(){
   if (!voices.length){ el.innerHTML = '<div class="vrow"><div class="nm">No voices found on this device yet.</div></div>'; return; }
   el.innerHTML = voices.slice(0,30).map(x=>`<div class="vrow ${v&&x.name===v.name?'on':''}" data-voice="${esc(x.name)}"><div class="radio"></div><div class="nm">${esc(x.name.replace(/Microsoft |Google /,''))}<small>${x.lang}${x.localService?'':' · online'}</small></div>${isNatural(x)?'<span class="star">★ natural</span>':''}</div>`).join('');
 }
-function renderAll(){ renderHome(); renderNotes(); renderReminders(); renderBudget(); renderChips(); }
+let renderHold = 0, renderWanted = false;
+function renderAll(full){
+  if (renderHold){ renderWanted = true; return; } // inside a command: draw once at the end
+  renderHome(); renderChips();
+  if (full===true || current==='notes') renderNotes();
+  if (full===true || current==='reminders') renderReminders();
+  if (full===true || current==='budget') renderBudget();
+  renderPlugins(full===true);
+}
+function renderView(name){
+  if (name==='notes') renderNotes(); else if (name==='reminders') renderReminders(); else if (name==='budget') renderBudget();
+  else { const v = plugins.views.find(x=>x.id===name); if (v) try { v.render(v.el); } catch(e){ console.error(v.id, e); } }
+}
 
 /* ---------- navigation ---------- */
 let current = 'home';
 function go(name){
-  current = name;
+  const changed = current !== name; current = name;
+  if (changed && !renderHold) renderView(name);
   document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active', v.id==='v-'+name));
   document.querySelectorAll('.nav .tab').forEach(b=>b.classList.toggle('active', b.dataset.go===name));
   if (!$('sheet').classList.contains('open')) window.scrollTo({top:0, behavior:'smooth'});
 }
 document.addEventListener('click', e=>{
   const g = e.target.closest('[data-go]'); if (g){ go(g.dataset.go); return; }
-  const d = e.target.closest('[data-del]'); if (d){ e.stopPropagation(); const [col,id] = d.dataset.del.split(':'); const idx = db[col].findIndex(x=>x.id===id); const item = db[col][idx]; db[col].splice(idx,1); save(); renderAll(); toast('Deleted', ()=>{ db[col].splice(idx,0,item); save(); renderAll(); }); return; }
+  if (e.target.closest('#setBudgetBtn')){ openBudgetModal(); return; }
+  const d = e.target.closest('[data-del]'); if (d){ e.stopPropagation(); const [col,id] = d.dataset.del.split(':'); const idx = db[col].findIndex(x=>x.id===id); if (idx<0) return; const item = db[col][idx]; db[col].splice(idx,1); if (col==='expenses') expenseEvent('removed', item); save(); renderAll(); toast('Deleted', ()=>{ db[col].splice(idx,0,item); if (col==='expenses') expenseEvent('restored', item); save(); renderAll(); }); return; }
   const p = e.target.closest('[data-pin]'); if (p){ e.stopPropagation(); const n = db.notes.find(x=>x.id===p.dataset.pin); n.pinned = !n.pinned; save(); renderAll(); toast(n.pinned?'Pinned':'Unpinned'); return; }
   const sy = e.target.closest('[data-say]'); if (sy){ e.stopPropagation(); const was = S.speak; S.speak = true; speak(sy.dataset.say); S.speak = was; return; }
   const dn = e.target.closest('[data-done]'); if (dn){ completeReminder(dn.dataset.done); return; }
@@ -740,15 +843,29 @@ function completeReminder(id){
 document.querySelectorAll('#noteFilter button').forEach(b=>b.onclick=()=>{ noteFilter=b.dataset.f; document.querySelectorAll('#noteFilter button').forEach(x=>x.classList.toggle('active',x===b)); renderNotes(); });
 document.querySelectorAll('#remFilter button').forEach(b=>b.onclick=()=>{ remFilter=b.dataset.f; document.querySelectorAll('#remFilter button').forEach(x=>x.classList.toggle('active',x===b)); renderReminders(); });
 $('noteSearch').oninput = renderNotes;
-$('prevM').onclick = ()=>{ viewMonth.setMonth(viewMonth.getMonth()-1); renderBudget(); };
-$('nextM').onclick = ()=>{ viewMonth.setMonth(viewMonth.getMonth()+1); renderBudget(); };
+$('prevM').onclick = ()=>{ txAll = false; viewMonth.setMonth(viewMonth.getMonth()-1); renderBudget(); };
+$('nextM').onclick = ()=>{ txAll = false; viewMonth.setMonth(viewMonth.getMonth()+1); renderBudget(); };
 
 /* ---------- quick actions ---------- */
 function renderChips(){
-  const chips = [['💸','Paid 10 dollars for coffee'],['⏰','Remind me in 30 minutes to stretch'],['📊','How much did I spend this month?'],['📝','Note: '],['📅','What are my reminders?'],['💰','Got paid 2000 salary']];
-  $('homeChips').innerHTML = chips.map(([i,c])=> c==='Note: ' ? `<button class="chip" id="chipNote">${i} New note</button>` : `<button class="chip" data-cmd="${c}">${i} ${c}</button>`).join('');
-  $('chipNote').onclick = ()=>openNoteModal();
-  $('suggest').innerHTML = ['How much did I spend this month?','What are my reminders?','Read my notes','Undo last expense'].map(c=>`<button class="chip" data-cmd="${c}">${c}</button>`).join('');
+  // quick actions: open the right form or screen (never log made-up data)
+  const has = id => plugins.views.some(v=>v.id===id);
+  const chips = [
+    ['💸','Add expense', 'exp'], ['📝','New note', 'note'], ['⏰','New reminder', 'rem'],
+    has('food') && ['💧','Glass of water', 'cmd:I drank a glass of water'],
+    has('food') && ['🥗','Log food', 'go:food'],
+    has('receipts') && ['🧾','Scan receipt', 'go:receipts'],
+    has('habits') && ['🔥','Habits', 'go:habits'],
+    has('finance') && ['📈','Markets', 'go:finance']
+  ].filter(Boolean);
+  if (!$('homeChips').childElementCount) {
+    $('homeChips').innerHTML = chips.map(([i,l,a])=> a.startsWith('cmd:') ? `<button class="chip" data-cmd="${esc(a.slice(4))}">${i} ${l}</button>` : a.startsWith('go:') ? `<button class="chip" data-go="${a.slice(3)}">${i} ${l}</button>` : `<button class="chip" data-chip="${a}">${i} ${l}</button>`).join('');
+    $('homeChips').querySelectorAll('[data-chip]').forEach(b=>b.onclick = ()=>({exp:openExpModal, note:()=>openNoteModal(), rem:openRemModal})[b.dataset.chip]());
+  }
+  // assistant suggestions: a short curated set, one per thing Jarvis does
+  const want = ['Brief me', 'How much did I spend this month?', 'What are my reminders?', 'How are my habits?', 'How many calories today?', 'Give me my market brief', 'Scan a receipt', 'Undo last expense'];
+  const list = want.filter(c=>!/^(Brief me|How are my habits\?|How many calories today\?|Give me my market brief|Scan a receipt)$/.test(c) || plugins.suggestions.includes(c));
+  if ($('suggest').dataset.n !== String(list.length)) { $('suggest').dataset.n = list.length; $('suggest').innerHTML = list.map(c=>`<button class="chip" data-cmd="${esc(c)}">${c}</button>`).join(''); }
 }
 
 /* ---------- toast + modals ---------- */
@@ -862,7 +979,7 @@ function applyTheme(){
 }
 function syncSettings(){
   $('sSpeak').checked = S.speak; $('sRate').value = S.rate; $('sPitch').value = S.pitch; $('sName').value = S.name; $('sCur').value = S.currency; $('sBudget').value = S.budget||''; $('sTheme').value = S.theme;
-  $('swatches').innerHTML = ACCENTS.map(c=>`<button style="background:${c}" class="${c===S.accent?'on':''}" data-accent="${c}" aria-label="Accent"></button>`).join('');
+  $('swatches').innerHTML = ACCENTS.map(c=>`<button style="background:${c}" class="${c===S.accent?'on':''}" data-accent="${c}" aria-label="Accent color ${['purple','blue','green','orange','red','pink'][ACCENTS.indexOf(c)]}"></button>`).join('');
   document.querySelectorAll('[data-accent]').forEach(b=>b.onclick=()=>{ S.accent=b.dataset.accent; save(); applyTheme(); syncSettings(); });
   const p = ('Notification' in window) ? Notification.permission : 'unsupported';
   $('notifState').textContent = p==='granted'?'On. You will get pop-up alerts.':p==='denied'?'Blocked in your browser settings.':p==='unsupported'?'Add Jarvis to your home screen to get alerts.':'Pop-up alerts on this device';
@@ -880,14 +997,22 @@ $('sTheme').onchange = e=>{ S.theme = e.target.value; save(); applyTheme(); };
 $('notifBtn').onclick = ()=>{ try { Notification.requestPermission().then(syncSettings); } catch(e){} };
 $('exportBtn').onclick = ()=>{ const blob = new Blob([JSON.stringify(db,null,2)], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'jarvis-backup-'+new Date().toISOString().slice(0,10)+'.json'; a.click(); toast('Backup saved'); };
 $('importBtn').onclick = ()=>$('importFile').click();
-$('importFile').onchange = async e=>{ try { const data = JSON.parse(await e.target.files[0].text()); if (!data.notes) throw 0; db = Object.assign({notes:[],reminders:[],expenses:[]}, data); db.settings = Object.assign({...DEFAULT_SETTINGS}, data.settings||{}); Object.assign(S, db.settings); db.settings = S; save(); applyTheme(); syncSettings(); renderAll(); toast('Backup restored'); } catch(err){ toast('That file is not a Jarvis backup'); } };
-$('wipeBtn').onclick = ()=>{ modal(`<h4>Erase everything?</h4><p style="color:var(--muted);margin:0 0 12px">All notes, reminders and transactions on this device will be deleted. Save a backup first if you might want them.</p><div class="row"><button class="btn ghost" id="mCancel">Cancel</button><button class="btn danger" id="mSave">Erase</button></div>`); $('mCancel').onclick=closeModal; $('mSave').onclick=()=>{ db.notes=[]; db.reminders=[]; db.expenses=[]; save(); renderAll(); closeModal(); toast('Everything erased'); }; };
+$('importFile').onchange = async e=>{ try { const data = JSON.parse(await e.target.files[0].text()); if (!data.notes) throw 0; const next = Object.assign({notes:[],reminders:[],expenses:[]}, data); next.settings = Object.assign({...DEFAULT_SETTINGS}, data.settings||{}); localStorage.setItem(KEY, JSON.stringify(next)); try { sessionStorage.setItem('jarvis2-toast', 'Backup restored'); } catch(x){} location.reload(); } catch(err){ toast('That file is not a Jarvis backup'); } };
+$('wipeBtn').onclick = ()=>{ modal(`<h4>Erase everything?</h4><p style="color:var(--muted);margin:0 0 12px">All notes, reminders, money, food, habits, goals and receipts on this device will be deleted. Your settings stay. Save a backup first if you might want them.</p><div class="row"><button class="btn ghost" id="mCancel">Cancel</button><button class="btn danger" id="mSave">Erase</button></div>`); $('mCancel').onclick=closeModal; $('mSave').onclick=()=>{ try { localStorage.setItem(KEY, JSON.stringify({notes:[], reminders:[], expenses:[], settings:S})); Object.keys(localStorage).filter(k=>k!==KEY && /^jarvis2/.test(k)).forEach(k=>localStorage.removeItem(k)); sessionStorage.setItem('jarvis2-toast', 'Everything erased'); } catch(x){} location.reload(); }; };
 
 /* ---------- start ---------- */
-applyTheme(); syncSettings(); renderAll(); checkReminders();
-setInterval(renderHome, 60000);
+applyTheme(); syncSettings();
+// features load after this script; start once everything is loaded
+document.addEventListener('DOMContentLoaded', ()=>{ renderAll(true); checkReminders(); try { const m = sessionStorage.getItem('jarvis2-toast'); if (m){ sessionStorage.removeItem('jarvis2-toast'); toast(m); } } catch(e){} });
+setInterval(()=>{ renderHome(); renderPlugins(); }, 60000);
 if ('serviceWorker' in navigator && location.protocol==='https:') navigator.serviceWorker.register('sw.js').catch(()=>{});
 window.jarvisHandle = handle; window.jarvisDB = ()=>db; // for testing
 </script>
+<!-- FEATURES (each file registers itself with window.Jarvis) -->
+<script src="features/brief.js"></script>
+<script src="features/habits.js"></script>
+<script src="features/finance.js"></script>
+<script src="features/receipt.js"></script>
+<script src="features/food.js"></script>
 </body>
 </html>

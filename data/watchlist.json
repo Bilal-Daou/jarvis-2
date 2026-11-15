@@ -1,0 +1,4 @@
+{
+  "_help": "Extra tickers for the Markets feed. Most big US stocks and ETFs are already included. Add any others here, e.g. [\"CAVA\", \"RKLB\"], and they appear after the next update.",
+  "symbols": []
+}

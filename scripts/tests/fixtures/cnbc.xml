@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:metadata="http://search.cnbc.com/rss/2.0/modules/siteContentMetadata" version="2.0">
+<channel>
+<title>Markets</title>
+<link>https://www.cnbc.com/id/100003114/device/rss/rss.html</link>
+<description>Stock market news</description>
+<item>
+<link>https://www.cnbc.com/2026/11/14/stock-market-today-live-updates.html</link>
+<guid isPermaLink="false">108229011</guid>
+<metadata:type>cnbcnewsstory</metadata:type>
+<metadata:id>108229011</metadata:id>
+<title>S&amp;P 500 rises as Nvidia leads chip rally; Dow gains 200 points</title>
+<description>Stocks rose on Friday as traders &lt;b&gt;cheered&lt;/b&gt; earnings.</description>
+<pubDate>Fri, 14 Nov 2026 21:05:12 GMT</pubDate>
+</item>
+<item>
+<link>https://www.cnbc.com/2026/11/14/oil-prices.html</link>
+<guid isPermaLink="false">108229012</guid>
+<title><![CDATA[Oil slips as OPEC+ weighs output hike]]></title>
+<pubDate>Fri, 14 Nov 2026 18:40:00 GMT</pubDate>
+</item>
+<item>
+<title>An item with no link is skipped</title>
+<pubDate>Fri, 14 Nov 2026 18:00:00 GMT</pubDate>
+</item>
+</channel>
+</rss>
