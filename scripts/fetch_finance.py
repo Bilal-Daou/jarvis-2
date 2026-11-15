@@ -90,10 +90,23 @@ UNIVERSE = list(NAMES.keys())
 
 FEEDS = [
     ("CNBC", "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114"),
-    ("Yahoo Finance", "https://feeds.finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EDJI,%5EIXIC&region=US&lang=en-US"),
     ("MarketWatch", "https://feeds.content.dowjones.io/public/rss/mw_topstories"),
-    ("Google News", "https://news.google.com/rss/search?q=%22stock+market%22+when:1d&hl=en-US&gl=US&ceid=US:en"),
+    # Google News search limited to major outlets: an open "stock market" search is full of
+    # auto-generated ticker spam. (Yahoo's own feeds 429 once yfinance has used the runner's IP.)
+    ("Google News", "https://news.google.com/rss/search?q=" + urllib.parse.quote(
+        '(stocks OR "Wall Street" OR "S&P 500" OR Nasdaq OR Fed) (site:reuters.com OR site:apnews.com OR '
+        'site:bloomberg.com OR site:wsj.com OR site:ft.com OR site:barrons.com OR site:nytimes.com OR '
+        'site:cnbc.com OR site:marketwatch.com OR site:axios.com) when:1d') + "&hl=en-US&gl=US&ceid=US:en"),
 ]
+
+# Auto-generated or promotional "news" that should never reach the headlines.
+JUNK_SOURCES = {"stock traders daily", "marketbeat", "ad hoc news", "defense world", "etf daily news",
+                "the markets daily", "watchlist news", "modern readers", "stock titan", "simply wall st"}
+JUNK_TITLE = re.compile(r"stock market analysis|^\(\w{1,6}(?::\w+)?\)|\b(?:shares (?:sold|bought|acquired) by|stake (?:raised|lowered|trimmed|boosted) by|position in .* (?:raised|lowered))\b", re.I)
+
+
+def is_junk(it):
+    return (it.get("source") or "").strip().lower() in JUNK_SOURCES or bool(JUNK_TITLE.search(it.get("title") or ""))
 
 UTC = dt.timezone.utc
 
@@ -641,7 +654,7 @@ def fetch_news(old):
             log("  feed failed", name, e)
     if not collected:
         return (old or {}).get("news") or [], ok, failed
-    items = dedupe(sort_news(collected))
+    items = dedupe(sort_news([it for it in collected if not is_junk(it)]))
     per, out = {}, []
     for it in items:
         if per.get(it["source"], 0) >= 6:
@@ -666,7 +679,7 @@ def fetch_symbol_news(symbols, names, old):
         except Exception:
             q = urllib.parse.quote(f'"{names.get(sym, sym)}" stock when:3d')
             items = parse_feed(http_get(f"https://news.google.com/rss/search?q={q}&hl=en-US&gl=US&ceid=US:en", retries=1), "Google News")
-        return dedupe(sort_news(items, 24 * 7))[:5]
+        return dedupe(sort_news([it for it in items if not is_junk(it)], 24 * 7))[:5]
 
     with ThreadPoolExecutor(max_workers=4) as ex:
         futs = {s: ex.submit(one, s) for s in symbols}

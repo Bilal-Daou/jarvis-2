@@ -534,7 +534,7 @@ function newsHTML(){
   let h = `<div class="fin-tools"><button class="chip ${st.news==='top'&&!newsSym?'on':''}" data-fin-news="top">Top stories</button><button class="chip ${st.news==='mine'&&!newsSym?'on':''}" data-fin-news="mine">My stocks</button>${newsSym?`<button class="chip on" data-fin-news="top">${J.esc(nameOf(newsSym))} ✕</button>`:''}</div>`;
   const list = newsSym ? allSymbolNews([newsSym]) : st.news==='mine' ? allSymbolNews(st.watchlist) : (data.news||[]);
   h += list.length ? `<div class="fin-list">${list.slice(0,30).map(newsItemHTML).join('')}</div>` : `<div class="empty"><div class="e-ic">📰</div>${newsSym||st.news==='mine'?'No fresh headlines for your stocks right now.':'No headlines yet.'}</div>`;
-  h += `<p style="color:var(--faint);font-size:12px;text-align:center;margin:16px 0 0">Tap a headline to read it. Sources: CNBC, Yahoo Finance, MarketWatch, Google News.</p>`;
+  h += `<p style="color:var(--faint);font-size:12px;text-align:center;margin:16px 0 0">Tap a headline to read it. Sources: CNBC, MarketWatch, Reuters, AP, Bloomberg, WSJ and more via Google News; Yahoo Finance for your stocks.</p>`;
   return h;
 }
 

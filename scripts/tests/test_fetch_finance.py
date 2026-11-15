@@ -331,6 +331,11 @@ class FeedTests(Base):
         self.assertEqual(out[0]["source"], "Reuters")                           # newest first
         self.assertIn("Oil slips as OPEC+ weighs output hike", titles)
 
+    def test_junk_filtered(self):
+        self.assertTrue(ff.is_junk({"title": "(ZJK) Stock Market Analysis (ZJK:CA)", "source": "Stock Traders Daily"}))
+        self.assertTrue(ff.is_junk({"title": "Apple Inc. shares sold by Example Advisors LLC", "source": "Some Site"}))
+        self.assertFalse(ff.is_junk({"title": "S&P 500 rises as Nvidia leads chip rally", "source": "Reuters"}))
+
     def test_fetch_news_keeps_old_when_all_fail(self):
         old = {"news": [{"title": "kept", "source": "X", "link": "https://x", "time": None}]}
         with mock.patch.object(ff, "http_get", side_effect=RuntimeError("down")):
