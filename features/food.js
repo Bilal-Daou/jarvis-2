@@ -559,9 +559,10 @@
   `);
 
   /* ---------------- shared UI pieces ---------------- */
-  function thumb(o, cls=''){
+  function thumb(o, cls='', full=false){
     const pic = o.pid ? photoOf(o.pid) : '';
-    if (pic) return `<div class="fd-th ph ${cls}"><img src="${pic}" alt=""></div>`;
+    // logged from a photo: the big header shows the photo; lists show the item's emoji with a tiny photo badge
+    if (pic) return full ? `<div class="fd-th ph ${cls}"><img src="${pic}" alt=""></div>` : `<div class="fd-th em ${cls}">${o.emoji||'🍽️'}<img class="fdp-badge" src="${pic}" alt=""></div>`;
     if (o.img) return `<div class="fd-th ${cls}"><img src="${esc(o.img)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.classList.add('em');this.replaceWith(document.createTextNode('${o.emoji||'🛒'}'))"></div>`;
     return `<div class="fd-th em ${cls}">${o.emoji||'🍽️'}</div>`;
   }
@@ -646,7 +647,7 @@
     else if (food.estimatedKcal) warn = `<div class="fd-warnbox">Calories were worked out from protein, carbs and fat.</div>`;
     const dayTxt = key===todayKey() ? 'today' : dateLabel(key);
     const body = openSheet(`
-      <div class="fd-ph">${thumb(food)}<div style="min-width:0"><h4>${esc(food.name)}</h4><div class="br">${esc(subtitle)}</div></div></div>
+      <div class="fd-ph">${thumb(food, '', true)}<div style="min-width:0"><h4>${esc(food.name)}</h4><div class="br">${esc(subtitle)}</div></div></div>
       ${(food.nutri||food.nova) ? `<div class="fd-badges">${nutriBadge(food.nutri)}${novaBadge(food.nova)}</div>` : ''}
       ${hdr}${warn}
       ${food.noKcal ? `<label class="fd-field"><span>Calories per serving (from the label)</span><input id="fdManK" type="number" inputmode="decimal" placeholder="e.g. 180"></label>` : ''}
@@ -1210,7 +1211,8 @@ Keep names short (at most 4 words) in plain English. portion is a short everyday
     const isFood = j.isFood!==false && items.length>0;
     return {isFood, kind:String(j.kind||''), title:String(j.title||'').trim().slice(0, 60) || (items[0] ? items[0].name : 'Your meal'), note:String(j.note||'').trim().slice(0, 220), items};
   }
-  const itemN = it => scaleN(it.n0, it.g/it.g0);
+  // whole calories per item, so the rows always add up to the total shown
+  const itemN = it => { const n = scaleN(it.n0, it.g/it.g0); n.kcal = Math.round(n.kcal||0); return n; };
 
   /* image: downscale to ~1024 px JPEG (fast and light), plus a tiny square thumbnail for the food log */
   function loadImg(file){
@@ -1452,7 +1454,7 @@ Keep names short (at most 4 words) in plain English. portion is a short everyday
     if (J.current!=='food') J.go('food');
     J.renderAll();
     const lf = F().goal - dayTotals(key).kcal;
-    J.toast(`Added ${res && res.title ? res.title : 'your meal'} · ${N(tot)} kcal · ${lf>=0 ? N(lf)+' left' : N(-lf)+' over'}`, ()=>{ added.forEach(e=>removeEntry(key, e.id)); });
+    J.toast(`Added ${N(tot)} kcal · ${lf>=0 ? N(lf)+' left' : N(-lf)+' over'}`, ()=>{ added.forEach(e=>removeEntry(key, e.id)); });
   }
 
   /* ---- setup: get a free Google key, paste it, test it ---- */
@@ -1553,6 +1555,8 @@ Keep names short (at most 4 words) in plain English. portion is a short everyday
   J.css(`
   .fdp-file{position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0}
   .fd-th.ph img{object-fit:cover;background:none}
+  .fd-th:has(.fdp-badge){overflow:visible}
+  .fd-th .fdp-badge{position:absolute;right:-4px;bottom:-4px;width:20px;height:20px;border-radius:7px;object-fit:cover;border:2px solid var(--card-solid);box-shadow:0 2px 6px rgba(0,0,0,.25)}
   .fdp-hero{margin-top:14px}
   .fdp-snap{position:relative;overflow:hidden;display:flex;align-items:center;gap:14px;border-radius:22px;padding:16px 16px;cursor:pointer;color:#fff;background:linear-gradient(135deg,var(--accent) 0%,#0ea5e9 100%);box-shadow:0 14px 30px rgba(79,70,229,.32);transition:transform .15s var(--ease);-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
   .fdp-snap:active{transform:scale(.98)}
@@ -1700,7 +1704,9 @@ Keep names short (at most 4 words) in plain English. portion is a short everyday
   .fdp-setmsg{font-size:13px;margin-top:10px}
   .fdp-setmsg:empty{display:none}
   .fdp-setmsg.ok{color:var(--good)}.fdp-setmsg.bad{color:var(--bad)}.fdp-setmsg.busy{color:var(--muted)}
-  .fd-sbot .r label{flex:1;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.14);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#fff;border-radius:16px;padding:13px 8px;font-weight:700;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+  .fd-sbot .r label{flex:1;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.14);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#fff;border-radius:16px;padding:13px 6px;font-weight:700;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+  .fd-sbot .r>*{white-space:nowrap;min-width:0}
+  .fd-sbot .r button{gap:6px!important;padding:13px 6px!important}
   .fd-sbot .r label svg{width:19px;height:19px}
   .fd-sbot .r label.ai{background:linear-gradient(135deg,var(--accent),#0ea5e9);border-color:transparent}
   @media (prefers-reduced-motion: reduce){.fdp-scanl,.fdp-shine,.fdp-frame img,.fdp-art .ln,.fdp-big{animation:none!important}}
@@ -1776,7 +1782,7 @@ Keep names short (at most 4 words) in plain English. portion is a short everyday
     q('#fdDateL').textContent = dateLabel(viewKey);
     q('#fdDateS').textContent = keyDate(viewKey).toLocaleDateString([], {weekday:'long', month:'long', day:'numeric'});
     q('#fdNext').disabled = viewKey >= todayKey();
-    { const has = J.ai.hasKey(); q('#fdSnapSub').textContent = has ? 'Plate or product · AI counts the calories' : 'Plate or product · free AI, quick setup';
+    { const has = J.ai.hasKey(); q('#fdSnapSub').textContent = has ? 'Plate or product · AI counts calories' : 'Plate or product · free AI';
       const ai = q('#fdAI'), sig = has ? 'on'+aiKey().slice(-4) : 'off'; if (ai.dataset.sig!==sig){ ai.dataset.sig = sig; ai.innerHTML = aiCardHTML(); } }
     const t = dayTotals(viewKey), goal = s.goal, left = goal - t.kcal, over = left < 0;
     q('#fdSum').innerHTML = `<div class="fd-sum">

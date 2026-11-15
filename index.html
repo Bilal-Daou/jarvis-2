@@ -780,7 +780,6 @@ function think(said){
     const text = cap(rest || 'Reminder');
     const when = date || new Date(Date.now()+36e5);
     const newRem = {id:uid(), text, at:when.getTime(), done:false, repeat, created:Date.now()}; db.reminders.push(newRem); save(); go('reminders'); reminderAdded(newRem);
-    askNotify();
     return `I'll remind you to ${text.charAt(0).toLowerCase()+text.slice(1)}, ${whenSpoken(when.getTime())}${repeat!=='none'?', repeating '+repeat:''}.` + (date?'':' You did not say a time, so I set it for an hour from now.');
   }
   // explicit notes
@@ -817,7 +816,7 @@ function think(said){
 /** tell features (e.g. receipts) that an expense was removed or put back */
 function expenseEvent(kind, e){ try { window.dispatchEvent(new CustomEvent('jarvis:expense-'+kind, {detail:{id:e.id, expense:e}})); } catch(err){} }
 /* Conversation: simple answers, never saves anything (except "save that", which you asked for) */
-const HELP_TEXT = "I can brief you on your day, check the weather and markets, track spending, food, water and habits, scan receipts, set reminders, and save notes when you ask. Try: brief me.";
+const HELP_TEXT = "I can brief you on your day, check the weather, markets and your calendar, set reminders and alarms, track spending, food, water and habits, scan receipts and food photos, and save notes when you ask. Try: brief me.";
 const pick = list => list[Math.floor(Math.random()*list.length)];
 function spendPeriod(t){
   const d0 = new Date(); d0.setHours(0,0,0,0);
@@ -887,7 +886,7 @@ function fallbackReply(t){
   if (/^(call|phone|ring|dial|facetime|video call)\b/.test(t)) return one(["I can't make calls yet. Say remind me to call, and I'll make sure you don't forget."]);
   if (/^(text|message|send|email|e-mail|whatsapp|reply to)\b/.test(t)) return one(["I can't send messages yet. I can remind you to, or save it as a note."]);
   if (/^(play|put on|shuffle|skip|pause|resume)\b|\b(music|song|songs|playlist|spotify|podcast)\b/.test(t)) return one(["I can't play music yet. I can give you your brief, the weather or the markets."]);
-  if (/\b(alarm|timer|stopwatch)\b/.test(t)) return one(["I can't set alarms or timers yet. Say remind me, then a time, and I'll remind you."]);
+  if (/\b(alarm|timer|stopwatch)\b/.test(t)) return one(["Say it like this: wake me up at 7 am, or set a timer for 10 minutes."]);
   if (/^(open|launch|start) /.test(t)) return one(["I can't open other apps yet. I can open your notes, reminders, budget, food, habits and markets."]);
   if (/^(what's|what is|whats) the news$|^(the )?news$|^(any|latest) news$|^(read|tell) me the news$/.test(t)) return one(["I only have market news for now. Say market news to hear the headlines."]);
   const isQ = /^(what|who|whom|whose|where|when|why|how|which|is|are|was|were|do|does|did|can|could|will|would|should|has|have|tell me|explain|define|translate|find|search|look up|google)\b/.test(t);
@@ -1144,7 +1143,7 @@ document.addEventListener('click', e=>{
   const p = e.target.closest('[data-pin]'); if (p){ e.stopPropagation(); const n = db.notes.find(x=>x.id===p.dataset.pin); n.pinned = !n.pinned; save(); renderAll(); toast(n.pinned?'Pinned':'Unpinned'); return; }
   const sy = e.target.closest('[data-say]'); if (sy){ e.stopPropagation(); const was = S.speak; S.speak = true; speak(sy.dataset.say); S.speak = was; return; }
   const dn = e.target.closest('[data-done]'); if (dn){ completeReminder(dn.dataset.done); return; }
-  const sn = e.target.closest('[data-snooze]'); if (sn){ const r = db.reminders.find(x=>x.id===sn.dataset.snooze); r.at = Math.max(Date.now(), r.at) + 6e5; r.done=false; save(); renderAll(); toast('Snoozed 10 minutes'); return; }
+  const sn = e.target.closest('[data-snooze]'); if (sn){ const r = db.reminders.find(x=>x.id===sn.dataset.snooze); r.at = Math.max(Date.now(), r.at) + 6e5; r.done=false; r.fired=false; save(); renderAll(); toast('Snoozed 10 minutes'); return; }
   const en = e.target.closest('[data-edit-note]'); if (en){ openNoteModal(db.notes.find(x=>x.id===en.dataset.editNote)); return; }
   const vv = e.target.closest('[data-voice]'); if (vv){ S.voice = vv.dataset.voice; save(); renderVoices(); const was=S.speak; S.speak=true; speak(`Hi ${S.name}, I'm Jarvis. This is how I sound.`); S.speak=was; return; }
   const ch = e.target.closest('[data-cmd]'); if (ch){ openSheet(false); handle(ch.dataset.cmd); return; }
