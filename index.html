@@ -134,17 +134,99 @@ h2{font-size:26px;font-weight:800;letter-spacing:-.6px;margin:0 0 4px}
 .app-tile:active{transform:scale(.96)}
 .app-tile .a-ic{width:54px;height:54px;border-radius:17px;display:grid;place-items:center;font-size:26px;box-shadow:0 8px 18px rgba(0,0,0,.18)}
 
-/* bottom nav */
-.nav{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(12px + var(--safe-b));width:calc(100% - 24px);max-width:496px;z-index:20;background:var(--glass);border:1px solid var(--line);border-radius:26px;backdrop-filter:blur(22px) saturate(1.4);-webkit-backdrop-filter:blur(22px) saturate(1.4);box-shadow:var(--shadow);display:grid;grid-template-columns:1fr 1fr 84px 1fr 1fr;align-items:center;height:70px;padding:0 6px}
-.nav button.tab{border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--faint);font-size:10.5px;font-weight:600;cursor:pointer;padding:8px 0}
-.nav button.tab svg{width:22px;height:22px}
+/* bottom nav: Home · Today · [mic] · Money · More. On Home the big mic is on the page, so the nav mic tucks away */
+.nav{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(12px + var(--safe-b));width:calc(100% - 24px);max-width:496px;z-index:20;background:var(--glass);border:1px solid var(--line);border-radius:26px;backdrop-filter:blur(22px) saturate(1.4);-webkit-backdrop-filter:blur(22px) saturate(1.4);box-shadow:var(--shadow);display:grid;grid-template-columns:1fr 1fr var(--orb-w,84px) 1fr 1fr;align-items:center;height:68px;padding:0 6px;transition:grid-template-columns .45s var(--ease)}
+.nav.on-home{--orb-w:0px}
+.nav button.tab{border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--faint);font-size:11px;font-weight:600;letter-spacing:.1px;cursor:pointer;padding:8px 0;min-width:0;transition:color .2s}
+.nav button.tab svg{width:23px;height:23px;transition:transform .25s var(--ease)}
 .nav button.tab.active{color:var(--text)}
-.nav button.tab.active svg{color:var(--accent)}
-.orb{justify-self:center;width:68px;height:68px;margin-top:-34px;border-radius:50%;border:0;cursor:pointer;background:radial-gradient(circle at 30% 30%,#a99dff,var(--accent) 45%,#3b2fd6);box-shadow:0 12px 30px rgba(109,93,252,.55),inset 0 2px 6px rgba(255,255,255,.35);display:grid;place-items:center;color:#fff;position:relative;transition:transform .2s var(--ease)}
+.nav button.tab.active svg{color:var(--accent);transform:translateY(-1px)}
+.orb{justify-self:center;width:64px;height:64px;margin-top:-32px;border-radius:50%;border:0;cursor:pointer;background:radial-gradient(circle at 30% 30%,#a99dff,var(--accent) 45%,#3b2fd6);background:radial-gradient(circle at 30% 28%,color-mix(in srgb,var(--accent) 45%,#fff),var(--accent) 45%,color-mix(in srgb,var(--accent) 62%,#000));box-shadow:0 12px 30px color-mix(in srgb,var(--accent) 55%,transparent),inset 0 2px 6px rgba(255,255,255,.35);display:grid;place-items:center;color:#fff;position:relative;transition:transform .4s var(--ease),opacity .25s}
 .orb:active{transform:scale(.94)}
-.orb svg{width:28px;height:28px}
-.orb::before{content:"";position:absolute;inset:-6px;border-radius:50%;border:2px solid rgba(109,93,252,.35);animation:breathe 3s ease-in-out infinite}
+.orb svg{width:27px;height:27px}
+.orb::before{content:"";position:absolute;inset:-6px;border-radius:50%;border:2px solid color-mix(in srgb,var(--accent) 35%,transparent);animation:breathe 3s ease-in-out infinite}
+.nav.on-home .orb{transform:translateY(26px) scale(.35);opacity:0;pointer-events:none}
 @keyframes breathe{50%{transform:scale(1.08);opacity:.4}}
+
+/* ============ HOME: one big mic + today's key numbers ============ */
+body.at-home .app{padding-bottom:calc(98px + var(--safe-b))}
+.hm{flex-direction:column;min-height:calc(100vh - 112px - var(--safe-t) - var(--safe-b));min-height:calc(100svh - 112px - var(--safe-t) - var(--safe-b))}
+.view.hm.active{display:flex}
+.hm-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:4px}
+.hm-top>div{min-width:0}
+.hm-greet{font-size:22px;font-weight:800;letter-spacing:-.55px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hm-date{color:var(--muted);font-size:13px;font-weight:500;margin-top:2px}
+.hm-top .icon-btn{flex:none;border-radius:50%;width:42px;height:42px;color:var(--muted)}
+.hm-stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px 0 22px;min-height:236px}
+.hm-orb{--sz:clamp(116px,calc((100svh - var(--safe-t) - var(--safe-b)) * .2),164px);position:relative;width:var(--sz);height:var(--sz);flex:none;border:0;padding:0;background:none;cursor:pointer;border-radius:50%;display:grid;place-items:center;color:#fff;transition:transform .3s var(--ease)}
+.hm-orb:active{transform:scale(.95)}
+.hm-orb:focus-visible{outline-offset:8px;outline-color:color-mix(in srgb,var(--accent) 70%,transparent)}
+.hm-glow{position:absolute;inset:-34%;border-radius:50%;background:radial-gradient(closest-side,rgba(109,93,252,.5),transparent);background:radial-gradient(closest-side,color-mix(in srgb,var(--accent) 52%,transparent),color-mix(in srgb,var(--accent2) 10%,transparent) 62%,transparent);animation:hmBreathe 5s ease-in-out infinite;pointer-events:none}
+:root[data-theme="light"] .hm-glow{opacity:.65}
+.hm-ring{position:absolute;inset:0;border-radius:50%;border:1.5px solid color-mix(in srgb,var(--accent) 55%,transparent);opacity:0;animation:hmRipple 5s cubic-bezier(.2,.6,.3,1) infinite;pointer-events:none}
+.hm-ring.r2{animation-delay:2.5s}
+.hm-core{position:absolute;inset:0;border-radius:50%;overflow:hidden;background:radial-gradient(circle at 32% 26%,#b3a9ff 0%,var(--accent) 45%,#2f24b8 100%);background:radial-gradient(circle at 32% 26%,color-mix(in srgb,var(--accent) 42%,#fff) 0%,var(--accent) 46%,color-mix(in srgb,var(--accent) 58%,#000) 100%);box-shadow:0 22px 48px -10px color-mix(in srgb,var(--accent) 75%,transparent),inset 0 2px 10px rgba(255,255,255,.35),inset 0 -14px 28px rgba(0,0,0,.22)}
+.hm-core::before{content:"";position:absolute;inset:-20%;background:conic-gradient(from 0deg,transparent 0 15%,rgba(255,255,255,.16) 25%,transparent 38% 55%,color-mix(in srgb,var(--accent2) 38%,transparent) 68%,transparent 82%);animation:hmSpin 14s linear infinite}
+.hm-core::after{content:"";position:absolute;left:18%;right:18%;top:6%;height:38%;border-radius:50%;background:linear-gradient(180deg,rgba(255,255,255,.32),rgba(255,255,255,0))}
+.hm-ic{position:relative;z-index:1;width:30%;height:30%;filter:drop-shadow(0 2px 6px rgba(0,0,0,.2));transition:opacity .2s,transform .3s var(--ease)}
+.hm-wave{position:absolute;z-index:1;display:flex;align-items:center;gap:5px;height:34%;opacity:0;transition:opacity .2s}
+.hm-wave i{width:5px;height:20%;border-radius:4px;background:#fff;animation:hmWave 1s ease-in-out infinite}
+.hm-wave i:nth-child(2){animation-delay:.15s}.hm-wave i:nth-child(3){animation-delay:.3s}.hm-wave i:nth-child(4){animation-delay:.45s}.hm-wave i:nth-child(5){animation-delay:.6s}
+body.is-listening .hm-ic{opacity:0;transform:scale(.7)}
+body.is-listening .hm-wave{opacity:1}
+body.is-listening .hm-ring{animation-duration:1.8s}
+body.is-listening .hm-ring.r2{animation-delay:.9s}
+body.is-listening .hm-glow{animation-duration:1.8s}
+@keyframes hmBreathe{0%,100%{transform:scale(.9);opacity:.7}50%{transform:scale(1.04);opacity:1}}
+@keyframes hmRipple{0%{transform:scale(1);opacity:.5}100%{transform:scale(1.6);opacity:0}}
+@keyframes hmSpin{to{transform:rotate(360deg)}}
+@keyframes hmWave{0%,100%{height:18%}50%{height:100%}}
+.hm-hint{margin:24px 0 0;border:0;background:none;padding:2px 10px;max-width:100%;color:var(--muted);font-size:15px;font-weight:500;line-height:1.4;text-align:center;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hm-hint.reply{color:var(--text);opacity:.8;font-size:14.5px}
+.hm-hint b{color:var(--text);font-weight:700}
+.hm-type{margin-top:12px;display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 15px 0 13px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;transition:transform .15s var(--ease)}
+.hm-type svg{width:17px;height:17px}
+.hm-type:active,.hm-brief:active,.tile:active{transform:scale(.97)}
+.hm-brief{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;border-radius:18px;border:1px solid var(--line);background:var(--card);padding:7px 14px 7px 8px;font-size:14.5px;font-weight:600;text-align:left;cursor:pointer;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);transition:transform .15s var(--ease)}
+.hm-brief[hidden]{display:none}
+.hm-brief .pb{flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent)}
+.hm-brief .pb svg{width:15px;height:15px}
+.hm-brief .bt{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.25}
+.hm-brief .bt b,.hm-brief .bt small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hm-brief .bt b{font-weight:700;font-size:14.5px}
+.hm-brief .bt small{color:var(--muted);font-size:12px;font-weight:500;margin-top:1px}
+.hm-brief .chev{flex:none;width:18px;height:18px;color:var(--faint)}
+.hm-brief .eq{display:none;align-items:flex-end;gap:2px;height:14px}
+.hm-brief .eq i{width:3px;border-radius:2px;background:currentColor;animation:hmEq .9s ease-in-out infinite}
+.hm-brief .eq i:nth-child(2){animation-delay:.2s}.hm-brief .eq i:nth-child(3){animation-delay:.4s}
+.hm-brief.playing .eq{display:flex}.hm-brief.playing .pb svg{display:none}
+@keyframes hmEq{0%,100%{height:4px}50%{height:14px}}
+.hm-tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.hm-tiles:empty{display:none}
+.tile{position:relative;min-width:0;min-height:96px;text-align:left;border:1px solid var(--line);background:var(--card);border-radius:20px;padding:12px 14px 13px;display:flex;flex-direction:column;cursor:pointer;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);transition:transform .15s var(--ease)}
+.tile.wide{grid-column:1/-1}
+.t-top{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:24px}
+.t-lbl{color:var(--muted);font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.t-ic{flex:none;width:24px;height:24px;display:grid;place-items:center;color:var(--accent)}
+.t-ic svg{width:100%;height:100%}
+.t-ic.sm{width:20px;height:20px;opacity:.9}
+.t-val{padding-top:6px;font-size:25px;font-weight:800;letter-spacing:-.8px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.t-val.txt{font-size:16.5px;letter-spacing:-.3px;font-weight:700;line-height:1.25}
+.t-val small{font-size:13px;font-weight:700;letter-spacing:0;color:var(--muted);margin-left:3px}
+.t-bar+.t-sub{margin-top:5px}
+.t-sub{margin-top:auto;padding-top:3px;color:var(--muted);font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.t-sub.bad{color:var(--bad);font-weight:600}.t-sub.warn{color:var(--warn);font-weight:600}
+.t-bar{height:4px;border-radius:9px;background:var(--line);overflow:hidden;margin-top:auto}
+.t-bar i{display:block;height:100%;border-radius:9px;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.t-bar i.bad{background:var(--bad)}.t-bar i.warn{background:linear-gradient(90deg,var(--warn),var(--bad))}
+.t-bar i.good{background:linear-gradient(90deg,#16a34a,var(--good))}
+.t-skel{display:block;height:24px;width:55%;border-radius:8px;margin-top:10px;background:linear-gradient(90deg,var(--line),rgba(255,255,255,.12),var(--line));background-size:200% 100%;animation:hmShim 1.4s linear infinite}
+@keyframes hmShim{to{background-position:-200% 0}}
+@media (max-height:700px){.hm-stage{padding:12px 0 16px;min-height:210px}.hm-hint{margin-top:18px}.tile{min-height:88px}}
+@media (prefers-reduced-motion:reduce){
+  .hm-glow,.hm-ring,.hm-core::before,.orb::before,.hm-wave i,.hm-brief .eq i,.t-skel{animation:none!important}
+  .hm-ring{opacity:0}.view{animation:none}.nav,.orb{transition:none}
+}
 
 /* assistant sheet */
 .sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:30;opacity:0;pointer-events:none;transition:opacity .3s}
@@ -235,32 +317,36 @@ input[type=range]{width:120px;accent-color:var(--accent)}
 .fin-range button::after{content:"";position:absolute;inset:-9px -2px}
 </style>
 </head>
-<body>
+<body class="at-home">
 <div class="app">
 
-  <!-- ============ HOME ============ -->
-  <section class="view active" id="v-home">
-    <div class="top">
-      <div class="brand">
-        <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M4 12h2l2-6 4 12 3-9 2 3h3"/></svg></div>
-        <div><b id="topTitle">Jarvis</b><small id="today"></small></div>
-      </div>
+  <!-- ============ HOME: one big mic + today's key numbers (everything else is behind the bottom menu) ============ -->
+  <section class="view hm active" id="v-home">
+    <div class="hm-top">
+      <div><div class="hm-greet" id="greet">Good morning</div><div class="hm-date" id="today"></div></div>
       <button class="icon-btn" data-go="settings" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
     </div>
 
-    <div class="card banner" id="noSpeech" style="border-color:var(--warn)">🎙️ Voice isn't available in this browser. Use <b>Safari</b> on iPhone or <b>Chrome</b> on Android. You can still type.</div>
-
-    <div class="hero" id="hero">
-      <div class="hi" id="greet">Good morning</div>
-      <div class="big" id="heroLine">What can I do for you today?</div>
-      <div class="hero-stats">
-        <div><b id="hsSpent">$0</b><span>Spent this month</span></div>
-        <div><b id="hsRem">0</b><span>Reminders today</span></div>
-        <div><b id="hsNotes">0</b><span>Notes</span></div>
-      </div>
+    <div class="hm-stage">
+      <button class="hm-orb" id="heroMic" aria-label="Talk to Jarvis">
+        <span class="hm-glow"></span><span class="hm-ring"></span><span class="hm-ring r2"></span>
+        <span class="hm-core"></span>
+        <svg class="hm-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="2.5" width="6" height="12" rx="3"/><path d="M5 10.5a7 7 0 0 0 14 0M12 17.5V21"/></svg>
+        <span class="hm-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+      </button>
+      <button class="hm-hint" id="heroHint">Tap and talk</button>
+      <button class="hm-type" id="heroType"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M6.5 10h.01M10 10h.01M13.5 10h.01M17 10h.01M8 14h8"/></svg>Type instead</button>
     </div>
 
-    <!-- Home is one curated flow: feature cards and core blocks are ordered together (see HOME_ORDER) -->
+    <button class="hm-brief" id="heroBrief" hidden><span class="pb"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l11-6.5a1 1 0 0 0 0-1.72l-11-6.5A1 1 0 0 0 8 5.5z"/></svg><span class="eq"><i></i><i></i><i></i></span></span><span class="bt"><b id="heroBriefTxt">Play my morning brief</b><small id="heroBriefSub">Weather, plans and money, read aloud</small></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button>
+    <div class="hm-tiles" id="heroTiles"></div>
+  </section>
+
+  <!-- ============ TODAY: the full overview (weather, habits, food, money, what's next, markets, notes) ============ -->
+  <section class="view" id="v-today">
+    <h2>Today</h2><p class="lede" id="todayLede">Your day at a glance.</p>
+    <div class="card banner" id="noSpeech" style="border-color:var(--warn)">🎙️ Voice isn't available in this browser. Use <b>Safari</b> on iPhone or <b>Chrome</b> on Android. You can still type.</div>
+    <!-- one curated flow: feature cards and core blocks are ordered together (see HOME_ORDER) -->
     <div id="homeCards" class="home-flow">
       <div class="chips home-block" id="homeChips" style="order:5"></div>
       <div class="home-block" style="order:30"><div class="section-h"><h3>Budget</h3><button class="link" data-go="budget">Details</button></div>
@@ -305,7 +391,7 @@ input[type=range]{width:120px;accent-color:var(--accent)}
 
   <!-- ============ APPS ============ -->
   <section class="view" id="v-apps">
-    <h2>Apps</h2><p class="lede">Everything Jarvis can do.</p>
+    <h2>More</h2><p class="lede">Everything Jarvis can do.</p>
     <div class="app-grid" id="appGrid"></div>
   </section>
 
@@ -349,12 +435,12 @@ input[type=range]{width:120px;accent-color:var(--accent)}
 </div>
 
 <!-- bottom nav -->
-<nav class="nav">
+<nav class="nav on-home" id="nav" aria-label="Main">
   <button class="tab active" data-go="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</button>
-  <button class="tab" data-go="budget"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20M6 15h4"/></svg>Budget</button>
+  <button class="tab" data-go="today"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16.5" rx="3"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/><circle cx="12" cy="15" r="1.6" fill="currentColor" stroke="none"/></svg>Today</button>
   <button class="orb" id="orb" aria-label="Talk to Jarvis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="2.5" width="6" height="12" rx="3"/><path d="M5 10.5a7 7 0 0 0 14 0M12 17.5V21"/></svg></button>
-  <button class="tab" data-go="reminders"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg>Reminders</button>
-  <button class="tab" data-go="apps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>Apps</button>
+  <button class="tab" data-go="budget"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7V5.5A1.5 1.5 0 0 0 17.5 4h-12A2.5 2.5 0 0 0 3 6.5v11A2.5 2.5 0 0 0 5.5 20h13a2.5 2.5 0 0 0 2.5-2.5v-8A2.5 2.5 0 0 0 18.5 7H5.5A2.5 2.5 0 0 1 3 4.5"/><circle cx="16.5" cy="13.5" r="1.3" fill="currentColor" stroke="none"/></svg>Money</button>
+  <button class="tab" data-go="apps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>More</button>
 </nav>
 
 <!-- assistant sheet -->
@@ -868,18 +954,112 @@ function budgetGoalHTML(spent){
     <div style="margin-top:8px;font-size:13px;color:${over?'var(--bad)':'var(--muted)'};font-weight:600">${over?`Over by ${fmt(spent-S.budget)}`:`${fmt(S.budget-spent)} left`}${isCur&&!over&&dLeft>0?` · about ${fmt(Math.floor((S.budget-spent)/dLeft))} a day for ${dLeft} days`:''}</div>`;
 }
 
+/* ---------- Home: greeting, the big mic, the brief pill and 3–4 glanceable tiles ---------- */
+const TI = {
+  clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+  cal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16.5" rx="3"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg>',
+  wallet:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7V5.5A1.5 1.5 0 0 0 17.5 4h-12A2.5 2.5 0 0 0 3 6.5v11A2.5 2.5 0 0 0 5.5 20h13a2.5 2.5 0 0 0 2.5-2.5v-8A2.5 2.5 0 0 0 18.5 7H5.5A2.5 2.5 0 0 1 3 4.5"/><circle cx="16.5" cy="13.5" r="1.3" fill="currentColor" stroke="none"/></svg>',
+  flame:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21c-3.9 0-7-2.8-7-6.6 0-3.4 2.4-5.4 3.6-8.4.5 2 1.6 3.2 2.9 3.8C11.4 6.6 13 4.3 15.2 3c-.3 3 1 4.8 2.3 6.6 1 1.4 1.5 2.9 1.5 4.6C19 18.1 15.9 21 12 21z"/></svg>',
+  habit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.7 2.7L16.5 9.5"/></svg>',
+  pin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>'
+};
+/* a small colored weather picture from an Open-Meteo code */
+function wxGlyph(code, day){
+  const g = code<=1?'clear':code===2?'partly':code===3?'cloudy':code<50?'fog':code>=95?'storm':(code>=71&&code<=77)||code===85||code===86?'snow':'rain';
+  const sun = '<circle cx="12" cy="12" r="4.6" fill="#fbbf24"/><g stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round"><path d="M12 2.8v2.1M12 19.1v2.1M2.8 12h2.1M19.1 12h2.1M5.5 5.5 7 7M17 17l1.5 1.5M5.5 18.5 7 17M17 7l1.5-1.5"/></g>';
+  const moon = '<path d="M15.5 3.5a8.5 8.5 0 1 0 5 13.7 7 7 0 0 1-5-13.7z" fill="#c7d2fe"/>';
+  const cloud = (x,y,s,c) => `<path transform="translate(${x} ${y}) scale(${s})" d="M7 18h10.5a4.5 4.5 0 0 0 .6-8.96A6 6 0 0 0 6.6 10.1 4 4 0 0 0 7 18z" fill="${c}"/>`;
+  const drops = c => `<g stroke="${c}" stroke-width="1.8" stroke-linecap="round"><path d="M8.5 19.5 7.5 22M12.5 19.5l-1 2.5M16.5 19.5l-1 2.5"/></g>`;
+  let b = '';
+  if (g==='clear') b = day ? sun : moon;
+  else if (g==='partly') b = (day ? '<g transform="translate(-3 -3) scale(.8)">'+sun+'</g>' : '<g transform="translate(-2 -3) scale(.72)">'+moon+'</g>') + cloud(2,3,.85,'#e2e8f0');
+  else if (g==='cloudy') b = cloud(-3,-1,.75,'#94a3b8') + cloud(1,1,.9,'#e2e8f0');
+  else if (g==='fog') b = cloud(0,-3,1,'#cbd5e1') + '<g stroke="#94a3b8" stroke-width="1.8" stroke-linecap="round"><path d="M4 19h14M7 22h12"/></g>';
+  else if (g==='snow') b = cloud(0,-3,1,'#e2e8f0') + '<g fill="#bae6fd"><circle cx="8" cy="20.5" r="1.3"/><circle cx="12.5" cy="21.5" r="1.3"/><circle cx="17" cy="20.5" r="1.3"/></g>';
+  else if (g==='storm') b = cloud(0,-4,1,'#94a3b8') + '<path d="m12.5 14-2.5 4.5h3l-2 4" stroke="#facc15" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+  else b = cloud(0,-4,1,'#cbd5e1') + drops('#38bdf8');
+  return `<svg viewBox="0 0 24 24">${b}</svg>`;
+}
+function soonText(ts){
+  const m = Math.round((ts - Date.now())/6e4);
+  if (m < -1) return 'Overdue · ' + whenText(ts);
+  if (m <= 1) return 'Now';
+  if (m < 60) return `In ${m} min`;
+  const d = new Date(ts), t = d.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
+  if (d.toDateString() === new Date().toDateString()) return `Today at ${t}`;
+  return whenText(ts).replace(', ', ' at ');
+}
+function tileHTML(o){
+  return `<button class="tile" ${o.go?`data-go="${o.go}"`:''} ${o.act?`data-tile="${o.act}"`:''}>
+    <div class="t-top"><span class="t-lbl">${esc(o.lbl)}</span><span class="t-ic${o.icSm?' sm':''}">${o.ic}</span></div>
+    ${o.skel?'<span class="t-skel"></span>':`<div class="t-val${o.txt?' txt':''}">${o.val}</div>`}
+    ${o.bar!=null?`<div class="t-bar"><i class="${o.barCls||''}" style="width:${Math.max(0,Math.min(100,o.bar))}%"></i></div>`:''}
+    <div class="t-sub ${o.subCls||''}">${o.sub}</div></button>`;
+}
+const N0 = new Intl.NumberFormat('en-US',{maximumFractionDigits:0});
+function homeTiles(){
+  const tiles = [];
+  // weather (from the morning-brief feature)
+  try { const W = Jarvis.weather; if (W){
+    const unitF = (db.brief && db.brief.unit) === 'F', T = c => Math.round(unitF ? c*9/5+32 : c);
+    const loc = W.location, v = loc ? W.now() : null;
+    if (!loc) tiles.push({lbl:'Weather', ic:TI.pin, icSm:true, val:'Set your city', txt:true, sub:'For your daily forecast', act:'wx'});
+    else if (v) tiles.push({lbl:loc.name, ic:wxGlyph(v.code, v.day), val:`${T(v.t)}°`, sub:`${W.describe(v.code, v.day)}${typeof v.max==='number'?` · ${T(v.max)}° / ${T(v.min)}°`:''}`, go:'today'});
+    else tiles.push({lbl:loc.name, ic:TI.pin, icSm:true, skel:true, sub:navigator.onLine===false?'Offline · no forecast yet':'Getting the weather…', go:'today'});
+  } } catch(e){}
+  // next up: the soonest reminder or calendar event
+  try {
+    const r = upcoming()[0], od = overdue()[0];
+    let ev = null; try { if (Jarvis.calendar && typeof Jarvis.calendar.next==='function'){ const n = Jarvis.calendar.next(); if (n && n.title && n.at) ev = n; } } catch(e){}
+    const hasCal = plugins.views.some(x=>x.id==='calendar');
+    const pickEv = ev && (!r || +ev.at < r.at);
+    const nx = pickEv ? {title:ev.title, at:+ev.at, go:hasCal?'calendar':'reminders'} : r ? {title:r.text, at:r.at, go:'reminders'} : null;
+    if (nx) tiles.push({lbl:'Next up', ic:pickEv?TI.cal:TI.clock, icSm:true, val:esc(nx.title), txt:true, sub:soonText(nx.at), go:nx.go});
+    else if (od) tiles.push({lbl:'Next up', ic:TI.clock, icSm:true, val:esc(od.text), txt:true, sub:'Overdue · '+whenText(od.at), subCls:'bad', go:'reminders'});
+    else tiles.push({lbl:'Next up', ic:TI.clock, icSm:true, val:'All clear', txt:true, sub:'Nothing coming up', go:hasCal?'calendar':'reminders'});
+  } catch(e){}
+  // money: this month vs budget
+  try {
+    const spent = sum(inMonth(monthKey(Date.now())));
+    const d0 = new Date(); d0.setHours(0,0,0,0); const today = sum(db.expenses.filter(e=>e.type==='expense' && e.at>=+d0));
+    const o = {lbl:'Spent this month', ic:TI.wallet, icSm:true, val:fmt(Math.round(spent)), go:'budget'};
+    if (S.budget){ const pct = spent/S.budget*100, over = spent > S.budget;
+      o.bar = pct; o.barCls = over?'bad':pct>80?'warn':''; o.sub = over ? `Over by ${fmt(Math.round(spent-S.budget))}` : `${fmt(Math.round(S.budget-spent))} left of ${fmt(S.budget)}`; if (over) o.subCls = 'bad'; }
+    else o.sub = today ? `${fmt(today)} today` : 'Tap to set a budget';
+    tiles.push(o);
+  } catch(e){}
+  // calories left (food feature), else today's habits
+  let food = null; try { if (Jarvis.food && typeof Jarvis.food.today==='function') food = Jarvis.food.today(); } catch(e){}
+  if (food && food.goal > 0){
+    const left = food.goal - (food.kcal||0), over = left < 0;
+    tiles.push({lbl: over?'Calories over':'Calories left', ic:TI.flame, icSm:true, val:N0.format(Math.abs(Math.round(left))), bar:(food.kcal||0)/food.goal*100, barCls:over?'bad':'good', sub:food.kcal?`${N0.format(Math.round(food.kcal))} of ${N0.format(food.goal)} eaten`:'Nothing logged yet', subCls:over?'warn':'', go:'food'});
+  } else { try { const h = Jarvis.habits && typeof Jarvis.habits.today==='function' && Jarvis.habits.today(); if (h && h.total) tiles.push({lbl:'Habits today', ic:TI.habit, icSm:true, val:`${h.done}<small>/ ${h.total}</small>`, bar:h.done/h.total*100, barCls:'good', sub:h.done>=h.total?'All done today':`${h.total-h.done} to go`, go:'habits'}); } catch(e){} }
+  return tiles;
+}
+let lastReply = '', briefOn = false, briefPoll = null;
 function renderHome(){
-  const key = monthKey(Date.now()); const spent = sum(inMonth(key));
   $('today').textContent = new Date().toLocaleDateString([], {weekday:'long', month:'long', day:'numeric'});
   $('greet').textContent = `${greeting()}, ${S.name}`;
-  // when the Today card is there it leads the page, so the greeting moves up into the top bar
-  const todayCard = plugins.homeCards.some(c=>c.id==='brief');
-  $('hero').hidden = todayCard; $('topTitle').textContent = todayCard ? `${greeting()}, ${S.name}` : 'Jarvis';
-  const up = upcoming(); const todayCount = up.filter(r=>new Date(r.at).toDateString()===new Date().toDateString()).length;
-  const lines = [];
-  if (up[0]) lines.push(`Next: ${up[0].text}`);
-  $('heroLine').textContent = lines[0] || 'What can I do for you today?';
-  $('hsSpent').textContent = fmt(spent); $('hsRem').textContent = todayCount; $('hsNotes').textContent = db.notes.length;
+  const canTalk = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+  $('heroHint').classList.toggle('reply', !!lastReply);
+  $('heroHint').innerHTML = lastReply ? '“'+esc(lastReply)+'”' : canTalk ? 'Tap and talk' : 'Voice needs <b>Safari</b> or <b>Chrome</b>. Tap to type.';
+  $('heroHint').setAttribute('aria-label', lastReply ? 'Open the conversation' : 'Talk to Jarvis');
+  // morning brief pill
+  const B = $('heroBrief'), hasBrief = !!(Jarvis.brief && typeof Jarvis.brief.play==='function');
+  B.hidden = !hasBrief;
+  if (hasBrief){ const h = new Date().getHours();
+    $('heroBriefTxt').textContent = briefOn ? 'Playing your brief' : h>=4 && h<12 ? 'Play my morning brief' : 'Play my daily brief';
+    $('heroBriefSub').textContent = briefOn ? 'Tap to stop' : 'Weather, plans and money, read aloud';
+    B.classList.toggle('playing', briefOn); B.setAttribute('aria-label', briefOn ? 'Stop the brief' : $('heroBriefTxt').textContent); }
+  const tiles = homeTiles(); if (tiles.length % 2) tiles[tiles.length-1].wide = true;
+  const html = tiles.map(t=>tileHTML(t).replace('class="tile"', t.wide?'class="tile wide"':'class="tile"')).join('');
+  if ($('heroTiles').dataset.h !== html){ $('heroTiles').innerHTML = html; $('heroTiles').dataset.h = html; }
+}
+/* the Today screen: everything that used to crowd Home */
+function renderToday(){
+  const key = monthKey(Date.now()); const spent = sum(inMonth(key));
+  $('todayLede').textContent = new Date().toLocaleDateString([], {weekday:'long', month:'long', day:'numeric'});
+  const up = upcoming();
   $('homeBudget').innerHTML = budgetGoalHTML(spent) + (()=>{ const byCat={}; inMonth(key).forEach(e=>byCat[e.cat]=(byCat[e.cat]||0)+e.amount); const top = Object.entries(byCat).sort((a,b)=>b[1]-a[1])[0]; return top?`<div style="margin-top:10px;font-size:13px;color:var(--muted)">Biggest category: <b style="color:var(--text)">${(CATS[top[0]]||CATS.Other).ic} ${top[0]} · ${fmt(top[1])}</b></div>`:''; })();
   const od = overdue();
   $('homeRem').innerHTML = (od.length||up.length) ? [...od.slice(0,2), ...up.slice(0,3)].map(remHTML).join('') : emptyHTML('⏰','Nothing coming up. Say “Remind me to…”');
@@ -934,14 +1114,14 @@ function renderVoices(){
 let renderHold = 0, renderWanted = false;
 function renderAll(full){
   if (renderHold){ renderWanted = true; return; } // inside a command: draw once at the end
-  renderHome(); renderChips();
+  renderHome(); renderToday(); renderChips();
   if (full===true || current==='notes') renderNotes();
   if (full===true || current==='reminders') renderReminders();
   if (full===true || current==='budget') renderBudget();
   renderPlugins(full===true);
 }
 function renderView(name){
-  if (name==='notes') renderNotes(); else if (name==='reminders') renderReminders(); else if (name==='budget') renderBudget();
+  if (name==='home') renderHome(); else if (name==='today') renderToday(); else if (name==='notes') renderNotes(); else if (name==='reminders') renderReminders(); else if (name==='budget') renderBudget();
   else { const v = plugins.views.find(x=>x.id===name); if (v) try { v.render(v.el); } catch(e){ console.error(v.id, e); } }
 }
 
@@ -951,7 +1131,10 @@ function go(name){
   const changed = current !== name; current = name;
   if (changed && !renderHold) renderView(name);
   document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active', v.id==='v-'+name));
-  document.querySelectorAll('.nav .tab').forEach(b=>b.classList.toggle('active', b.dataset.go===name));
+  // each screen lights up the tab it lives under; on Home the nav mic tucks away (the big mic is on the page)
+  const tab = name==='home'||name==='today' ? name : /^(budget|receipts|finance)$/.test(name) ? 'budget' : 'apps';
+  document.querySelectorAll('.nav .tab').forEach(b=>{ const on = b.dataset.go===tab; b.classList.toggle('active', on); if (on) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
+  $('nav').classList.toggle('on-home', name==='home'); document.body.classList.toggle('at-home', name==='home');
   if (!$('sheet').classList.contains('open')) window.scrollTo({top:0, behavior:'smooth'});
 }
 document.addEventListener('click', e=>{
@@ -1052,6 +1235,7 @@ function addMsg(who, text){
   const el = document.createElement('div'); el.className = 'msg '+who;
   el.innerHTML = who==='ai' ? `<div class="who">Jarvis</div>${esc(text)}` : esc(text);
   $('chat').appendChild(el); $('chat').scrollTop = $('chat').scrollHeight;
+  if (who==='ai' && chatLog.some(m=>m.who==='me')){ lastReply = String(text); try { renderHome(); } catch(e){} }
 }
 function openSheet(listen){
   $('sheet').classList.add('open'); $('sheetBg').classList.add('open');
@@ -1060,6 +1244,22 @@ function openSheet(listen){
 }
 function closeSheet(){ $('sheet').classList.remove('open'); $('sheetBg').classList.remove('open'); stopListening(); }
 $('orb').onclick = ()=>openSheet(true);
+$('heroMic').onclick = ()=>openSheet(!!SR);
+$('heroHint').onclick = ()=>openSheet(!lastReply && !!SR);
+$('heroType').onclick = ()=>{ openSheet(false); try { $('textIn').focus(); } catch(e){} };
+document.addEventListener('click', e=>{
+  const t = e.target.closest('[data-tile="wx"]'); if (!t) return;
+  // no city yet: open the brief's own location picker (its card lives on the Today screen)
+  const b = document.querySelector('#hc-brief [data-bf="loc"]'); if (b) b.click(); else go('today');
+});
+$('heroBrief').onclick = ()=>{
+  if (!Jarvis.brief) return;
+  const was = briefOn;
+  try { Jarvis.brief.play(); } catch(e){ return; }
+  briefOn = !was && 'speechSynthesis' in window; renderHome();
+  clearInterval(briefPoll);
+  if (briefOn) briefPoll = setInterval(()=>{ let busy = false; try { busy = speechSynthesis.speaking || speechSynthesis.pending; } catch(e){} if (!busy){ briefOn = false; clearInterval(briefPoll); renderHome(); } }, 700);
+};
 $('closeSheet').onclick = closeSheet; $('sheetBg').onclick = closeSheet;
 
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1071,10 +1271,10 @@ function startListening(){
   try { speechSynthesis.cancel(); } catch(e){}
   rec = new SR(); rec.lang = navigator.language || 'en-US'; rec.interimResults = true; rec.continuous = false;
   finalText = '';
-  rec.onstart = ()=>{ listening = true; $('micBtn').classList.add('rec'); $('stage').classList.add('listening'); $('live').textContent = 'Listening…'; };
+  rec.onstart = ()=>{ listening = true; document.body.classList.add('is-listening'); $('micBtn').classList.add('rec'); $('stage').classList.add('listening'); $('live').textContent = 'Listening…'; };
   rec.onresult = ev=>{ let interim=''; for (let i=ev.resultIndex;i<ev.results.length;i++){ const r = ev.results[i]; if (r.isFinal) finalText += r[0].transcript; else interim += r[0].transcript; } $('live').textContent = (finalText+interim) || 'Listening…'; };
   rec.onerror = ev=>{ if (ev.error==='not-allowed'||ev.error==='service-not-allowed') $('live').textContent = 'Please allow the microphone for this page, then tap the mic again.'; else if (ev.error==='no-speech') $('live').textContent = "I didn't catch that. Tap the mic and try again."; };
-  rec.onend = ()=>{ listening = false; $('micBtn').classList.remove('rec'); $('stage').classList.remove('listening'); if (finalText.trim()){ $('live').textContent = 'Tap the mic to talk again.'; handle(finalText); } };
+  rec.onend = ()=>{ listening = false; document.body.classList.remove('is-listening'); $('micBtn').classList.remove('rec'); $('stage').classList.remove('listening'); if (finalText.trim()){ $('live').textContent = 'Tap the mic to talk again.'; handle(finalText); } };
   try { rec.start(); } catch(e){}
 }
 function stopListening(){ if (rec && listening) try { rec.stop(); } catch(e){} }
@@ -1142,7 +1342,7 @@ $('wipeBtn').onclick = ()=>{ modal(`<h4>Erase everything?</h4><p style="color:va
 applyTheme(); syncSettings();
 // features load after this script; start once everything is loaded
 document.addEventListener('DOMContentLoaded', ()=>{ renderAll(true); checkReminders(); try { const m = sessionStorage.getItem('jarvis2-toast'); if (m){ sessionStorage.removeItem('jarvis2-toast'); toast(m); } } catch(e){} });
-setInterval(()=>{ renderHome(); renderPlugins(); }, 60000);
+setInterval(()=>{ renderHome(); renderToday(); renderPlugins(); }, 60000);
 if ('serviceWorker' in navigator && location.protocol==='https:') navigator.serviceWorker.register('sw.js').catch(()=>{});
 window.jarvisHandle = handle; window.jarvisDB = ()=>db; // for testing
 </script>

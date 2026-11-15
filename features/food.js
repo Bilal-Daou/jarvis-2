@@ -11,7 +11,7 @@
   const ZXING_URL = 'https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js';
   const OFF = 'https://world.openfoodfacts.org';
   const OFF_FIELDS = 'code,product_name,brands,image_front_small_url,nutriments,serving_size,serving_quantity,serving_quantity_unit,nutrition_data_per,nutriscore_grade,nova_group,quantity';
-  const DEFAULTS = {goal:2000, waterGoal:8, days:{}, products:{}, recent:[]};
+  const DEFAULTS = {goal:2000, waterGoal:8, days:{}, products:{}, recent:[], photos:{}};
   const MEALS = [
     {id:'breakfast', label:'Breakfast', ic:'🍳'},
     {id:'lunch', label:'Lunch', ic:'🥗'},
@@ -560,6 +560,8 @@
 
   /* ---------------- shared UI pieces ---------------- */
   function thumb(o, cls=''){
+    const pic = o.pid ? photoOf(o.pid) : '';
+    if (pic) return `<div class="fd-th ph ${cls}"><img src="${pic}" alt=""></div>`;
     if (o.img) return `<div class="fd-th ${cls}"><img src="${esc(o.img)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.classList.add('em');this.replaceWith(document.createTextNode('${o.emoji||'🛒'}'))"></div>`;
     return `<div class="fd-th em ${cls}">${o.emoji||'🍽️'}</div>`;
   }
@@ -637,7 +639,7 @@
     }
     const rowsDef = [['p','Protein'],['c','Carbs'],['sugar','  of which sugar'],['f','Fat'],['satfat','  of which saturated'],['salt','Salt'],['fiber','Fiber']];
     const table = p100 && !food.noKcal ? `<div class="fd-nt">${rowsDef.filter(([k])=>food.src==='off' || ['p','c','f'].includes(k)).map(([k,l])=>{ const v = p100[k]; if (v==null && (k==='satfat'||k==='fiber')) return ''; return `<div><span style="${l.startsWith('  ')?'padding-left:12px;color:var(--muted)':''}">${l.trim()}</span>${food.src==='off'?level(k,v,food.w==='ml'):''}<b>${v!=null?g1(v)+' g':'—'}</b></div>`; }).join('')}</div>` : '';
-    const subtitle = [food.brand, food.quantity].filter(Boolean).join(' · ') || (food.src==='local' ? 'Common food · typical values' : food.src==='manual' ? 'Added by you' : '');
+    const subtitle = [food.brand, food.quantity].filter(Boolean).join(' · ') || (food.src==='local' ? 'Common food · typical values' : food.src==='manual' ? 'Added by you' : food.src==='ai-photo' ? 'From your photo · AI estimate' : '');
     let warn = '';
     if (food.noKcal) warn = `<div class="fd-warnbox">⚠️ This product has no calorie info yet. Type the calories from the label below.</div>`;
     else if (food.src==='off' && food.missing && food.missing.length) warn = `<div class="fd-warnbox">Some nutrition info is missing for this product, so totals may be a little low.</div>`;
@@ -659,7 +661,7 @@
       <div class="fd-total"><b id="fdTotK">0<span>kcal</span></b><small id="fdTotM"></small></div>
       <button class="fd-cta" id="fdAdd">${editing ? 'Save changes' : 'Add to '+esc(dayTxt)}</button>
       ${editing ? `<div class="fd-row2"><button class="btn danger" id="fdDel">Delete</button></div>` : ''}
-      ${food.src==='off' ? `<p class="fd-note" style="margin-top:12px">Data from Open Food Facts${food.code?` · barcode ${esc(food.code)}`:''}</p>` : food.src==='local' ? `<p class="fd-note" style="margin-top:12px">Typical values. Packaged food? Scan its barcode for exact numbers.</p>` : ''}
+      ${food.src==='off' ? `<p class="fd-note" style="margin-top:12px">Data from Open Food Facts${food.code?` · barcode ${esc(food.code)}`:''}</p>` : food.src==='local' ? `<p class="fd-note" style="margin-top:12px">Typical values. Packaged food? Scan its barcode for exact numbers.</p>` : food.src==='ai-photo' ? `<p class="fd-note" style="margin-top:12px">Estimated by AI from a photo. It can be off by 20–30%.</p>` : ''}
     `);
     const $ = s => body.querySelector(s);
     const qIn = $('#fdQty');
@@ -820,7 +822,7 @@
       <div class="fd-frame"><i class="a"></i><i class="b"></i><i class="c"></i><i class="d"></i><div class="fd-laser"></div></div>
       <div class="fd-stop"><button class="fd-cb" data-a="close" aria-label="Close scanner">${I.close}</button><b>Scan a barcode</b><button class="fd-cb" data-a="torch" aria-label="Flashlight" hidden>${I.flash}</button></div>
       <div class="fd-sstate"></div>
-      <div class="fd-sbot"><div class="fd-hint">Point the camera at the barcode</div><div class="r"><button data-a="photo">${I.photo} Photo</button><button data-a="type">${I.keys} Type number</button></div></div>
+      <div class="fd-sbot"><div class="fd-hint">Point the camera at the barcode</div><div class="r"><label for="fdPhCam" class="ai" data-a="food" role="button" tabindex="0">${I.cam} Food photo</label><button data-a="photo">${I.photo} Photo</button><button data-a="type">${I.keys} Type it</button></div></div>
       <input type="file" accept="image/*" hidden data-f="gal"><input type="file" accept="image/*" capture="environment" hidden data-f="cap">`;
     document.body.appendChild(scanEl);
     const v = scanEl.querySelector('video'); v.muted = true; v.setAttribute('playsinline',''); v.setAttribute('webkit-playsinline','');
@@ -834,9 +836,12 @@
       else if (a==='type'){ closeScanner(); showTypeCode(); }
       else if (a==='start') startCamera();
       else if (a==='search'){ closeScanner(); J.go('food'); setTimeout(focusSearch, 350); }
+      else if (a==='food'){ ensurePhotoInputs(); closeScanner(); } // the label itself opens the camera
+      else if (a==='aiphoto'){ const f = lastScanFile; closeScanner(); if (f) onPhotoFile(f, {skipBarcode:true}); else openPhoto(); }
     });
     scanEl.querySelectorAll('input[type=file]').forEach(inp=>inp.onchange = async ()=>{
       const file = inp.files && inp.files[0]; inp.value = ''; if (!file) return;
+      lastScanFile = file;
       stopCamera(); setState('busy', 'Reading the photo…');
       try {
         const txt = await decodeFile(file);
@@ -854,12 +859,12 @@
     const H = {
       live:'',
       busy:`<div class="fd-spin"></div><p>${esc(msg||'Starting the camera…')}</p>`,
-      tap:`<div class="big">📷</div><h4>Ready to scan</h4><p>Tap below to turn on the camera, then point it at the barcode on the package.</p><button class="fd-start" data-a="start">${I.cam} Start camera</button>`,
+      tap:`<div class="big">📷</div><h4>Ready to scan</h4><p>Tap below to turn on the camera, then point it at the barcode on the package.</p><button class="fd-start" data-a="start">${I.cam} Start camera</button><br><label for="fdPhCam" class="lnk" data-a="food" role="button" tabindex="0" style="display:inline-block">No barcode? Snap the food instead</label>`,
       denied:`<div class="big">🔒</div><h4>Camera is blocked</h4><p>${/iphone|ipad/i.test(navigator.userAgent) ? 'On iPhone: open <b>Settings → Safari → Camera</b> and choose <b>Allow</b>, or tap <b>aA</b> in the address bar → Website Settings → Camera.' : 'Tap the lock icon next to the web address → <b>Permissions</b> → allow <b>Camera</b>, then try again.'}</p><button class="fd-start" data-a="start">${I.cam} Try again</button><br>${photoBtn}`,
       nocam:`<div class="big">📵</div><h4>No camera found</h4><p>${window.isSecureContext===false ? 'The camera only works on the secure (https) link of Jarvis.' : "This device doesn't have a camera Jarvis can use."} You can still use a photo or type the number.</p>${photoBtn}`,
       inuse:`<div class="big">📸</div><h4>Camera is busy</h4><p>Another app is using the camera. Close it and try again.</p><button class="fd-start" data-a="start">${I.cam} Try again</button>`,
       libfail:`<div class="big">📡</div><h4>Scanner needs internet once</h4><p>Connect to the internet so Jarvis can load the scanner, or type the number instead.</p><button class="fd-start" data-a="start">${I.cam} Try again</button>`,
-      nophoto:`<div class="big">🤔</div><h4>Couldn't read that photo</h4><p>Try a closer, sharper photo with the whole barcode in view and good light — or type the number.</p><button class="fd-start" data-a="photo">${I.photo} Choose another photo</button><br><button class="lnk" data-a="start">Use the live camera</button>`,
+      nophoto:`<div class="big">🤔</div><h4>Couldn't read that photo</h4><p>Try a closer, sharper photo with the whole barcode in view and good light — or type the number.</p><button class="fd-start" data-a="photo">${I.photo} Choose another photo</button><br><button class="lnk" data-a="aiphoto">No barcode? Count its calories with AI</button><br><button class="lnk" data-a="start" style="margin-top:2px">Use the live camera</button>`,
       error:`<div class="big">⚠️</div><h4>Camera didn't start</h4><p>${esc(msg||'Something went wrong with the camera.')}</p><button class="fd-start" data-a="start">${I.cam} Try again</button><br>${photoBtn}`
     };
     box.innerHTML = H[s] || '';
@@ -1004,13 +1009,712 @@
     inp.scrollIntoView({behavior:'smooth', block:'center'}); setTimeout(()=>{ try { inp.focus({preventScroll:true}); } catch(e){} }, 300);
   }
 
+  /* =========================================================
+     AI (shared helper) — Google Gemini API, free tier.
+     The key lives only on this phone (its own localStorage entry,
+     kept out of Jarvis backups). Other features can reuse
+     Jarvis.ai.gemini(parts, opts), e.g. for receipts later.
+     ========================================================= */
+  const AI_LS = 'jarvis2-ai';
+  const AI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models/';
+  const AI_STUDIO = 'https://aistudio.google.com/apikey';
+  // newest alias first; then current free-tier models. A model that is gone (404) or out of free quota (429) falls through to the next.
+  const AI_MODELS = ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-3.5-flash', 'gemini-3.1-flash-lite', 'gemini-2.5-flash-lite'];
+  let aiMem = null;
+  function aiState(){ if (aiMem) return aiMem; try { aiMem = JSON.parse(localStorage.getItem(AI_LS) || '{}') || {}; } catch(e){ aiMem = {}; } return aiMem; }
+  function aiSave(){ try { localStorage.setItem(AI_LS, JSON.stringify(aiMem || {})); } catch(e){} }
+  function aiErr(kind, info){ const e = new Error('ai '+kind); e.kind = kind; if (info) Object.assign(e, info); return e; }
+  const sleep = ms => new Promise(r=>setTimeout(r, ms));
+  /** pull a key out of whatever was copied (a bare key, or text around it) */
+  function extractKey(txt){
+    const s = String(txt||'').trim().replace(/^["'`]+|["'`]+$/g,'');
+    const m = s.match(/AIza[0-9A-Za-z_\-]{30,}/); if (m) return m[0];
+    if (/^[0-9A-Za-z_\-\.]{30,120}$/.test(s)) return s; // other key formats Google may use later
+    return '';
+  }
+  function classifyHttp(status, data){
+    const er = (data && data.error) || {};
+    const msg = String(er.message || ''), st = String(er.status || '');
+    const det = JSON.stringify(er.details || '');
+    const all = msg+' '+st+' '+det;
+    if (/API_KEY_INVALID|API key not valid|API_KEY_EXPIRED|API key expired|invalid api key/i.test(all)) return aiErr('badkey', {status, msg});
+    if (/location is not supported|not supported in your (?:country|region)|unsupported (?:location|country|region)|not available in your (?:country|region)/i.test(all)) return aiErr('region', {status, msg});
+    if (status===429 || st==='RESOURCE_EXHAUSTED') return aiErr('quota', {status, msg, daily:/per ?day|PerDay|daily/i.test(all)});
+    if (status===404 || /models\/\S+ is not found|is not found for API version|not supported for generateContent|no longer available|unknown model|model .*not (?:found|available)/i.test(msg)) return aiErr('model', {status, msg});
+    if (status===403) return aiErr(/SERVICE_DISABLED|has not been used|is disabled|API_KEY_SERVICE_BLOCKED|referer|referrer/i.test(all) ? 'denied' : 'badkey', {status, msg});
+    if (status===400 && /response_?schema|responseSchema|schema|Unknown name|Invalid JSON payload/i.test(msg)) return aiErr('schema', {status, msg});
+    if (status===401) return aiErr('badkey', {status, msg});
+    if (status>=500) return aiErr('server', {status, msg});
+    return aiErr('request', {status, msg});
+  }
+  function parseLoose(text){
+    const s = String(text||'').trim(); if (!s) return undefined;
+    try { return JSON.parse(s); } catch(e){}
+    const a = s.indexOf('{'), b = s.lastIndexOf('}');
+    if (a>=0 && b>a){ try { return JSON.parse(s.slice(a, b+1)); } catch(e){} }
+    return undefined;
+  }
+  async function aiCall(model, key, parts, opts, noSchema){
+    const gc = {};
+    if (opts.schema || opts.json){ gc.responseMimeType = 'application/json'; if (opts.schema && !noSchema) gc.responseSchema = opts.schema; }
+    // Google advises leaving temperature at its default on Gemini 3 models; older models get the low value asked for
+    if (opts.temperature!=null && /^gemini-[12]\./.test(model)) gc.temperature = opts.temperature;
+    if (opts.maxTokens) gc.maxOutputTokens = opts.maxTokens;
+    const body = {contents:[{role:'user', parts}]};
+    if (Object.keys(gc).length) body.generationConfig = gc;
+    if (opts.system) body.systemInstruction = {parts:[{text:opts.system}]};
+    const ac = new AbortController(); let timedOut = false;
+    const tm = setTimeout(()=>{ timedOut = true; ac.abort(); }, opts.timeout || 45000);
+    const onAbort = ()=>ac.abort();
+    if (opts.signal){ if (opts.signal.aborted) ac.abort(); else opts.signal.addEventListener('abort', onAbort); }
+    let r, data = null;
+    try {
+      r = await fetch(AI_BASE + model + ':generateContent', {method:'POST', headers:{'Content-Type':'application/json', 'x-goog-api-key':key}, body:JSON.stringify(body), signal:ac.signal});
+      try { data = await r.json(); } catch(e){}
+    } catch(e){
+      if (opts.signal && opts.signal.aborted) throw aiErr('abort');
+      if (timedOut) throw aiErr('timeout');
+      throw aiErr(navigator.onLine===false ? 'offline' : 'network');
+    } finally { clearTimeout(tm); if (opts.signal) opts.signal.removeEventListener('abort', onAbort); }
+    if (!r.ok) throw classifyHttp(r.status, data);
+    data = data || {};
+    if (data.promptFeedback && data.promptFeedback.blockReason) throw aiErr('safety', {reason:data.promptFeedback.blockReason});
+    const c = (data.candidates || [])[0];
+    if (!c) throw aiErr('empty');
+    const fr = String(c.finishReason || '');
+    const text = ((c.content && c.content.parts) || []).filter(p=>p && !p.thought && typeof p.text==='string').map(p=>p.text).join('');
+    if (/SAFETY|PROHIBITED|BLOCKLIST|SPII/.test(fr) && !text) throw aiErr('safety', {reason:fr});
+    let json;
+    if (opts.schema || opts.json){ json = parseLoose(text); if (json===undefined) throw aiErr(fr==='MAX_TOKENS' ? 'empty' : 'parse'); }
+    return {text, json, model, finishReason:fr, usage:data.usageMetadata || null};
+  }
+  /** gemini(parts, opts) → {text, json, model}. parts use the REST shape: {text} or {inline_data:{mime_type, data}}.
+      opts: {schema, json, temperature, system, timeout, signal, maxTokens, model, key}. Errors carry .kind:
+      nokey · badkey · denied · quota (.daily) · region · offline · network · timeout · server · safety · model · parse · empty · abort */
+  async function gemini(parts, opts={}){
+    const key = opts.key || aiKey(); if (!key) throw aiErr('nokey');
+    if (navigator.onLine===false) throw aiErr('offline');
+    if (typeof parts==='string') parts = [{text:parts}];
+    const st = aiState();
+    const list = opts.model ? [opts.model] : [...new Set([st.model, ...AI_MODELS].filter(Boolean))];
+    let last = null, quota = null, noSchema = false;
+    for (const model of list){
+      for (let attempt=0; attempt<3; attempt++){
+        try {
+          const res = await aiCall(model, key, parts, opts, noSchema);
+          if (!opts.model && !opts.key && st.model!==model){ st.model = model; aiSave(); }
+          return res;
+        } catch(e){
+          last = e;
+          if (['abort','badkey','denied','region','offline','safety','nokey','timeout'].includes(e.kind)) throw e;
+          if (e.kind==='schema' && opts.schema && !noSchema){ noSchema = true; continue; }
+          if ((e.kind==='server' || e.kind==='parse') && attempt===0){ await sleep(800); continue; }
+          break; // try the next model
+        }
+      }
+      if (last && last.kind==='quota') quota = quota || last;
+      if (last && last.kind==='network') throw last;
+      if (opts.signal && opts.signal.aborted) throw aiErr('abort');
+    }
+    throw quota || last || aiErr('empty');
+  }
+  function aiKey(){ return String(aiState().key || ''); }
+  function setAiKey(k){ const st = aiState(); st.key = String(k||'').trim(); st.savedAt = Date.now(); if (!st.key) { delete st.key; delete st.model; } aiSave(); }
+  /** quick text-only check that a key works. Resolves {ok, err} */
+  async function aiTest(k){
+    try { await gemini([{text:'Reply with the single word: OK'}], {key:k, timeout:25000}); return {ok:true}; }
+    catch(e){ if (e.kind==='empty' || e.kind==='safety' || e.kind==='parse') return {ok:true}; if (e.kind==='quota') return {ok:true, quota:true, err:e}; return {ok:false, err:e}; }
+  }
+  function aiErrText(e){
+    const k = e && e.kind;
+    const T = {
+      nokey:['AI is not turned on yet', 'Add your free Google key to count calories from a photo.'],
+      badkey:["That key didn't work", 'Google says the key is not valid. Copy it again from Google AI Studio (it starts with “AIza”) and paste it here.'],
+      denied:["This key can't use the AI", 'Make a new key in Google AI Studio with “Create API key”, then paste it here.'],
+      quota: e && e.daily ? ["You've used today's free photos", "Google's free plan has a daily limit. It resets tomorrow. You can still log food by voice or barcode."] : ['Free limit reached for now', "Google's free plan allows a few photos per minute. Wait a minute, then try again."],
+      region:['Not available where you are', "Google's free AI isn't offered in your country right now. Barcode scanning and voice logging still work."],
+      offline:["You're offline", 'Connect to Wi-Fi or mobile data and try again.'],
+      network:["Couldn't reach Google", 'Check your internet connection and try again.'],
+      timeout:['That took too long', 'Google took too long to answer. Please try again.'],
+      server:["Google's AI is busy", 'It did not answer properly. Try again in a moment.'],
+      safety:["I can't analyze that photo", "Google's AI declined this photo. Try a photo that shows just the food."],
+      model:['The AI model changed', 'Google changed its free models. Try again later, or update Jarvis.'],
+      parse:["I couldn't read the answer", 'The AI sent back something unexpected. Please try again.'],
+      empty:['No answer from the AI', 'Please try again, maybe with a clearer photo.'],
+      request:['Something went wrong', 'Google could not handle that request. Please try again.']
+    };
+    const v = T[k] || T.request; return {t:v[0], d:v[1]};
+  }
+  J.ai = Object.assign(J.ai || {}, {
+    hasKey(){ return !!aiKey(); },
+    key(){ return aiKey(); },
+    setKey: setAiKey,
+    removeKey(){ setAiKey(''); },
+    gemini, test:aiTest, errorText:aiErrText, extractKey,
+    setupUrl:AI_STUDIO,
+    model(){ return aiState().model || AI_MODELS[0]; },
+    /** open the friendly setup sheet (from any feature) */
+    setup(opts){ showAiSetup(opts||{}); }
+  });
+
+  /* =========================================================
+     FOOD PHOTOS — snap a plate or product, the AI counts calories
+     ========================================================= */
+  const AI_PROMPT = `You are a careful nutrition expert. Look at this photo so the person can log what they are about to eat.
+1. If it shows a meal or plate: list each distinct food or drink separately (for example: chicken shawarma wrap, french fries, garlic sauce, side salad). Estimate each portion's weight in grams (ml for drinks) from visual cues: plate size (about 26 cm), cutlery, hands, cups, packaging.
+2. If it shows a packaged product: read the brand and product name. If the nutrition facts label is readable, use the label's numbers (prefer them over estimates) and set fromLabel to true. Log one typical serving unless the photo clearly shows a whole small package being eaten; say which in "portion".
+3. The person lives in Lebanon, so Lebanese and Middle-Eastern food is common: manakish (zaatar or cheese), shawarma, shish tawook, falafel, hummus, baba ghanoush, tabbouleh, fattoush, kibbeh, mjadra, foul, fatteh, labneh, halloumi, ka'ak, lahm bi ajeen, fatayer, warak enab, knafeh, baklava, Arabic bread. Use their usual recipes (olive oil, tahini, toum garlic sauce, pickles) when estimating.
+4. Include visible oil, butter, sauces, dressings and sugary drinks. Calories, protein, carbs, fat and sugar are for the estimated portion (not per 100 g).
+5. confidence is 0 to 1: how sure you are about the item AND its amount.
+6. If there is no food or drink in the photo, set isFood to false, items to an empty list, and say what you see in note.
+Keep names short (at most 4 words) in plain English. portion is a short everyday description like "1 wrap", "1 medium bowl", "2 pieces", "1 cup (240 ml)". title is a short name for the whole meal. note is one short friendly sentence (for example a tip or what you assumed).`;
+  const AI_SCHEMA = {
+    type:'OBJECT',
+    properties:{
+      isFood:{type:'BOOLEAN'},
+      kind:{type:'STRING', enum:['plate','product','drink','snack','other']},
+      title:{type:'STRING'},
+      items:{type:'ARRAY', items:{type:'OBJECT', properties:{
+        name:{type:'STRING'}, emoji:{type:'STRING'}, portion:{type:'STRING'},
+        grams:{type:'NUMBER'}, calories:{type:'NUMBER'}, protein:{type:'NUMBER'}, carbs:{type:'NUMBER'}, fat:{type:'NUMBER'},
+        sugar:{type:'NUMBER', nullable:true}, confidence:{type:'NUMBER'}, fromLabel:{type:'BOOLEAN'}, liquid:{type:'BOOLEAN'}
+      }, required:['name','portion','grams','calories','protein','carbs','fat','confidence'],
+      propertyOrdering:['name','emoji','portion','grams','calories','protein','carbs','fat','sugar','confidence','fromLabel','liquid']}},
+      note:{type:'STRING'}
+    },
+    required:['isFood','title','items','note'],
+    propertyOrdering:['isFood','kind','title','items','note']
+  };
+  const numOr = (v, d=0) => { const x = typeof v==='number' ? v : parseFloat(v); return isFinite(x) && x>=0 ? x : d; };
+  const EMOJI_RE = /\p{Extended_Pictographic}/u;
+  function guessEmoji(name){
+    const n = String(name||'').toLowerCase();
+    const loc = localMatches(n)[0]; if (loc) return loc.emoji;
+    const map = [[/fries|chips/,'🍟'],[/salad|greens|lettuce/,'🥗'],[/rice/,'🍚'],[/bread|pita|toast|bun/,'🫓'],[/chicken|tawook/,'🍗'],[/beef|meat|steak|kafta|kebab/,'🥩'],[/fish|salmon|tuna|shrimp/,'🐟'],[/egg/,'🥚'],[/cheese|halloumi/,'🧀'],[/yog|laban|labneh|milk/,'🥛'],[/sauce|toum|garlic|tahini|dip|mayo|ketchup/,'🥣'],[/soup/,'🍲'],[/pasta|spaghetti|noodle/,'🍝'],[/pizza/,'🍕'],[/burger/,'🍔'],[/wrap|sandwich|shawarma/,'🌯'],[/cake|dessert|knafeh|baklava|sweet/,'🍰'],[/fruit|apple|banana|orange|grape|berry|melon/,'🍎'],[/juice/,'🧃'],[/coffee|latte|espresso/,'☕'],[/tea/,'🍵'],[/soda|cola|drink|pepsi|coke/,'🥤'],[/water/,'💧'],[/chocolate|bar/,'🍫'],[/potato/,'🥔'],[/pickle|olive/,'🫒'],[/vegetable|tomato|cucumber|carrot/,'🥕']];
+    for (const [re, e] of map) if (re.test(n)) return e;
+    return '🍽️';
+  }
+  /** turn the model's JSON into review items (numbers checked and rounded) */
+  function normalizeAI(j){
+    j = j || {};
+    const items = (Array.isArray(j.items) ? j.items : []).filter(x=>x && String(x.name||'').trim()).slice(0, 12).map(x=>{
+      let kcal = Math.min(numOr(x.calories), 6000), p = numOr(x.protein), c = numOr(x.carbs), f = numOr(x.fat);
+      if (!kcal && (p||c||f)) kcal = p*4 + c*4 + f*9;
+      const g = Math.max(1, Math.min(numOr(x.grams, 0) || 100, 5000));
+      const name = cap(String(x.name).trim().replace(/\s+/g,' ').slice(0, 48));
+      const em = String(x.emoji||'').trim();
+      const sugar = x.sugar==null ? null : numOr(x.sugar, null);
+      return {id:J.uid(), name, emoji: em && em.length<=8 && EMOJI_RE.test(em) ? em : guessEmoji(name), portion:String(x.portion||'').trim().slice(0, 40) || '1 portion',
+        g0:g, g, n0:{kcal, p, c, f, ...(sugar!=null ? {sugar} : {})}, conf:Math.max(0, Math.min(1, numOr(x.confidence, .6))), label:!!x.fromLabel, liquid:!!x.liquid, src:'ai'};
+    }).filter(x=>x.n0.kcal>0 || x.n0.p || x.n0.c || x.n0.f || /water|tea|coffee|diet|zero/i.test(x.name));
+    const isFood = j.isFood!==false && items.length>0;
+    return {isFood, kind:String(j.kind||''), title:String(j.title||'').trim().slice(0, 60) || (items[0] ? items[0].name : 'Your meal'), note:String(j.note||'').trim().slice(0, 220), items};
+  }
+  const itemN = it => scaleN(it.n0, it.g/it.g0);
+
+  /* image: downscale to ~1024 px JPEG (fast and light), plus a tiny square thumbnail for the food log */
+  function loadImg(file){
+    return new Promise((res, rej)=>{ const url = URL.createObjectURL(file); const i = new Image(); i.onload = ()=>res({i, url}); i.onerror = ()=>{ URL.revokeObjectURL(url); rej(new Error('decode')); }; i.src = url; });
+  }
+  async function preparePhoto(file){
+    const {i, url} = await loadImg(file);
+    try {
+      const W = i.naturalWidth, H = i.naturalHeight; if (!W || !H) throw new Error('empty');
+      const k = Math.min(1, 1024/Math.max(W, H));
+      const cv = document.createElement('canvas'); cv.width = Math.round(W*k); cv.height = Math.round(H*k);
+      const ctx = cv.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height); ctx.drawImage(i, 0, 0, cv.width, cv.height);
+      const dataUrl = cv.toDataURL('image/jpeg', .8);
+      const s = Math.min(W, H), t = document.createElement('canvas'); t.width = t.height = 96;
+      t.getContext('2d').drawImage(i, (W-s)/2, (H-s)/2, s, s, 0, 0, 96, 96);
+      return {dataUrl, b64:dataUrl.slice(dataUrl.indexOf(',')+1), thumb:t.toDataURL('image/jpeg', .7), w:cv.width, h:cv.height, file};
+    } finally { URL.revokeObjectURL(url); }
+  }
+  function savePhoto(thumb){
+    const s = F(); if (!s.photos) s.photos = {};
+    const id = 'p'+J.uid(); s.photos[id] = {t:thumb, at:Date.now()};
+    const ks = Object.keys(s.photos); if (ks.length>30) ks.sort((a,b)=>(s.photos[a].at||0)-(s.photos[b].at||0)).slice(0, ks.length-30).forEach(k=>delete s.photos[k]);
+    return id;
+  }
+  function photoOf(pid){ const p = pid && F().photos && F().photos[pid]; return p ? p.t : ''; }
+
+  /* hidden file inputs live outside re-rendered areas: a <label for> opens them reliably on iPhone */
+  let lastScanFile = null;
+  function ensurePhotoInputs(){
+    if (document.getElementById('fdPhCam')) return;
+    const mk = (id, capture) => { const i = document.createElement('input'); i.type = 'file'; i.accept = 'image/*'; i.id = id; if (capture) i.setAttribute('capture','environment'); i.className = 'fdp-file'; i.tabIndex = -1; i.setAttribute('aria-hidden','true');
+      i.addEventListener('change', ()=>{ const f = i.files && i.files[0]; i.value = ''; if (f) onPhotoFile(f); }); document.body.appendChild(i); };
+    mk('fdPhCam', true); mk('fdPhGal', false);
+  }
+  const camLbl = (cls, inner, id='fdPhCam', extra='') => `<label for="${id}" class="${cls}" role="button" tabindex="0" ${extra}>${inner}</label>`;
+
+  const ph = {seq:0, ac:null, img:null, res:null, items:[], meal:null, tick:null, pending:null, adding:false};
+  function stopPhotoWork(){ if (ph.ac){ try { ph.ac.abort(); } catch(e){} ph.ac = null; } clearInterval(ph.tick); ph.tick = null; ph.seq++; }
+  function closeCoreSheet(){ const core = document.getElementById('sheet'); if (core && core.classList.contains('open')){ const c = document.getElementById('closeSheet'); if (c) c.click(); } }
+
+  /** the capture screen: big Take photo (a tap is needed on iPhone), From photos, barcode */
+  function openPhoto(opts={}){
+    closeScanner(); closeCoreSheet(); stopPhotoWork(); ensurePhotoInputs();
+    const has = J.ai.hasKey();
+    openSheet(`<div class="fdp-cap">
+        <div class="fdp-art" aria-hidden="true"><span class="c a"></span><span class="c b"></span><span class="c c2"></span><span class="c d"></span><span class="pl">🍽️</span><span class="sp s1">✦</span><span class="sp s2">✦</span><i class="ln"></i></div>
+        <h4>What are you eating?</h4>
+        <p>Take a photo of your plate or a product. ${has ? 'AI will spot each food and count the calories.' : 'Products with a barcode work right away.'}</p>
+        ${camLbl('fdp-big', `${I.cam}<span>Take photo</span>`)}
+        <div class="fdp-two">${camLbl('fd-ghost', `${I.photo} From photos`, 'fdPhGal')}<button class="fd-ghost" data-pa="barcode">${I.scan} Scan barcode</button></div>
+        ${has ? `<p class="fdp-tipline">Tip: shoot from above in good light, with the whole plate in view.</p>`
+          : `<button class="fdp-aioff" data-pa="setup"><span class="sp">✨</span><span><b>Turn on AI for plates</b><small>Free, about 2 minutes, no credit card</small></span>${I.right}</button>`}
+      </div>`, stopPhotoWork);
+    wirePhotoSheet();
+  }
+  function wirePhotoSheet(){
+    const b = sheetBody();
+    b.onclick = e=>{
+      const t = e.target.closest('[data-pa]'); if (!t) return;
+      const a = t.dataset.pa;
+      if (a==='barcode'){ closeSheet(); openScanner(); }
+      else if (a==='setup') showAiSetup({});
+      else if (a==='retry'){ if (ph.img) analyzePhoto(ph.img); else openPhoto(); }
+      else if (a==='new') openPhoto();
+      else if (a==='fixkey') showAiSetup({fix:true});
+      else if (a==='cancel'){ stopPhotoWork(); openPhoto(); }
+      else if (a==='manual'){ showManual({name:''}); }
+    };
+  }
+
+  async function onPhotoFile(file, opts={}){
+    closeScanner(); closeCoreSheet(); stopPhotoWork();
+    if (file.type && !/^image\//.test(file.type)){ J.toast('Please choose a photo'); return; }
+    const my = ph.seq;
+    openSheet(analyzingHTML(null, 'Getting your photo ready…'), stopPhotoWork); wirePhotoSheet();
+    let img;
+    try { img = await preparePhoto(file); }
+    catch(e){ if (my!==ph.seq) return; return showPhotoError({t:"I couldn't open that photo", d:'Please take a new photo, or pick a JPG or PNG from your photos.'}, {noRetry:true}); }
+    if (my!==ph.seq || !sheetOpen()) return;
+    ph.img = img;
+    if (J.ai.hasKey() && !opts.barcodeOnly) return analyzePhoto(img);
+    // no AI key: a product photo may still have a barcode we can read on the phone
+    openSheet(analyzingHTML(img, 'Looking for a barcode…', true), stopPhotoWork); wirePhotoSheet();
+    let code = null;
+    if (!opts.skipBarcode){ try { code = await decodeFile(file); } catch(e){} }
+    if (my!==ph.seq || !sheetOpen()) return;
+    if (code){ beep(); handleScanResult(code); return; }
+    ph.pending = img;
+    showAiSetup({reason:'plate'});
+  }
+
+  const STEPS = ['Looking at your food…', 'Spotting each item…', 'Estimating portions…', 'Counting calories…', 'Checking the numbers…'];
+  function analyzingHTML(img, msg, barcode){
+    return `<div class="fdp-hd"><h4>${barcode ? 'Reading your photo' : 'Analyzing your food'}</h4><small>${barcode ? 'Checking for a product barcode' : 'Usually takes 3 to 10 seconds'}</small></div>
+      <div class="fdp-frame ${img?'':'empty'}">${img ? `<img src="${img.dataUrl}" alt="Your photo">` : ''}<div class="fdp-shine"></div><i class="fdp-scanl"></i>
+        <span class="c a"></span><span class="c b"></span><span class="c c2"></span><span class="c d"></span>
+        <div class="fdp-pill"><span class="fdp-dot"></span><span id="fdpMsg">${esc(msg||STEPS[0])}</span></div></div>
+      <div class="fdp-skel"><div class="fd-sk" style="height:58px"></div><div class="fd-sk" style="height:58px;animation-delay:.15s"></div><div class="fd-sk" style="height:58px;animation-delay:.3s"></div></div>
+      <button class="fd-ghost fdp-wide" data-pa="cancel">Cancel</button>`;
+  }
+  async function analyzePhoto(img){
+    stopPhotoWork(); ensurePhotoInputs();
+    const my = ph.seq; ph.ac = new AbortController();
+    openSheet(analyzingHTML(img), stopPhotoWork); wirePhotoSheet();
+    let n = 0; const t0 = Date.now();
+    ph.tick = setInterval(()=>{ const el = document.getElementById('fdpMsg'); if (!el) return; n++; el.textContent = Date.now()-t0 > 16000 ? 'Still working… big plates take a little longer' : STEPS[Math.min(n, STEPS.length-1)]; }, 1700);
+    try {
+      const r = await gemini([{text:AI_PROMPT}, {inline_data:{mime_type:'image/jpeg', data:img.b64}}], {schema:AI_SCHEMA, temperature:.2, timeout:60000, signal:ph.ac.signal});
+      if (my!==ph.seq) return;
+      clearInterval(ph.tick); ph.tick = null; ph.ac = null;
+      const res = normalizeAI(r.json);
+      if (!res.isFood) return showNotFood(res);
+      ph.res = res; ph.items = res.items; ph.meal = defaultMeal();
+      try { navigator.vibrate && navigator.vibrate(30); } catch(e){}
+      showReview();
+    } catch(e){
+      if (my!==ph.seq || e.kind==='abort') return;
+      clearInterval(ph.tick); ph.tick = null; ph.ac = null;
+      if (e.kind==='nokey'){ ph.pending = img; return showAiSetup({reason:'plate'}); }
+      showPhotoError(aiErrText(e), {kind:e.kind});
+    }
+  }
+  function showPhotoError(t, o={}){
+    const icon = {offline:'📡', network:'📡', quota:'⏳', badkey:'🔑', denied:'🔑', region:'🌍', safety:'🙈', timeout:'🐢'}[o.kind] || '⚠️';
+    const keyIssue = o.kind==='badkey' || o.kind==='denied';
+    openSheet(`<div class="fd-center fdp-err">${ph.img && !o.noRetry ? `<div class="fdp-mini"><img src="${ph.img.dataUrl}" alt=""></div>` : `<div class="big">${icon}</div>`}
+      <h4>${esc(t.t)}</h4><p>${esc(t.d)}</p>
+      <div class="fd-stack">
+        ${keyIssue ? `<button class="fd-cta" data-pa="fixkey">Fix my key</button>` : o.noRetry ? '' : `<button class="fd-cta" data-pa="retry">Try again</button>`}
+        ${camLbl('fd-ghost', `${I.cam} Take a new photo`)}
+        ${o.kind==='region' || o.kind==='quota' ? `<button class="fd-ghost" data-pa="barcode">${I.scan} Scan a barcode instead</button>` : ''}
+        <button class="fd-ghost" data-pa="manual">${I.pen} Type it in</button>
+      </div></div>`, stopPhotoWork);
+    wirePhotoSheet();
+  }
+  function showNotFood(res){
+    openSheet(`<div class="fd-center fdp-err">${ph.img ? `<div class="fdp-mini"><img src="${ph.img.dataUrl}" alt=""></div>` : ''}
+      <h4>I don't see any food here</h4><p>${esc(res.note || 'Try a photo that shows your plate or the product clearly.')}</p>
+      <div class="fd-stack">${camLbl('fd-cta', `Take another photo`)}<button class="fd-ghost" data-pa="barcode">${I.scan} Scan a barcode</button></div></div>`, stopPhotoWork);
+    wirePhotoSheet();
+  }
+
+  /* ---- review: edit portions, remove/add items, pick the meal, log it ---- */
+  function gStep(g){ return g<40 ? 5 : g<150 ? 10 : g<400 ? 25 : 50; }
+  function photoTotals(){ return ph.items.reduce((a, it)=>{ const n = itemN(it); a.kcal+=n.kcal||0; a.p+=n.p||0; a.c+=n.c||0; a.f+=n.f||0; return a; }, {kcal:0,p:0,c:0,f:0}); }
+  function itemRowHTML(it){
+    const n = itemN(it), u = it.liquid ? 'ml' : 'g', adj = Math.round(it.g)!==Math.round(it.g0);
+    return `<div class="fdp-it" data-id="${it.id}">
+      <div class="fdp-r1"><div class="fdp-em">${esc(it.emoji)}</div>
+        <div class="b"><b>${esc(it.name)}${it.conf<.5 ? '<em class="fdp-chk">check</em>' : ''}${it.label ? '<em class="fdp-lbl">label</em>' : ''}</b><small>${esc(it.portion)}${adj ? ` · <span class="fdp-adj">adjusted</span>` : ''}</small></div>
+        <div class="fdp-k"><b>${N(n.kcal)}</b><small>kcal</small></div></div>
+      <div class="fdp-r2"><div class="fdp-st"><button data-st="-1" aria-label="Less ${esc(it.name)}">${I.minus}</button><span>${N(it.g)} ${u}</span><button data-st="1" aria-label="More ${esc(it.name)}">${I.plus}</button></div>
+        <span class="fdp-mac">P ${g1(n.p)} · C ${g1(n.c)} · F ${g1(n.f)}</span>
+        <button class="fdp-rm" data-rm aria-label="Remove ${esc(it.name)}">${I.close}</button></div></div>`;
+  }
+  function showReview(){
+    const res = ph.res, img = ph.img;
+    const fromLabel = ph.items.some(x=>x.label);
+    const conf = ph.items.length ? ph.items.reduce((a,x)=>a+x.conf, 0)/ph.items.length : 0;
+    const body = openSheet(`
+      <div class="fdp-hd"><h4>Here's what I see</h4><small>AI estimate · tap − or + to fix any portion</small></div>
+      <div class="fdp-banner">${img ? `<img src="${img.dataUrl}" alt="Your photo">` : ''}<div class="fdp-bov"><span class="fdp-chip">${fromLabel ? '🏷️ Read from the label' : '✨ AI estimate'}</span><b>${esc(res.title)}</b></div></div>
+      <div class="fdp-tot" id="fdpTot"></div>
+      ${res.note ? `<p class="fdp-note">💬 ${esc(res.note)}</p>` : ''}
+      <div class="fd-lbl" style="display:flex;justify-content:space-between"><span>Items</span><span id="fdpCnt" style="text-transform:none;letter-spacing:0"></span></div>
+      <div class="fdp-list" id="fdpList"></div>
+      <div id="fdpAddBox"></div>
+      <button class="fd-online fdp-addbtn" id="fdpAdd">${I.plus} Add something I missed</button>
+      <div class="fdp-hint">${fromLabel ? 'Label numbers are exact for the serving shown. ' : ''}Estimates from a photo can be off by 20–30%. ${conf<.55 ? 'Some items are hard to see, so check them. ' : ''}Adjust portions if they look wrong.</div>
+      <div class="fd-lbl">Meal</div>
+      <div class="seg fd-seg" id="fdpMeal">${MEALS.map(m=>`<button data-m="${m.id}">${m.id==='snack'?'Snack':m.label}</button>`).join('')}</div>
+      <button class="fd-cta" id="fdpLog" style="margin-top:14px"></button>
+      <div class="fd-row2">${camLbl('fd-ghost', `${I.cam} Retake`)}<button class="fd-ghost" data-pa="cancelreview">Cancel</button></div>
+      <p class="fd-note" style="margin-top:12px">Counted by Google Gemini AI from your photo.</p>`, stopPhotoWork);
+    const $ = s => body.querySelector(s);
+    const list = $('#fdpList');
+    function paintList(){ list.innerHTML = ph.items.length ? ph.items.map(itemRowHTML).join('') : `<div class="empty" style="padding:18px"><div class="e-ic">🍽️</div>No items left. Add one below or retake the photo.</div>`; paintTotals(); }
+    function paintTotals(){
+      const t = photoTotals();
+      const pct = t.p*4 + t.c*4 + t.f*9 || 1;
+      $('#fdpTot').innerHTML = `<div class="fdp-tk"><small>Total</small><b>${N(t.kcal)}<span>kcal</span></b></div>
+        <div class="fdp-tm">${MACROS.map(m=>{ const v = t[m.k]; return `<div><span><i style="background:${m.color}"></i>${m.label}</span><b>${N(v)} g</b><u><s style="width:${Math.round(v*m.per/pct*100)}%;background:${m.color}"></s></u></div>`; }).join('')}</div>`;
+      $('#fdpCnt').textContent = `${ph.items.length} item${ph.items.length===1?'':'s'}`;
+      const left = F().goal - dayTotals(todayKey()).kcal - t.kcal;
+      $('#fdpLog').innerHTML = ph.adding ? 'Adding…' : `Add to today · ${N(t.kcal)} kcal<small>${left>=0 ? `${N(left)} kcal left after this` : `${N(-left)} kcal over your goal after this`}</small>`;
+      $('#fdpLog').disabled = !ph.items.length;
+    }
+    function paintMeal(){ body.querySelectorAll('#fdpMeal button').forEach(b=>b.classList.toggle('active', b.dataset.m===ph.meal)); }
+    list.onclick = e=>{
+      const row = e.target.closest('.fdp-it'); if (!row) return;
+      const it = ph.items.find(x=>x.id===row.dataset.id); if (!it) return;
+      const st = e.target.closest('[data-st]');
+      if (st){
+        const dir = +st.dataset.st, s = gStep(it.g);
+        it.g = dir>0 ? Math.min(5000, Math.floor(it.g/s)*s + s) : Math.max(s===5?5:s, Math.ceil(it.g/s)*s - s);
+        if (it.g<=0) it.g = 5;
+        row.outerHTML = itemRowHTML(it); paintTotals(); return;
+      }
+      if (e.target.closest('[data-rm]')){
+        const i = ph.items.indexOf(it); ph.items.splice(i, 1); paintList();
+        J.toast(`Removed ${it.name}`, ()=>{ ph.items.splice(Math.min(i, ph.items.length), 0, it); if (sheetOpen() && document.getElementById('fdpList')) paintList(); });
+      }
+    };
+    body.querySelectorAll('#fdpMeal button').forEach(b=>b.onclick = ()=>{ ph.meal = b.dataset.m; paintMeal(); });
+    $('#fdpAdd').onclick = ()=>{
+      const box = $('#fdpAddBox');
+      if (box.innerHTML){ box.innerHTML = ''; return; }
+      box.innerHTML = `<div class="fdp-addf"><div class="search">${I.search}<input id="fdpQ" placeholder="Search common foods, e.g. hummus" autocomplete="off" enterkeyhint="search" aria-label="Search common foods"></div><div class="fd-res" id="fdpQR"></div></div>`;
+      const q = box.querySelector('#fdpQ'), rr = box.querySelector('#fdpQR');
+      const paint = ()=>{ const v = q.value.trim(); const res = v ? localMatches(v) : ['pita','hummus','fries','salad','rice','cola','labneh','garlic'].map(k=>FOOD_BY_KEY[k]).filter(Boolean);
+        rr.innerHTML = res.length ? res.slice(0,6).map(f=>`<button class="fd-row" data-lk="${f.key}">${thumb({emoji:f.emoji})}<div class="b"><b>${esc(f.name)}</b><small>1 ${esc(f.unit)} · ${N(f.g)} ${LIQ.has(f.key)?'ml':'g'}</small></div><div class="k">${N(f.n.kcal)}<small>kcal</small></div></button>`).join('') : `<div style="color:var(--muted);font-size:13px;padding:6px 4px">Not in my list. You can add it after logging with “Add myself”.</div>`; };
+      q.oninput = paint; paint();
+      rr.onclick = e=>{ const b = e.target.closest('[data-lk]'); if (!b) return; const f = FOOD_BY_KEY[b.dataset.lk]; if (!f) return;
+        ph.items.push({id:J.uid(), name:f.name, emoji:f.emoji, portion:`1 ${f.unit}`, g0:f.g, g:f.g, n0:{...f.n}, conf:1, label:false, liquid:LIQ.has(f.key), src:'local', lkey:f.key});
+        box.innerHTML = ''; paintList(); J.toast(`Added ${f.name}`); };
+      setTimeout(()=>{ try { q.focus(); } catch(e){} }, 60);
+    };
+    body.onclick = e=>{ const t = e.target.closest('[data-pa]'); if (t && t.dataset.pa==='cancelreview') closeSheet(); };
+    $('#fdpLog').onclick = logPhotoItems;
+    paintList(); paintMeal();
+  }
+  function logPhotoItems(){
+    if (!ph.items.length || ph.adding) return;
+    const key = todayKey(), meal = ph.meal || defaultMeal();
+    const pid = ph.img && ph.img.thumb ? savePhoto(ph.img.thumb) : '';
+    const added = [];
+    ph.items.forEach(it=>{
+      const n = itemN(it), w = it.liquid ? 'ml' : 'g', g = Math.round(it.g);
+      const food = {src:'ai-photo', key:'a:'+it.name.toLowerCase(), name:it.name, emoji:it.emoji, w,
+        units:[{u:'portion', g, w, n}, {u:'g', g:1, w, n:scaleN(n, 1/Math.max(1, g))}], per100:scaleN(n, 100/Math.max(1, g))};
+      const e = addEntry(food, 0, 1, meal, key);
+      e.source = 'ai-photo'; e.pid = pid; e.portion = it.portion; e.conf = Math.round(it.conf*100)/100;
+      added.push(e);
+    });
+    J.save();
+    const tot = added.reduce((a,e)=>a+ntot(e).kcal, 0);
+    const res = ph.res; ph.img = null; ph.items = []; ph.res = null; ph.pending = null;
+    closeSheet(); viewKey = key; srch.meal = null;
+    if (J.current!=='food') J.go('food');
+    J.renderAll();
+    const lf = F().goal - dayTotals(key).kcal;
+    J.toast(`Added ${res && res.title ? res.title : 'your meal'} · ${N(tot)} kcal · ${lf>=0 ? N(lf)+' left' : N(-lf)+' over'}`, ()=>{ added.forEach(e=>removeEntry(key, e.id)); });
+  }
+
+  /* ---- setup: get a free Google key, paste it, test it ---- */
+  function showAiSetup(o={}){
+    stopPhotoWork(); ensurePhotoInputs();
+    const has = J.ai.hasKey();
+    const intro = o.reason==='plate'
+      ? `I didn't find a barcode in that photo. To count calories on a plate, Jarvis uses Google's free AI. Set it up once, about 2 minutes, no credit card.`
+      : `Jarvis uses Google's free Gemini AI to count calories from a photo. You just need a free key: about 2 minutes, no credit card.`;
+    const body = openSheet(`
+      <div class="fdp-hd" style="margin-right:44px"><h4>Turn on AI food photos <span class="tag fdp-free">FREE</span></h4></div>
+      ${o.reason==='plate' && ph.pending ? `<div class="fdp-pend"><img src="${ph.pending.dataUrl}" alt=""><span>Your photo is saved. I'll analyze it as soon as AI is on.</span></div>` : ''}
+      <p class="fdp-lede">${esc(intro)}</p>
+      <ol class="fdp-steps">
+        <li><i>1</i><div><b>Open Google AI Studio</b><small>Tap the button below and sign in with your Google (Gmail) account.</small></div></li>
+        <li><i>2</i><div><b>Tap “Create API key”</b><small>If it asks for a project, pick any one or create one. Any name is fine.</small></div></li>
+        <li><i>3</i><div><b>Copy the key</b><small>Tap the copy icon next to your new key. It starts with “AIza”.</small></div></li>
+        <li><i>4</i><div><b>Come back and tap “Paste key”</b><small>If your iPhone asks, tap Paste. Jarvis checks the key for you.</small></div></li>
+      </ol>
+      <a class="fd-ghost fdp-wide" href="${AI_STUDIO}" target="_blank" rel="noopener noreferrer" id="fdpStudio">↗︎ Open Google AI Studio</a>
+      <button class="fd-cta fdp-wide" id="fdpPaste" style="margin-top:10px">📋 Paste key</button>
+      <div class="fdp-box" id="fdpBox" ${o.fix ? '' : 'hidden'}>
+        <label class="fd-field" style="margin:12px 0 8px"><span>Or paste it here (press and hold, then Paste)</span><input id="fdpKeyIn" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="AIza…" inputmode="text"></label>
+        <button class="fd-ghost fdp-wide" id="fdpTest">Test key</button>
+      </div>
+      <button class="fdp-link" id="fdpShowBox" ${o.fix ? 'hidden' : ''}>Paste didn't work? Type or paste it in a box</button>
+      <div id="fdpStat" class="fdp-stat" aria-live="polite"></div>
+      ${has ? `<div class="fdp-have">✅ AI is already on with key ••••${esc(aiKey().slice(-4))}. Pasting a new key replaces it.</div>` : ''}
+      <p class="fdp-priv">🔒 Your key is saved only on this phone. On Google's free plan, Google may use your photos to improve its AI, so don't snap anything private.</p>`, ()=>{ stopPhotoWork(); });
+    const $ = s => body.querySelector(s);
+    const stat = $('#fdpStat'), box = $('#fdpBox'), inp = $('#fdpKeyIn');
+    const showBox = (msg)=>{ box.hidden = false; $('#fdpShowBox').hidden = true; if (msg) say('info', msg); setTimeout(()=>{ try { inp.focus(); } catch(e){} }, 60); };
+    function say(kind, html){ stat.className = 'fdp-stat '+kind; stat.innerHTML = html; }
+    let busy = false;
+    async function tryKey(k){
+      if (busy) return; busy = true;
+      say('busy', `<span class="fdp-spin"></span> Checking your key with Google…`);
+      $('#fdpPaste').disabled = true;
+      const r = await aiTest(k);
+      busy = false; $('#fdpPaste').disabled = false;
+      if (!body.isConnected || !sheetOpen()) return;
+      if (r.ok){
+        setAiKey(k); J.renderAll();
+        const pend = ph.pending;
+        say('ok', `<b>🎉 AI is on!</b> ${r.quota ? 'Your key works. Google says the free limit is used up for a moment, so wait a minute before your first photo.' : pend ? 'Analyzing your photo now…' : 'Now snap your food and I will count the calories.'}`);
+        if (pend && !r.quota){ ph.pending = null; setTimeout(()=>{ if (sheetOpen()) analyzePhoto(pend); }, 900); }
+        else {
+          const done = document.createElement('div'); done.className = 'fd-stack'; done.style.marginTop = '12px';
+          done.innerHTML = pend ? `<button class="fd-cta" data-pa="retry2">Analyze my photo</button>` : camLbl('fd-cta', `${I.cam} Snap your food`);
+          stat.after(done);
+          const r2 = done.querySelector('[data-pa=retry2]'); if (r2) r2.onclick = ()=>{ ph.pending = null; analyzePhoto(pend); };
+        }
+        return;
+      }
+      const t = aiErrText(r.err);
+      const extra = r.err && (r.err.kind==='badkey' || r.err.kind==='denied') ? ' Make sure you copied the whole key.' : '';
+      say('bad', `<b>${esc(t.t)}</b> ${esc(t.d + extra)}`);
+      if (r.err && (r.err.kind==='badkey' || r.err.kind==='denied')) showBox();
+    }
+    $('#fdpPaste').onclick = async ()=>{
+      let txt = '';
+      try {
+        if (!navigator.clipboard || !navigator.clipboard.readText) throw new Error('no clipboard');
+        txt = await navigator.clipboard.readText();
+      } catch(e){ return showBox("Your phone didn't let me read the clipboard. Press and hold in the box below and tap Paste."); }
+      const k = extractKey(txt);
+      if (!k){ say('bad', `<b>No key found in what you copied.</b> In Google AI Studio, tap the copy icon next to your key, then come back and tap Paste key.`); return; }
+      inp.value = k; tryKey(k);
+    };
+    $('#fdpShowBox').onclick = ()=>showBox();
+    $('#fdpTest').onclick = ()=>{ const k = extractKey(inp.value); if (!k){ say('bad', `<b>That doesn't look like a key.</b> It should start with “AIza” and be about 39 letters and numbers.`); return; } tryKey(k); };
+    inp.oninput = ()=>{ const k = extractKey(inp.value); if (k && /^AIza/.test(k) && k.length>=39) tryKey(k); };
+    inp.onkeydown = e=>{ if (e.key==='Enter') $('#fdpTest').click(); };
+  }
+
+  /* ---- the "AI food photos" card in the Food screen ---- */
+  function aiCardHTML(){
+    const has = J.ai.hasKey();
+    return has
+      ? `<div class="fdp-set"><div class="ic on">✨</div><div class="b"><b>AI food photos are on</b><small>Google Gemini, free plan · key ••••${esc(aiKey().slice(-4))} saved on this phone only</small></div></div>
+         <div class="fdp-setb"><button class="btn ghost" data-ai="test">Test key</button><button class="btn ghost" data-ai="change">Change key</button><button class="btn ghost" data-ai="remove" style="color:var(--bad)">Remove key</button></div>
+         <div class="fdp-setmsg" id="fdpSetMsg"></div>`
+      : `<div class="fdp-set"><div class="ic">✨</div><div class="b"><b>AI food photos are off</b><small>Turn on Google's free AI to count calories from a photo of any plate. No credit card.</small></div></div>
+         <button class="fd-cta" data-ai="setup" style="margin-top:12px">Turn on (free)</button>`;
+  }
+  async function aiCardClick(b){
+    const a = b.dataset.ai;
+    if (a==='setup' || a==='change') return showAiSetup({});
+    if (a==='remove'){ const old = aiKey(); setAiKey(''); J.renderAll(); J.toast('AI key removed from this phone', ()=>{ setAiKey(old); J.renderAll(); }); return; }
+    if (a==='test'){
+      const m = document.getElementById('fdpSetMsg'); if (m){ m.className = 'fdp-setmsg busy'; m.innerHTML = '<span class="fdp-spin"></span> Checking with Google…'; }
+      const r = await aiTest(aiKey()); const m2 = document.getElementById('fdpSetMsg'); if (!m2) return;
+      if (r.ok){ m2.className = 'fdp-setmsg ok'; m2.textContent = r.quota ? '✅ Key works. The free limit is used up for now, so wait a minute.' : '✅ Your key works.'; }
+      else { const t = aiErrText(r.err); m2.className = 'fdp-setmsg bad'; m2.textContent = t.t+'. '+t.d; }
+    }
+  }
+
+  J.css(`
+  .fdp-file{position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0}
+  .fd-th.ph img{object-fit:cover;background:none}
+  .fdp-hero{margin-top:14px}
+  .fdp-snap{position:relative;overflow:hidden;display:flex;align-items:center;gap:14px;border-radius:22px;padding:16px 16px;cursor:pointer;color:#fff;background:linear-gradient(135deg,var(--accent) 0%,#0ea5e9 100%);box-shadow:0 14px 30px rgba(79,70,229,.32);transition:transform .15s var(--ease);-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+  .fdp-snap:active{transform:scale(.98)}
+  .fdp-snap::after{content:"";position:absolute;inset:0;background:radial-gradient(260px 120px at 85% -20%,rgba(255,255,255,.28),transparent 70%);pointer-events:none}
+  .fdp-snap .ic{width:52px;height:52px;border-radius:16px;background:rgba(255,255,255,.2);display:grid;place-items:center;flex:none;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+  .fdp-snap .ic svg{width:28px;height:28px}
+  .fdp-snap .t{flex:1;min-width:0;line-height:1.25}
+  .fdp-snap .t b{display:block;font-size:18px;font-weight:800;letter-spacing:-.3px}
+  .fdp-snap .t small{display:block;font-size:13px;opacity:.88;font-weight:600;margin-top:2px}
+  .fdp-snap .go{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.18);display:grid;place-items:center;flex:none}
+  .fdp-snap .go svg{width:16px;height:16px}
+  .fdp-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+  .fdp-row .fd-ghost{padding:12px 6px;font-size:13.5px;flex-direction:column;gap:5px;border-radius:16px;min-height:66px}
+  .fdp-row .fd-ghost svg{width:20px;height:20px;color:var(--accent)}
+  label.fd-ghost{user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+  .fdp-wide{width:100%;text-decoration:none;box-sizing:border-box}
+  .fdp-hd{margin:4px 44px 12px 0}
+  .fdp-hd h4{margin:0;font-size:19px;font-weight:800;letter-spacing:-.3px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .fdp-hd small{display:block;color:var(--muted);font-size:13px;margin-top:3px}
+  .fdp-free{background:rgba(34,197,94,.16);color:var(--good);letter-spacing:.06em}
+  /* capture */
+  .fdp-cap{text-align:center;padding:6px 2px 2px}
+  .fdp-cap h4{margin:6px 0 6px;font-size:21px;font-weight:800;letter-spacing:-.4px}
+  .fdp-cap>p{margin:0 auto 18px;color:var(--muted);font-size:14.5px;max-width:330px}
+  .fdp-art{position:relative;width:150px;height:150px;margin:6px auto 8px;border-radius:36px;background:radial-gradient(circle at 50% 45%,var(--accent-soft),transparent 70%)}
+  .fdp-art .pl{position:absolute;inset:0;display:grid;place-items:center;font-size:64px;filter:drop-shadow(0 8px 16px rgba(0,0,0,.25))}
+  .fdp-art .c,.fdp-frame .c{position:absolute;width:26px;height:26px;border:3.5px solid var(--accent);border-radius:4px}
+  .fdp-art .c.a,.fdp-frame .c.a{left:8px;top:8px;border-right:0;border-bottom:0;border-top-left-radius:14px}
+  .fdp-art .c.b,.fdp-frame .c.b{right:8px;top:8px;border-left:0;border-bottom:0;border-top-right-radius:14px}
+  .fdp-art .c.c2,.fdp-frame .c.c2{left:8px;bottom:8px;border-right:0;border-top:0;border-bottom-left-radius:14px}
+  .fdp-art .c.d,.fdp-frame .c.d{right:8px;bottom:8px;border-left:0;border-top:0;border-bottom-right-radius:14px}
+  .fdp-art .ln{position:absolute;left:18px;right:18px;height:2px;top:20%;border-radius:2px;background:linear-gradient(90deg,transparent,var(--accent2),transparent);box-shadow:0 0 12px 2px var(--accent2);animation:fdpLine 2.2s ease-in-out infinite alternate;opacity:.9}
+  .fdp-art .sp{position:absolute;color:var(--accent2);font-size:16px;animation:fdpTw 1.8s ease-in-out infinite}
+  .fdp-art .s1{right:22px;top:26px}.fdp-art .s2{left:24px;bottom:30px;animation-delay:.9s;font-size:12px}
+  @keyframes fdpLine{to{top:78%}}
+  @keyframes fdpTw{50%{opacity:.25;transform:scale(.7)}}
+  .fdp-big{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;box-sizing:border-box;border-radius:20px;padding:18px;font-size:18px;font-weight:800;color:#fff;cursor:pointer;background:linear-gradient(135deg,var(--accent),#0ea5e9);box-shadow:0 14px 34px rgba(79,70,229,.42);animation:fdPulse 2.2s ease-in-out infinite;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+  .fdp-big svg{width:26px;height:26px}
+  .fdp-big:active{transform:scale(.98)}
+  .fdp-two{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+  .fdp-two .fd-ghost{font-size:14px;padding:13px 8px}
+  .fdp-tipline{font-size:12.5px;color:var(--faint);margin:14px 6px 2px}
+  .fdp-aioff{display:flex;align-items:center;gap:12px;width:100%;margin-top:14px;padding:13px 14px;border-radius:16px;border:1px dashed var(--accent);border:1px dashed color-mix(in srgb,var(--accent) 55%,transparent);background:var(--accent-soft);color:var(--text);cursor:pointer;text-align:left}
+  .fdp-aioff .sp{font-size:22px}
+  .fdp-aioff span:nth-child(2){flex:1}
+  .fdp-aioff b{display:block;font-size:14.5px}
+  .fdp-aioff small{display:block;color:var(--muted);font-size:12.5px;margin-top:1px}
+  .fdp-aioff svg{width:18px;height:18px;color:var(--accent)}
+  /* analyzing */
+  .fdp-frame{position:relative;border-radius:22px;overflow:hidden;aspect-ratio:4/3;max-height:44vh;width:100%;background:#0b0e1a;box-shadow:0 14px 34px rgba(0,0,0,.28)}
+  .fdp-frame.empty{background:linear-gradient(135deg,#1b1f3a,#0b0e1a)}
+  .fdp-frame img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;animation:fdpZoom 6s ease-in-out infinite alternate}
+  @keyframes fdpZoom{to{transform:scale(1.06)}}
+  .fdp-frame .c{border-color:#fff;z-index:3;width:30px;height:30px;filter:drop-shadow(0 1px 4px rgba(0,0,0,.5))}
+  .fdp-frame .c.a,.fdp-frame .c.b{top:12px}.fdp-frame .c.c2,.fdp-frame .c.d{bottom:12px}
+  .fdp-frame .c.a,.fdp-frame .c.c2{left:12px}.fdp-frame .c.b,.fdp-frame .c.d{right:12px}
+  .fdp-shine{position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.16) 45%,transparent 60%);background-size:250% 100%;animation:fdpShine 2s linear infinite;z-index:1}
+  @keyframes fdpShine{from{background-position:150% 0}to{background-position:-100% 0}}
+  .fdp-scanl{position:absolute;left:0;right:0;height:38%;top:-38%;z-index:2;background:linear-gradient(180deg,transparent,rgba(34,211,238,.10) 70%,rgba(34,211,238,.55) 98%,#fff 100%);border-bottom:2px solid #67e8f9;box-shadow:0 8px 22px rgba(34,211,238,.55);animation:fdpScan 2.1s cubic-bezier(.45,.05,.55,.95) infinite}
+  @keyframes fdpScan{to{top:100%}}
+  .fdp-pill{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);z-index:4;display:flex;align-items:center;gap:8px;padding:9px 14px;border-radius:999px;background:rgba(10,12,24,.62);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#fff;font-size:13.5px;font-weight:700;white-space:nowrap;max-width:calc(100% - 24px);overflow:hidden;text-overflow:ellipsis;border:1px solid rgba(255,255,255,.14)}
+  .fdp-dot{width:8px;height:8px;border-radius:50%;background:#22d3ee;box-shadow:0 0 0 0 rgba(34,211,238,.7);animation:fdpDot 1.2s infinite;flex:none}
+  @keyframes fdpDot{70%{box-shadow:0 0 0 8px rgba(34,211,238,0)}100%{box-shadow:0 0 0 0 rgba(34,211,238,0)}}
+  .fdp-skel{display:flex;flex-direction:column;gap:8px;margin:14px 0}
+  /* review */
+  .fdp-banner{position:relative;border-radius:20px;overflow:hidden;height:170px;background:var(--card);border:1px solid var(--line)}
+  .fdp-banner img{width:100%;height:100%;object-fit:cover;display:block}
+  .fdp-bov{position:absolute;left:0;right:0;bottom:0;padding:34px 14px 12px;background:linear-gradient(180deg,transparent,rgba(0,0,0,.72));color:#fff}
+  .fdp-bov b{display:block;font-size:19px;font-weight:800;letter-spacing:-.3px;text-shadow:0 1px 8px rgba(0,0,0,.5);line-height:1.2}
+  .fdp-chip{display:inline-block;font-size:11.5px;font-weight:700;padding:4px 9px;border-radius:999px;background:rgba(255,255,255,.2);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);margin-bottom:6px}
+  .fdp-tot{display:flex;gap:14px;align-items:center;margin-top:12px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px}
+  .fdp-tk small{display:block;color:var(--muted);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+  .fdp-tk b{font-size:32px;font-weight:800;letter-spacing:-1px;line-height:1.05}
+  .fdp-tk b span{font-size:13px;color:var(--muted);font-weight:700;margin-left:3px;letter-spacing:0}
+  .fdp-tm{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+  .fdp-tm div{display:grid;grid-template-columns:1fr auto;align-items:center;gap:2px 8px;font-size:12.5px}
+  .fdp-tm span{color:var(--muted);font-weight:600;display:flex;align-items:center;gap:6px}
+  .fdp-tm span i{width:8px;height:8px;border-radius:50%}
+  .fdp-tm b{font-size:13px}
+  .fdp-tm u{grid-column:1/-1;height:4px;border-radius:9px;background:var(--line);overflow:hidden;display:block}
+  .fdp-tm u s{display:block;height:100%;border-radius:9px;transition:width .4s var(--ease)}
+  .fdp-note{font-size:13px;color:var(--muted);margin:10px 2px 0;line-height:1.45}
+  .fdp-list{display:flex;flex-direction:column;gap:8px}
+  .fdp-it{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:10px 12px;animation:fadeUp .25s var(--ease)}
+  .fdp-r1{display:flex;align-items:center;gap:12px}
+  .fdp-em{width:42px;height:42px;border-radius:12px;background:var(--accent-soft);display:grid;place-items:center;font-size:22px;flex:none}
+  .fdp-r1 .b{flex:1;min-width:0}
+  .fdp-r1 .b b{display:block;font-weight:700;font-size:14.5px;line-height:1.25;overflow-wrap:anywhere}
+  .fdp-r1 .b small{display:block;color:var(--muted);font-size:12.5px;margin-top:1px}
+  .fdp-chk,.fdp-lbl{font-style:normal;font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:99px;margin-left:6px;vertical-align:1px;letter-spacing:.02em}
+  .fdp-chk{color:var(--warn);background:rgba(245,158,11,.16)}
+  .fdp-lbl{color:var(--good);background:rgba(34,197,94,.14)}
+  .fdp-adj{color:var(--accent);font-weight:700}
+  .fdp-k{text-align:right;flex:none}
+  .fdp-k b{display:block;font-size:17px;font-weight:800;letter-spacing:-.3px}
+  .fdp-k small{color:var(--muted);font-size:10.5px;font-weight:700}
+  .fdp-r2{display:flex;align-items:center;gap:10px;margin-top:9px}
+  .fdp-st{display:flex;align-items:center;background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden;flex:none}
+  .fdp-st button{width:40px;height:38px;border:0;background:none;color:var(--text);display:grid;place-items:center;cursor:pointer}
+  .fdp-st button:active{background:var(--accent-soft)}
+  .fdp-st button svg{width:16px;height:16px}
+  .fdp-st span{min-width:62px;text-align:center;font-weight:800;font-size:14px;font-variant-numeric:tabular-nums}
+  .fdp-mac{flex:1;min-width:0;font-size:11.5px;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .fdp-rm{width:38px;height:38px;border-radius:11px;border:1px solid var(--line);background:none;color:var(--muted);display:grid;place-items:center;cursor:pointer;flex:none}
+  .fdp-rm svg{width:15px;height:15px}
+  .fdp-addbtn{margin-top:8px;color:var(--accent)}
+  .fdp-addf{margin-top:8px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:10px}
+  .fdp-addf .search{margin-bottom:8px}
+  .fdp-addf .fd-row{background:var(--bg2)}
+  .fdp-hint{font-size:12.5px;color:var(--muted);background:rgba(245,158,11,.10);border:1px solid rgba(245,158,11,.22);border-radius:12px;padding:10px 12px;margin-top:12px;line-height:1.45}
+  #fdpLog small{display:block;font-size:12px;font-weight:600;opacity:.85;margin-top:2px}
+  .fdp-err .fdp-mini{width:110px;height:110px;margin:4px auto 12px;border-radius:24px;overflow:hidden;box-shadow:0 10px 24px rgba(0,0,0,.25)}
+  .fdp-err .fdp-mini img{width:100%;height:100%;object-fit:cover;filter:saturate(.7)}
+  /* setup */
+  .fdp-lede{color:var(--muted);font-size:14px;margin:0 0 14px;line-height:1.5}
+  .fdp-pend{display:flex;align-items:center;gap:12px;background:var(--accent-soft);border-radius:14px;padding:8px;margin-bottom:12px;font-size:13px;font-weight:600}
+  .fdp-pend img{width:46px;height:46px;border-radius:10px;object-fit:cover;flex:none}
+  .fdp-steps{list-style:none;margin:0 0 14px;padding:0;display:flex;flex-direction:column;gap:2px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:6px 14px}
+  .fdp-steps li{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line)}
+  .fdp-steps li:last-child{border-bottom:0}
+  .fdp-steps i{font-style:normal;width:28px;height:28px;border-radius:50%;flex:none;display:grid;place-items:center;font-weight:800;font-size:13.5px;color:#fff;background:linear-gradient(135deg,var(--accent),#0ea5e9)}
+  .fdp-steps b{display:block;font-size:14.5px}
+  .fdp-steps small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px;line-height:1.4}
+  .fdp-link{display:block;margin:10px auto 0;background:none;border:0;color:var(--accent);font-weight:700;font-size:13.5px;cursor:pointer;padding:8px;text-decoration:underline}
+  .fdp-link[hidden],.fdp-box[hidden]{display:none}
+  .fdp-box input{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:15px!important;letter-spacing:.3px}
+  .fdp-stat{margin-top:12px;font-size:13.5px;line-height:1.45;border-radius:14px;padding:0 12px;transition:padding .2s}
+  .fdp-stat:empty{display:none}
+  .fdp-stat.busy{padding:12px;background:var(--card);border:1px solid var(--line);color:var(--muted);display:flex;align-items:center;gap:10px}
+  .fdp-stat.ok{padding:12px;background:rgba(34,197,94,.13);border:1px solid rgba(34,197,94,.3)}
+  .fdp-stat.bad{padding:12px;background:rgba(244,63,94,.11);border:1px solid rgba(244,63,94,.28)}
+  .fdp-stat.info{padding:12px;background:var(--accent-soft)}
+  .fdp-spin{width:16px;height:16px;border-radius:50%;border:2.5px solid var(--line);border-top-color:var(--accent);animation:fdSpin .8s linear infinite;display:inline-block;flex:none;vertical-align:-3px}
+  .fdp-have{margin-top:12px;font-size:13px;color:var(--muted)}
+  .fdp-priv{font-size:12px;color:var(--faint);margin:14px 2px 0;line-height:1.45}
+  /* settings card */
+  .fdp-set{display:flex;gap:12px;align-items:center}
+  .fdp-set .ic{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-size:22px;background:var(--line);flex:none}
+  .fdp-set .ic.on{background:linear-gradient(135deg,var(--accent),#0ea5e9)}
+  .fdp-set .b{flex:1;min-width:0}
+  .fdp-set b{display:block;font-size:15px}
+  .fdp-set small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px;line-height:1.4}
+  .fdp-setb{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+  .fdp-setb .btn{flex:1;padding:10px 8px;font-size:13px;white-space:nowrap}
+  .fdp-setmsg{font-size:13px;margin-top:10px}
+  .fdp-setmsg:empty{display:none}
+  .fdp-setmsg.ok{color:var(--good)}.fdp-setmsg.bad{color:var(--bad)}.fdp-setmsg.busy{color:var(--muted)}
+  .fd-sbot .r label{flex:1;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.14);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#fff;border-radius:16px;padding:13px 8px;font-weight:700;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+  .fd-sbot .r label svg{width:19px;height:19px}
+  .fd-sbot .r label.ai{background:linear-gradient(135deg,var(--accent),#0ea5e9);border-color:transparent}
+  @media (prefers-reduced-motion: reduce){.fdp-scanl,.fdp-shine,.fdp-frame img,.fdp-art .ln,.fdp-big{animation:none!important}}
+  `);
+  ensurePhotoInputs();
+
   /* ---------------- view ---------------- */
   function buildView(el){
     el.innerHTML = `
-      <div class="fd-top"><div><h2>Food</h2><p class="lede">Say “I ate 2 eggs and a banana” or scan a barcode.</p></div></div>
+      <div class="fd-top"><div><h2>Food</h2><p class="lede">Snap your plate, scan a barcode, or say “I ate 2 eggs and a banana”.</p></div></div>
       <div class="fd-date"><button id="fdPrev" aria-label="Previous day">${I.left}</button><div><b id="fdDateL"></b><small id="fdDateS"></small></div><button id="fdNext" aria-label="Next day">${I.right}</button></div>
       <div class="card" id="fdSum"></div>
-      <div class="fd-actions"><button class="fd-scanbtn" id="fdScanBtn">${I.scan} Scan barcode</button><button class="fd-ghost" id="fdManBtn">${I.pen} Add myself</button></div>
+      <div class="fdp-hero">${camLbl('fdp-snap', `<span class="ic">${I.cam}</span><span class="t"><b>Snap your food</b><small id="fdSnapSub"></small></span><span class="go">${I.right}</span>`, 'fdPhCam', 'id="fdSnapBtn" aria-label="Snap your food"')}
+        <div class="fdp-row">${camLbl('fd-ghost', `${I.photo}<span>From photos</span>`, 'fdPhGal')}<button class="fd-ghost" id="fdScanBtn">${I.scan}<span>Barcode</span></button><button class="fd-ghost" id="fdManBtn">${I.pen}<span>Type it</span></button></div></div>
       <div class="fd-search"><div class="search">${I.search}<input id="fdSIn" placeholder="Search food or brand" autocomplete="off" enterkeyhint="search" aria-label="Search food"><button id="fdSBtn" style="display:none">Search</button></div><div id="fdSRes"></div></div>
       <div class="section-h"><h3>Meals</h3><span id="fdMealsTot" style="color:var(--muted);font-size:13px;font-weight:600"></span></div>
       <div id="fdMeals"></div>
@@ -1018,7 +1722,9 @@
       <div class="card" id="fdWater"></div>
       <div class="section-h"><h3>Last 7 days</h3><span id="fdWeekAvg" style="color:var(--muted);font-size:13px;font-weight:600"></span></div>
       <div class="card" id="fdWeek"></div>
-      <p class="fd-note">Product data from Open Food Facts (free and open). Common-food values are typical estimates.</p>`;
+      <div class="section-h"><h3>AI food photos</h3></div>
+      <div class="card" id="fdAI"></div>
+      <p class="fd-note">Product data from Open Food Facts (free and open). Common-food values are typical estimates. Photo estimates by Google Gemini.</p>`;
     const q = s => el.querySelector(s);
     q('#fdPrev').onclick = ()=>{ viewKey = shiftKey(viewKey, -1); renderDynamic(el); };
     q('#fdNext').onclick = ()=>{ if (viewKey < todayKey()){ viewKey = shiftKey(viewKey, 1); renderDynamic(el); } };
@@ -1036,9 +1742,10 @@
       if ((b = t.closest('[data-lf]'))) return showFood(localFood(FOOD_BY_KEY[b.dataset.lf]), {meal:srch.meal});
       if ((b = t.closest('[data-sr]'))) return showFood(srch.results[+b.dataset.sr], {meal:srch.meal});
       if ((b = t.closest('[data-rec]'))){ const r = F().recent[+b.dataset.rec]; if (r) showFood(JSON.parse(JSON.stringify(r)), {meal:srch.meal}); return; }
-      if ((b = t.closest('[data-entry]'))){ const d = getDay(viewKey); const en = d.items.find(x=>x.id===b.dataset.entry); if (en) showFood({src:en.src, name:en.name, brand:en.brand, emoji:en.emoji, img:en.img, code:en.code, units:en.units, w:wu(en.units[0]), per100:null}, {entry:en}); return; }
+      if ((b = t.closest('[data-entry]'))){ const d = getDay(viewKey); const en = d.items.find(x=>x.id===b.dataset.entry); if (en) showFood({src:en.src, name:en.name, brand:en.brand, emoji:en.emoji, img:en.img, pid:en.pid, code:en.code, units:en.units, w:wu(en.units[0]), per100:null}, {entry:en}); return; }
       if ((b = t.closest('[data-addmeal]'))){ srch.meal = b.dataset.addmeal; focusSearch(b.dataset.addmeal); J.toast(`Search or pick a food for ${MEALS.find(m=>m.id===b.dataset.addmeal).label.toLowerCase()}`); return; }
       if ((b = t.closest('#fdGoalBtn'))) return showGoal();
+      if ((b = t.closest('[data-ai]'))) return aiCardClick(b);
       if ((b = t.closest('[data-water]'))){ addWater(+b.dataset.water, viewKey); return; }
       if ((b = t.closest('[data-glass]'))){ const d = ensureDay(viewKey); const i = +b.dataset.glass; const before = d.water||0; d.water = (i+1===before) ? i : i+1; syncHabitWater(d.water-before, viewKey); J.save(); J.renderAll(); return; }
       if ((b = t.closest('[data-day]'))){ viewKey = b.dataset.day; renderDynamic(el); return; }
@@ -1069,6 +1776,8 @@
     q('#fdDateL').textContent = dateLabel(viewKey);
     q('#fdDateS').textContent = keyDate(viewKey).toLocaleDateString([], {weekday:'long', month:'long', day:'numeric'});
     q('#fdNext').disabled = viewKey >= todayKey();
+    { const has = J.ai.hasKey(); q('#fdSnapSub').textContent = has ? 'Plate or product · AI counts the calories' : 'Plate or product · free AI, quick setup';
+      const ai = q('#fdAI'), sig = has ? 'on'+aiKey().slice(-4) : 'off'; if (ai.dataset.sig!==sig){ ai.dataset.sig = sig; ai.innerHTML = aiCardHTML(); } }
     const t = dayTotals(viewKey), goal = s.goal, left = goal - t.kcal, over = left < 0;
     q('#fdSum').innerHTML = `<div class="fd-sum">
         <div class="fd-ring" style="width:150px;height:150px">${ringSVG(t.kcal, goal, 150, 14, 'fdgV')}<div class="fd-rc"><div><b style="${over?'color:var(--warn)':''}">${N(Math.abs(left))}</b><span>${over?'kcal over':'kcal left'}</span></div></div></div>
@@ -1114,9 +1823,10 @@
         <div class="fd-ring sm" style="width:68px;height:68px">${ringSVG(t.kcal, s.goal, 68, 8, 'fdgH')}<div class="fd-rc"><div><b>${Math.round(t.kcal/s.goal*100)||0}%</b></div></div></div>
         <div class="b"><b style="${over?'color:var(--warn)':''}">${N(Math.abs(left))} kcal ${over?'over':'left'}</b><small>${N(t.kcal)} of ${N(s.goal)} eaten <span style="white-space:nowrap;margin-left:6px">💧 ${w}/${s.waterGoal}</span></small>
           <div class="mm">${MACROS.map(m=>`<i title="${m.label}"><u style="width:${Math.min(t[m.k]/macroTarget(m)*100,100)}%;background:${m.color}"></u></i>`).join('')}</div></div>
-        <button class="fd-hscan" data-fd-scan aria-label="Scan a barcode">${I.scan}</button>
+        ${camLbl('fd-hscan', I.cam, 'fdPhCam', 'data-fd-snap aria-label="Snap your food"')}
       </div>`;
     if (!el.dataset.wired){ el.dataset.wired = '1'; el.addEventListener('click', e=>{
+      if (e.target.closest('[data-fd-snap]')){ e.stopPropagation(); return; } // the label opens the camera
       if (e.target.closest('[data-fd-scan]')){ e.stopPropagation(); openScanner(); return; }
       if (e.target.closest('[data-fd-open]')){ viewKey = todayKey(); J.go('food'); J.renderAll(); }
     }); }
@@ -1248,6 +1958,23 @@
     t = t.replace(/[.]+$/,'').replace(/\s+\./g,' ').trim();
     let m;
     if (/^(?:note|take a note|new note|add a note|write down|remember)\b|\bremind(?:er)?\b/.test(t)) return null;
+    // ---- AI setup: "turn on AI food photos", "set up the food AI"
+    if (/\b(?:turn on|set up|setup|enable|activate|connect)\b.*\b(?:ai|gemini)\b/.test(t) && /\b(?:food|photo|photos|calorie|calories|plate|gemini)\b/.test(t)){
+      J.go('food'); setTimeout(()=>showAiSetup({}), 60);
+      return J.ai.hasKey() ? 'AI food photos are already on. I opened the setup in case you want to change the key.' : "Let's turn on AI food photos. It's free. Follow the four steps on screen.";
+    }
+    // ---- food photo: "how many calories is this", "scan my plate", "take a picture of my food"
+    const PHOTO_FOOD = /\b(?:food|foods|plate|meal|dish|dinner|lunch|breakfast|snack|eating|calories)\b/;
+    if (!/\b(?:receipt|receipts|bill|invoice|barcode|bar code|qr)\b/.test(t) && !NOT_FOOD.test(t) && (
+        /\bwhat(?:'s| is| are) (?:in|on) (?:this|the|my|that) (?:photo|picture|pic|image|plate|dish|bowl)\b/.test(t) ||
+        /^(?:so |ok |okay |hey jarvis |jarvis )?how many (?:calories|calorie|cals|kcal) (?:is|are|are in|is in|in|does|do|would) (?:this|that|these|those|it|my plate|my food|my meal)(?: have| has| got| plate| meal| food| dish| photo| picture| be)?$/.test(t) ||
+        /\b(?:scan|analy[sz]e|check|snap|photograph|count|estimate)\b (?:my |the |this |a |that )?(?:plate|meal|dish|food|lunch|dinner|breakfast|snack|calories (?:in|of|on) (?:this|my|the) (?:photo|picture|plate|food|meal))\b/.test(t) ||
+        /\b(?:take|snap|use) (?:a |an )?(?:photo|picture|pic|snap|snapshot)\b/.test(t) && PHOTO_FOOD.test(t) ||
+        /\b(?:with|using|from|by) (?:a |the )?(?:photo|picture|pic|camera)\b/.test(t) && PHOTO_FOOD.test(t) ||
+        /\b(?:photo|picture) of (?:my |the |this )?(?:food|plate|meal|dish|lunch|dinner|breakfast)\b/.test(t) )){
+      J.go('food'); setTimeout(()=>openPhoto({fromVoice:true}), 60);
+      return J.ai.hasKey() ? 'Sure. Tap Take photo and point your camera at the food. I will count the calories.' : 'Sure. Tap Take photo. Products with a barcode work right away. For plates, I will show you how to turn on the free AI.';
+    }
     // ---- scan
     if (/\b(scan|scanner)\b/.test(t) && /\b(food|foods|barcode|barcodes|bar code|product|item|label|snack|groceries|grocery|nutrition|calories|packet|package|qr|box|can|bottle|this)\b/.test(t) && !/\b(receipt|receipts|bill|invoice|document|page)\b/.test(t)){
       J.go('food'); setTimeout(()=>openScanner({fromVoice:true}), 60);
@@ -1385,8 +2112,8 @@
     return parts.join(' ');
   });
 
-  J.addSuggestions(['I ate 2 eggs and a banana', 'How many calories today?', 'Scan a barcode', 'I drank a glass of water', 'How many calories in a shawarma?']);
+  J.addSuggestions(['I ate 2 eggs and a banana', 'Scan my plate', 'How many calories today?', 'Scan a barcode', 'I drank a glass of water', 'How many calories in a shawarma?']);
 
   // test hooks (harmless in production)
-  window.__food = {parseFoods, interpret, checksumOK, fromOFF, openScanner, closeScanner, lookupAndShow, runSearch, handleScanResult, decodeFile, F, dayTotals, todayKey};
+  window.__food = {parseFoods, interpret, checksumOK, fromOFF, openScanner, closeScanner, lookupAndShow, runSearch, handleScanResult, decodeFile, F, dayTotals, todayKey, openPhoto, onPhotoFile, analyzePhoto, showAiSetup, normalizeAI, extractKey, classifyHttp, AI_SCHEMA, AI_MODELS};
 })();
