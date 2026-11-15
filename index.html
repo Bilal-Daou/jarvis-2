@@ -588,7 +588,7 @@ const Jarvis = window.Jarvis = {
   categorize, CATS, wordsToNumbers, parseTime, handle, get icons(){ return ICON; },
   renderAll: (...a)=>renderAll(...a), addLateReply: t=>addLateReply(t), normalizeSpeech: t=>normalizeSpeech(t),
   addExpense(o){ const e = Object.assign({id:uid(), type:'expense', at:Date.now()}, o); if (!e.cat) e.cat = e.type==='income'?'Income':categorize(e.desc||''); e.desc = cap(e.desc|| (e.type==='income'?'Income':'Expense')); db.expenses.unshift(e); save(); renderAll(); return e; },
-  addReminder(o){ const r = Object.assign({id:uid(), done:false, repeat:'none', created:Date.now()}, o); db.reminders.push(r); save(); renderAll(); return r; },
+  addReminder(o){ const r = Object.assign({id:uid(), done:false, repeat:'none', created:Date.now()}, o); db.reminders.push(r); save(); renderAll(); reminderAdded(r); return r; },
   addNote(text, tag){ addNote(text); if (tag) db.notes[0].tag = tag; save(); renderAll(); return db.notes[0]; },
   /** store: namespaced persistent data for a feature, e.g. Jarvis.store('food') */
   store(ns, defaults){ if (!db[ns]) db[ns] = defaults ? JSON.parse(JSON.stringify(defaults)) : {}; return db[ns]; },
@@ -693,7 +693,7 @@ function think(said){
     const {date, rest, repeat} = parseTime(wordsToNumbers(m[1]));
     const text = cap(rest || 'Reminder');
     const when = date || new Date(Date.now()+36e5);
-    db.reminders.push({id:uid(), text, at:when.getTime(), done:false, repeat, created:Date.now()}); save(); go('reminders');
+    const newRem = {id:uid(), text, at:when.getTime(), done:false, repeat, created:Date.now()}; db.reminders.push(newRem); save(); go('reminders'); reminderAdded(newRem);
     askNotify();
     return `I'll remind you to ${text.charAt(0).toLowerCase()+text.slice(1)}, ${whenSpoken(when.getTime())}${repeat!=='none'?', repeating '+repeat:''}.` + (date?'':' You did not say a time, so I set it for an hour from now.');
   }
@@ -1025,7 +1025,7 @@ function openRemModal(){
   <select id="mRep"><option value="none">Doesn't repeat</option><option value="daily">Every day</option><option value="weekly">Every week</option><option value="monthly">Every month</option></select>
   <div class="row"><button class="btn ghost" id="mCancel">Cancel</button><button class="btn" id="mSave">Save</button></div>`);
   $('mCancel').onclick = closeModal;
-  $('mSave').onclick = ()=>{ const t = $('mText').value.trim(); if (!t) return; db.reminders.push({id:uid(), text:cap(t), at:new Date($('mWhen').value).getTime(), done:false, repeat:$('mRep').value, created:Date.now()}); save(); renderAll(); closeModal(); askNotify(); toast('Reminder set'); };
+  $('mSave').onclick = ()=>{ const t = $('mText').value.trim(); if (!t) return; const newRem = {id:uid(), text:cap(t), at:new Date($('mWhen').value).getTime(), done:false, repeat:$('mRep').value, created:Date.now()}; db.reminders.push(newRem); save(); reminderAdded(newRem); renderAll(); closeModal(); askNotify(); toast('Reminder set'); };
 }
 function openExpModal(){
   modal(`<h4>Add transaction</h4><select id="mType"><option value="expense">Expense</option><option value="income">Income</option></select>
@@ -1085,12 +1085,17 @@ $('textIn').addEventListener('keydown', e=>{ if (e.key==='Enter') sendTyped(); }
 
 /* ---------- reminders firing ---------- */
 function askNotify(){ try { if ('Notification' in window && Notification.permission==='default') Notification.requestPermission().then(syncSettings); } catch(e){} }
+/* Events other features listen to: 'jarvis:reminder-added' and 'jarvis:reminder-due' (detail = reminder).
+   A listener may call e.preventDefault() on 'jarvis:reminder-due' to take over the alert. */
+function reminderAdded(r){ try { window.dispatchEvent(new CustomEvent('jarvis:reminder-added', {detail:r})); } catch(e){} }
 function checkReminders(){
   const now = Date.now(); let changed = false;
   db.reminders.forEach(r=>{
     if (!r.done && r.at <= now && !r.fired){
       r.fired = true; changed = true;
       const msg = `Reminder: ${r.text}`;
+      let taken = false; try { taken = !window.dispatchEvent(new CustomEvent('jarvis:reminder-due', {detail:r, cancelable:true})); } catch(e){}
+      if (taken){ if (r.repeat && r.repeat!=='none'){ const d = new Date(r.at); do { if (r.repeat==='daily') d.setDate(d.getDate()+1); else if (r.repeat==='weekly') d.setDate(d.getDate()+7); else d.setMonth(d.getMonth()+1); } while (d.getTime() <= now); r.at = d.getTime(); r.fired = false; } return; }
       toast('⏰ '+r.text); speak(msg);
       try { if ('Notification' in window && Notification.permission==='granted'){ navigator.serviceWorker && navigator.serviceWorker.ready ? navigator.serviceWorker.ready.then(reg=>reg.showNotification('Jarvis', {body:r.text, icon:'icon-192.png', badge:'icon-192.png'})).catch(()=>new Notification('Jarvis',{body:r.text})) : new Notification('Jarvis',{body:r.text}); } } catch(e){}
       try { navigator.vibrate && navigator.vibrate([250,100,250]); } catch(e){}
@@ -1147,5 +1152,6 @@ window.jarvisHandle = handle; window.jarvisDB = ()=>db; // for testing
 <script src="features/finance.js"></script>
 <script src="features/receipt.js"></script>
 <script src="features/food.js"></script>
+<script src="features/calendar.js"></script>
 </body>
 </html>
