@@ -42,6 +42,11 @@ jobs:
       - name: Test the data job
         run: python -m unittest discover -s scripts/tests
 
+      - name: Install yfinance
+        # Handles Yahoo's cookie/crumb and browser impersonation; plain requests get HTTP 429 here.
+        # If the install fails the job still runs (direct requests, CoinGecko, kept prices).
+        run: pip install --disable-pip-version-check -q "yfinance==1.8.0" || echo "::warning::yfinance install failed"
+
       - name: Fetch market data
         run: python scripts/fetch_finance.py
 

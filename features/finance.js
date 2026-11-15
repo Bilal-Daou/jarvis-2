@@ -38,6 +38,9 @@ function paint(){
   try { if (homeEl) renderHomeCard(homeEl); } catch(e){ console.error('finance home', e); }
 }
 function quote(sym){ return (data && data.quotes && data.quotes[sym]) || null; }
+// true when the PRICES are not real: the whole file is the sample, or the data job kept the
+// sample prices because no live price could be fetched yet (news/calendar are then real).
+function samplePx(){ return !!(data && (data.sample || data.sample_prices)); }
 
 /* Symbols Bilal added that the feed doesn't cover show as "waiting for data".
    (Yahoo blocks direct browser requests, so a client-side fetch would only fail.) */
@@ -397,6 +400,7 @@ function agoTxt(u){ const a = J.ago(u); return a==='just now' ? 'just now' : /ag
 function updatedTxt(){
   if (!data) return '';
   if (data.sample) return 'Sample data · not real prices';
+  if (data.sample_prices) return 'Prices are samples · news and calendar are live';
   const u = Date.parse(data.updated);
   if (isNaN(u)) return 'Refreshes every 30 min while the market is open';
   return 'Updated ' + agoTxt(u) + ' · refreshes every 30 min while the market is open';
@@ -416,6 +420,7 @@ function renderView(el){
     el.innerHTML = h; return;
   }
   if (data.sample) h += `<div class="fin-note warn"><span>🧪</span><span><b>Sample data, not real prices.</b> Live prices, news and the calendar appear after the first data update.</span></div>`;
+  else if (data.sample_prices) h += `<div class="fin-note warn"><span>🧪</span><span><b>Prices are sample numbers, not real.</b> Live prices appear after the next successful update. The news and calendar below are live.</span></div>`;
   else if (failed) h += `<div class="fin-note warn"><span>📡</span><span>${failed==='offline'?"You're offline.":"Couldn't refresh."} Showing prices from ${J.esc(agoTxt(Date.parse(data.updated)).replace(/^on /,''))}.</span></div>`;
   else if (clk.state==='open' && staleHours() > 2) h += `<div class="fin-note warn"><span>⏳</span><span>These prices are about ${Math.round(staleHours())} hours old. The next update is on its way.</span></div>`;
   h += `<div class="seg fin-seg">${SEGS.map(([k,l])=>`<button data-fin-seg="${k}" class="${st.seg===k?'active':''}">${l}</button>`).join('')}</div>`;
@@ -652,7 +657,7 @@ function renderHomeCard(el){
   if (!data){ el.innerHTML = h + (loading||!failed ? `<div class="card fin-hc"><div class="fin-sk" style="height:62px"></div></div>` : `<div class="card fin-hc" style="color:var(--muted);font-size:13.5px">📡 Market data will show here once you're online.</div>`); return; }
   const cell = s=>{ const q = quote(s); if (!q) return ''; return `<div><div class="n">${J.esc(s==='BTC-USD'?'Bitcoin':nameOf(s))}</div><div class="v fin-${dir(q)}">${pctTxt(q)}</div><div class="sp">${spark(q,'1d')}</div></div>`; };
   const nb = nextBig();
-  h += `<div class="card fin-hc"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:12px;color:var(--muted);font-weight:600"><span style="display:flex;align-items:center;gap:6px"><i class="fin-dot ${clk.state}"></i>${clk.label}</span>${data.sample?'<span class="fin-tag fin-sample">SAMPLE DATA</span>':`<span>${J.esc(isNaN(Date.parse(data.updated))?'':agoTxt(Date.parse(data.updated)))}</span>`}</div>
+  h += `<div class="card fin-hc"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:12px;color:var(--muted);font-weight:600"><span style="display:flex;align-items:center;gap:6px"><i class="fin-dot ${clk.state}"></i>${clk.label}</span>${samplePx()?`<span class="fin-tag fin-sample">${data.sample?'SAMPLE DATA':'SAMPLE PRICES'}</span>`:`<span>${J.esc(isNaN(Date.parse(data.updated))?'':agoTxt(Date.parse(data.updated)))}</span>`}</div>
     <div class="fin-strip">${['^GSPC','^IXIC','BTC-USD'].map(cell).join('')}</div>
     ${nb?`<div class="fin-next"><span class="lb">Next</span><span class="ev">${FLAGS[nb.country]||''} ${J.esc(explain(nb).plain)} · ${J.esc(evWhen(nb))}</span><em class="fin-imp High">High</em></div>`:''}</div>`;
   el.innerHTML = h;
@@ -685,7 +690,7 @@ function brief(){
   if (extra.length) parts.push(J.cap(extra.join(', and '))+'.');
   const nb = nextBig();
   if (nb) parts.push(`Next big event: the ${sayEvent(nb)}, ${evWhen(nb, true)}.`);
-  if (data.sample) parts.unshift('Heads up, these are sample numbers, not live prices, until the first data update.');
+  if (samplePx()) parts.unshift('Heads up, these are sample numbers, not live prices, until the first price update.');
   else if (marketClock().state==='open' && staleHours() > 2) parts.push(`Heads up, this data is about ${Math.round(staleHours())} hours old.`);
   return parts.join(' ') || "I couldn't read the market data right now.";
 }
@@ -715,7 +720,7 @@ J.addIntent((said, t0)=>{
   try {
     saidData = false;
     const r = intent(said, t0);
-    if (typeof r === 'string' && saidData && data && data.sample && !/sample/i.test(r)) return r + ' Note: this is sample data, not live market prices, until the first update.';
+    if (typeof r === 'string' && saidData && samplePx() && !/sample/i.test(r)) return r + ' Note: this is sample data, not live market prices, until the first update.';
     return r;
   } catch(e){ console.error('finance intent', e); return null; }
 });
@@ -839,10 +844,10 @@ J.addSuggestions(['Give me my market brief', "How's Tesla doing?", "What's on th
 /* ------------------------------------------------------ morning brief line */
 function briefLine(){
   if (!data || data.sample) return null;                       // never read sample numbers as real
-  const u = Date.parse(data.updated); if (isNaN(u) || Date.now() - u > 4*864e5) return null;   // too old to be news
+  const u = Date.parse(data.sample_prices ? (data.checked || data.updated) : data.updated); if (isNaN(u) || Date.now() - u > 4*864e5) return null;   // too old to be news
   const mv = q=>{ if (!q || q.pct==null || q.stale) return null; const a = Math.abs(q.pct); return a < 0.05 ? 'flat' : `${q.pct>0?'up':'down'} ${nf(a, 1)}%`; };
   const sp = quote('^GSPC'), nq = quote('^IXIC');
-  const moves = [sp && mv(sp) && `S&P 500 ${mv(sp)}`, nq && mv(nq) && `Nasdaq ${mv(nq)}`].filter(Boolean);
+  const moves = data.sample_prices ? [] : [sp && mv(sp) && `S&P 500 ${mv(sp)}`, nq && mv(nq) && `Nasdaq ${mv(nq)}`].filter(Boolean);
   const todayStr = new Date().toDateString(), tmr = new Date(); tmr.setDate(tmr.getDate()+1);
   const p = nyParts(new Date());
   let ev = '';

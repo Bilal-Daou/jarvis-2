@@ -6,13 +6,15 @@ Runs on GitHub Actions (free, scheduled) and writes data/finance.json, which the
 app reads from its own site, so the phone never hits CORS walls or needs API keys.
 
 Sources (all free, no keys):
-  quotes    Yahoo Finance chart endpoint (fallback: Stooq daily CSV)
+  quotes    Yahoo Finance via the yfinance package, two batched calls (fallbacks: Yahoo chart
+            endpoint, Stooq daily CSV, CoinGecko for crypto)
   news      Yahoo Finance, CNBC, MarketWatch RSS + Google News RSS search
   calendar  Forex Factory weekly JSON (this week + next week)
   earnings  Nasdaq earnings calendar API (optional, skipped if blocked)
 
 Every source is isolated: if one fails, the previous values from the old file
-are kept, so a bad run never breaks the app. Python standard library only.
+are kept, so a bad run never breaks the app. Standard library only, plus the optional
+yfinance package (installed by the workflow; the job still runs without it).
 
 Usage:
   python scripts/fetch_finance.py            # fetch live data
@@ -88,7 +90,7 @@ UNIVERSE = list(NAMES.keys())
 
 FEEDS = [
     ("CNBC", "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114"),
-    ("Yahoo Finance", "https://finance.yahoo.com/news/rssindex"),
+    ("Yahoo Finance", "https://feeds.finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EDJI,%5EIXIC&region=US&lang=en-US"),
     ("MarketWatch", "https://feeds.content.dowjones.io/public/rss/mw_topstories"),
     ("Google News", "https://news.google.com/rss/search?q=%22stock+market%22+when:1d&hl=en-US&gl=US&ceid=US:en"),
 ]
@@ -296,9 +298,22 @@ def stooq_quote(sym, name, kind, stooq_sym):
     return build_quote(sym, name or sym, kind, closes[-1], closes[-2], t, None, closes, {"src": "stooq"})
 
 
+# After a few hard refusals (429 / gated replies) stop hammering a source for the rest of the run;
+# a blocked source otherwise costs ~10 minutes of retries.
+BLOCKED = {"yahoo": 0, "stooq": 0}
+BLOCK_AFTER = 4
+
+
+def _note_block(src, err):
+    if src == "yahoo" and "429" in str(err) or src == "stooq" and "unexpected reply" in str(err):
+        BLOCKED[src] += 1
+
+
 def fetch_quote(item):
     sym, name, kind, stooq_sym, want5d = item
     try:
+        if BLOCKED["yahoo"] >= BLOCK_AFTER:
+            raise RuntimeError("yahoo skipped (rate limited this run)")
         res_day = yahoo_chart(sym, "1d", "5m")
         res_5d = None
         if want5d:
@@ -308,10 +323,146 @@ def fetch_quote(item):
                 log("  5d failed", sym, e)
         return sym, parse_yahoo(sym, name, kind, res_day, res_5d), None
     except Exception as e:
+        _note_block("yahoo", e)
         try:
+            if BLOCKED["stooq"] >= BLOCK_AFTER:
+                raise RuntimeError("stooq skipped (gated this run)")
             return sym, stooq_quote(sym, name, kind, stooq_sym), None
         except Exception as e2:
+            _note_block("stooq", e2)
             return sym, None, f"{e} | {e2}"
+
+
+# ---------------------------------------------------------------- quotes via yfinance (batched)
+def _ts(x):
+    """pandas Timestamp / datetime -> unix seconds (naive = UTC)."""
+    d = x.to_pydatetime() if hasattr(x, "to_pydatetime") else x
+    if d.tzinfo is None:
+        d = d.replace(tzinfo=UTC)
+    return int(d.timestamp())
+
+
+def _num(v):
+    try:
+        v = float(v)
+    except (TypeError, ValueError):
+        return None
+    return v if math.isfinite(v) else None
+
+
+def _frame(df, sym):
+    """One ticker's rows from a yf.download(group_by='ticker') frame, NaN closes dropped."""
+    if df is None or getattr(df, "empty", True):
+        return None
+    try:
+        cols = df.columns
+        if getattr(cols, "nlevels", 1) > 1:
+            if sym not in cols.get_level_values(0):
+                return None
+            sub = df[sym]
+        else:
+            sub = df
+        sub = sub.dropna(subset=["Close"])
+    except Exception:
+        return None
+    return sub if len(sub) else None
+
+
+def quote_from_frames(sym, name, kind, daily, intra):
+    """Build a quote from a 1y daily frame (price, previous close, ranges) and a 5d/5m frame (charts).
+    Daily rows give the official closes, so % change = last close vs the previous session's close,
+    which is what Yahoo/Google show (and correct before the open: no partial row yet)."""
+    if daily is None:
+        return None
+    rows = [(_ts(ix), _num(r["Close"]), _num(r.get("High")), _num(r.get("Low"))) for ix, r in daily.iterrows()]
+    rows = [r for r in rows if r[1] is not None]
+    dedup = []
+    for r in rows:  # guard against a duplicated "today" row
+        if dedup and dt.datetime.fromtimestamp(dedup[-1][0], UTC).date() == dt.datetime.fromtimestamp(r[0], UTC).date():
+            dedup[-1] = r
+        else:
+            dedup.append(r)
+    rows = dedup
+    if not rows:
+        return None
+    price, prev = rows[-1][1], (rows[-2][1] if len(rows) >= 2 else None)
+    if price <= 0 and kind != "rate":
+        return None
+    year = rows[-260:]
+    highs = [r[2] for r in year if r[2] is not None]
+    lows = [r[3] for r in year if r[3] is not None]
+    extra = {"hi": rnd(rows[-1][2], kind), "lo": rnd(rows[-1][3], kind),
+             "h52": rnd(max(highs), kind) if highs else None, "l52": rnd(min(lows), kind) if lows else None,
+             "src": "yfinance"}
+    day = d5 = None
+    t = rows[-1][0] + 21 * 3600  # daily stamp is the session date; ~4 PM New York
+    if intra is not None:
+        bars = [(_ts(ix), _num(c)) for ix, c in intra["Close"].items()]
+        bars = [b for b in bars if b[1] is not None]
+        if bars:
+            last_t = bars[-1][0]
+            day = [c for ts_, c in bars if ts_ > last_t - 20 * 3600]   # the latest session only
+            d5 = [c for _, c in bars]
+            t = last_t + 300
+    t = min(t, int(now_utc().timestamp()))
+    return build_quote(sym, name or sym, kind, price, prev, t, day, d5, extra)
+
+
+def yf_download(symbols, **kw):
+    import yfinance as yf  # optional dependency
+    return yf.download(symbols, group_by="ticker", auto_adjust=False, actions=False, threads=True,
+                       progress=False, timeout=30, **kw)
+
+
+def fetch_quotes_yf(items):
+    """{sym: quote} for every symbol yfinance could price. Raises ImportError if not installed."""
+    import yfinance  # noqa: F401  (fail fast when missing)
+    syms = [it[0] for it in items]
+    daily = yf_download(syms, period="1y", interval="1d")
+    try:
+        intra = yf_download(syms, period="5d", interval="5m", prepost=False)
+    except Exception as e:
+        log("  yfinance intraday failed:", e)
+        intra = None
+    out = {}
+    for sym, name, kind, _st, want5d in items:
+        try:
+            q = quote_from_frames(sym, name, kind, _frame(daily, sym), _frame(intra, sym))
+            if q:
+                if not want5d:
+                    q.pop("d5", None)
+                if not name:
+                    q["name"] = sym
+                out[sym] = q
+        except Exception as e:
+            log("  yfinance parse failed", sym, e)
+    return out
+
+
+# ---------------------------------------------------------------- crypto fallback: CoinGecko (free, no key)
+COINGECKO_IDS = {"BTC-USD": "bitcoin", "ETH-USD": "ethereum", "SOL-USD": "solana", "XRP-USD": "ripple", "DOGE-USD": "dogecoin"}
+
+
+def parse_coingecko(raw, names):
+    j = json.loads(raw)
+    out = {}
+    for sym, cid in COINGECKO_IDS.items():
+        r = j.get(cid) if isinstance(j, dict) else None
+        if not isinstance(r, dict):
+            continue
+        price, chg = _num(r.get("usd")), _num(r.get("usd_24h_change"))
+        if not price or price <= 0:
+            continue
+        prev = price / (1 + chg / 100) if chg is not None and chg > -100 else None
+        q = build_quote(sym, names.get(sym, sym), "crypto", price, prev, r.get("last_updated_at"), extra={"src": "coingecko"})
+        out[sym] = q
+    return out
+
+
+def fetch_coingecko(names):
+    url = ("https://api.coingecko.com/api/v3/simple/price?ids=" + ",".join(COINGECKO_IDS.values())
+           + "&vs_currencies=usd&include_24hr_change=true&include_last_updated_at=true")
+    return parse_coingecko(http_get(url, headers={"Accept": "application/json"}, retries=1), names)
 
 
 def read_watch_extras():
@@ -340,17 +491,37 @@ def fetch_quotes(old):
     items += [(s, None, "crypto" if s.endswith("-USD") else "stock", None, True) for s in extras]
     quotes, failed = {}, []
     old_q = (old or {}).get("quotes") or {}
-    with ThreadPoolExecutor(max_workers=6) as ex:
-        for sym, q, err in ex.map(fetch_quote, items):
-            if q:
-                quotes[sym] = q
-            else:
-                failed.append(sym)
-                log("  quote failed", sym, err)
-                if sym in old_q:
-                    stale = dict(old_q[sym])
-                    stale["stale"] = True
-                    quotes[sym] = stale
+    try:
+        quotes.update(fetch_quotes_yf(items))
+        log(f"  yfinance: {len(quotes)} of {len(items)} priced")
+    except ImportError:
+        log("  yfinance not installed; using direct requests")
+    except Exception as e:
+        log("  yfinance failed:", e)
+    rest = [it for it in items if it[0] not in quotes]
+    if rest:
+        with ThreadPoolExecutor(max_workers=6) as ex:
+            for sym, q, err in ex.map(fetch_quote, rest):
+                if q:
+                    quotes[sym] = q
+                else:
+                    failed.append(sym)
+                    log("  quote failed", sym, err)
+    if any(s in COINGECKO_IDS for s in failed):
+        try:
+            cg = fetch_coingecko({**NAMES, "BTC-USD": "Bitcoin"})
+            for s, q in cg.items():
+                if s in failed:
+                    quotes[s] = q
+                    failed.remove(s)
+            log(f"  coingecko: {len(cg)} coins")
+        except Exception as e:
+            log("  coingecko failed:", e)
+    for sym in failed:
+        if sym in old_q:
+            stale = dict(old_q[sym])
+            stale["stale"] = True
+            quotes[sym] = stale
     ok = len(items) - len(failed)
     return quotes, ok, failed, extras
 
@@ -574,6 +745,9 @@ def fetch_calendar(old):
                     merged[ev_key(e)] = e
             ok += 1
         except Exception as e:
+            if "nextweek" in url and "404" in str(e):
+                log("  calendar: next week's file isn't published yet (normal)")
+                continue
             failed.append(url.rsplit("_", 1)[-1])
             log("  calendar failed", url, e)
     today = now_utc().date()
@@ -654,8 +828,16 @@ def main():
         log("wrote SAMPLE data to", OUT)
         return 0
     old = load_old()
+    # Sample prices (from the sample file, or kept from it by an earlier run) must never be
+    # presented as real: they are not passed on as "previous" prices, only reused, still
+    # flagged, when no live price can be fetched at all.
+    sample_quotes = (old.get("quotes") or {}) if (old.get("sample") or old.get("sample_prices")) else {}
     if old.get("sample"):
-        old = {}  # never carry sample values into a live file
+        old = {}  # the sample's news/calendar are placeholders: carry nothing
+    elif sample_quotes:
+        old = {k: v for k, v in old.items() if k != "quotes"}
+        old["status"] = {k: v for k, v in (old.get("status") or {}).items() if k != "quotes"}
+        old.pop("updated", None)
     t0 = time.time()
     status = dict(old.get("status") or {})
     now = iso(now_utc())
@@ -663,6 +845,8 @@ def main():
     quotes, q_ok, q_failed, extras = {}, 0, [], []
     try:
         quotes, q_ok, q_failed, extras = fetch_quotes(old)
+        if not q_ok:
+            quotes = {}
         log(f"quotes: {q_ok} ok, {len(q_failed)} failed")
         if q_ok:
             status["quotes"] = {"at": now, "ok": q_ok, "failed": q_failed}
@@ -706,10 +890,18 @@ def main():
     except Exception as e:
         log("earnings crashed:", e)
 
+    sample_prices = False
+    if not q_ok:
+        if old.get("quotes"):
+            quotes = {s: dict(q, stale=True) for s, q in old["quotes"].items()}
+        elif sample_quotes:
+            quotes, sample_prices = sample_quotes, True
+            log("No live prices: keeping the SAMPLE prices (flagged sample_prices) with the fresh news/calendar.")
     if not quotes:
         log("No prices at all (live or previous); leaving the file untouched.")
         return 0
-    if not q_ok and not n_ok and old:
+    cal_fresh = (status.get("calendar") or {}).get("at") == now
+    if not q_ok and not n_ok and not cal_fresh:
         log("All live sources failed this run; keeping the previous file so the app shows its real age.")
         return 0
 
@@ -718,6 +910,7 @@ def main():
         "updated": (status.get("quotes") or {}).get("at") or old.get("updated") or now,
         "checked": now,
         "sample": False,
+        "sample_prices": sample_prices,
         "markets": [m[0] for m in MARKETS],
         "watchlist": DEFAULT_WATCHLIST,
         "extras": extras,

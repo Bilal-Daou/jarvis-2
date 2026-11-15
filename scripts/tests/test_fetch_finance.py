@@ -48,6 +48,7 @@ class Base(unittest.TestCase):
         p = mock.patch.object(ff, "now_utc", lambda: NOW)
         p.start()
         self.addCleanup(p.stop)
+        ff.BLOCKED.update({"yahoo": 0, "stooq": 0})
 
 
 class YahooTests(Base):
@@ -120,6 +121,105 @@ class YahooTests(Base):
         self.assertEqual(q["chg"], 0.0024)
 
 
+try:
+    import pandas as pd
+except ImportError:  # pragma: no cover
+    pd = None
+
+
+def yf_frames():
+    """Frames shaped exactly like yf.download(..., group_by='ticker') returns them:
+    columns MultiIndex (Ticker, Price); daily index = session dates, intraday index = UTC times;
+    a ticker Yahoo couldn't price is an all-NaN column block."""
+    days = pd.to_datetime(["2026-11-10", "2026-11-11", "2026-11-12", "2026-11-13"])
+    fields = ["Open", "High", "Low", "Close", "Adj Close", "Volume"]
+    nan = float("nan")
+    data = {}
+    for f in fields:
+        data[("^GSPC", f)] = {"High": [6700, 6720, 6750, 6779.12], "Low": [6600, 6650, 6690, 6702.33],
+                              "Close": [6690.0, 6710.5, 6737.49, 6760.21]}.get(f, [1, 1, 1, 1])
+        data[("DEAD", f)] = [nan] * 4
+        data[("BTC-USD", f)] = {"Close": [101000.0, 99000.0, 98000.0, nan]}.get(f, [1, 1, 1, nan])
+    daily = pd.DataFrame(data, index=days)
+    daily.columns = pd.MultiIndex.from_tuples(daily.columns, names=["Ticker", "Price"])
+    t = pd.date_range("2026-11-12 14:30", periods=78, freq="5min", tz="UTC").append(
+        pd.date_range("2026-11-13 14:30", periods=78, freq="5min", tz="UTC"))
+    closes = [6737.0 + i * 0.1 for i in range(156)]
+    closes[-1] = 6760.21
+    idata = {}
+    for f in fields:
+        idata[("^GSPC", f)] = closes
+        idata[("DEAD", f)] = [nan] * 156
+        idata[("BTC-USD", f)] = [nan] * 156
+    intra = pd.DataFrame(idata, index=t)
+    intra.columns = pd.MultiIndex.from_tuples(intra.columns, names=["Ticker", "Price"])
+    return daily, intra
+
+
+@unittest.skipIf(pd is None, "pandas not installed")
+class YFinanceTests(Base):
+    def test_quote_from_frames(self):
+        daily, intra = yf_frames()
+        q = ff.quote_from_frames("^GSPC", "S&P 500", "index", ff._frame(daily, "^GSPC"), ff._frame(intra, "^GSPC"))
+        self.assertEqual(q["price"], 6760.21)
+        self.assertEqual(q["prev"], 6737.49)             # previous session's official close
+        self.assertAlmostEqual(q["pct"], 0.34)
+        self.assertEqual(q["hi"], 6779.12)
+        self.assertEqual(q["h52"], 6779.12)
+        self.assertEqual(q["l52"], 6600)
+        self.assertEqual(q["src"], "yfinance")
+        self.assertEqual(q["day"][-1], 6760.21)
+        self.assertLessEqual(len(q["day"]), 64)
+        self.assertGreater(q["day"][0], 6737.0 + 77 * 0.1)  # only Friday's bars in the 1D chart
+        self.assertEqual(q["t"], int(dt.datetime(2026, 11, 13, 21, 0, tzinfo=UTC).timestamp()))
+
+    def test_missing_and_partial_tickers(self):
+        daily, intra = yf_frames()
+        self.assertIsNone(ff._frame(daily, "DEAD"))
+        self.assertIsNone(ff._frame(daily, "NOPE"))
+        q = ff.quote_from_frames("BTC-USD", "Bitcoin", "crypto", ff._frame(daily, "BTC-USD"), ff._frame(intra, "BTC-USD"))
+        self.assertEqual(q["price"], 98000.0)            # trailing NaN row ignored
+        self.assertEqual(q["prev"], 99000.0)
+
+    def test_fetch_quotes_yf_batches(self):
+        daily, intra = yf_frames()
+        calls = []
+
+        def fake(symbols, **kw):
+            calls.append(kw["interval"])
+            return daily if kw["interval"] == "1d" else intra
+        items = [("^GSPC", "S&P 500", "index", None, True), ("DEAD", None, "stock", None, True), ("BTC-USD", "Bitcoin", "crypto", None, False)]
+        with mock.patch.dict(sys.modules, {"yfinance": mock.MagicMock()}), mock.patch.object(ff, "yf_download", side_effect=fake):
+            out = ff.fetch_quotes_yf(items)
+        self.assertEqual(calls, ["1d", "5m"])            # two batched calls, not one per ticker
+        self.assertEqual(set(out), {"^GSPC", "BTC-USD"})
+        self.assertNotIn("d5", out["BTC-USD"])
+        json.dumps(out, allow_nan=False)
+
+
+class FallbackTests(Base):
+    def test_coingecko(self):
+        raw = b'{"bitcoin":{"usd":98400.12,"usd_24h_change":-0.7712,"last_updated_at":1794729600},"ethereum":{"usd":3520.5,"usd_24h_change":1.5,"last_updated_at":1794729600},"dogecoin":{"usd":null}}'
+        out = ff.parse_coingecko(raw, {"BTC-USD": "Bitcoin", "ETH-USD": "Ethereum"})
+        self.assertEqual(set(out), {"BTC-USD", "ETH-USD"})
+        self.assertEqual(out["BTC-USD"]["price"], 98400.12)
+        self.assertEqual(out["BTC-USD"]["pct"], -0.77)
+        self.assertEqual(out["BTC-USD"]["src"], "coingecko")
+
+    def test_circuit_breaker_stops_hammering(self):
+        n = {"yahoo": 0}
+
+        def fake(url, **kw):
+            if "yahoo" in url:
+                n["yahoo"] += 1
+                raise RuntimeError("GET failed: HTTP Error 429: Too Many Requests")
+            raise RuntimeError("stooq down")
+        with mock.patch.object(ff, "http_get", side_effect=fake):
+            for i in range(20):
+                ff.fetch_quote((f"T{i}", None, "stock", None, False))
+        self.assertLessEqual(n["yahoo"], ff.BLOCK_AFTER * 2)
+
+
 class CalendarTests(Base):
     def test_parse_ff(self):
         evs = ff.parse_ff(fx("ff_thisweek.json"))
@@ -166,6 +266,18 @@ class CalendarTests(Base):
         self.assertEqual(cpis[0]["time"], "2026-11-18T13:30:00Z")
         self.assertTrue(any(e["title"] == "Retail Sales m/m" for e in cal))  # outside the fresh range: kept
         self.assertEqual(cal, sorted(cal, key=lambda e: e["time"]))
+
+    def test_nextweek_404_is_quiet(self):
+        raw = fx("ff_thisweek.json").encode()
+
+        def fake(url, **kw):
+            if url.endswith("thisweek.json"):
+                return raw
+            raise RuntimeError("GET failed: HTTP Error 404: Not Found")
+        with mock.patch.object(ff, "http_get", side_effect=fake):
+            cal, ok, failed, skipped = ff.fetch_calendar({})
+        self.assertEqual(failed, [])
+        self.assertEqual(ok, 1)
 
     def test_calendar_throttle(self):
         old = {"calendar": [{"title": "x", "country": "USD", "impact": "High", "time": "2026-11-18T13:30:00Z"}],
@@ -234,6 +346,10 @@ class WriteTests(Base):
         p = mock.patch.object(ff, "OUT", os.path.join(self.tmp, "finance.json"))
         p.start()
         self.addCleanup(p.stop)
+        # offline tests: behave as if yfinance is unavailable (the batch path has its own tests)
+        y = mock.patch.object(ff, "fetch_quotes_yf", side_effect=ImportError("no yfinance"))
+        y.start()
+        self.addCleanup(y.stop)
 
     def test_nan_never_written(self):
         with open(ff.OUT, "w") as f:
@@ -261,6 +377,35 @@ class WriteTests(Base):
             self.assertEqual(self._main(), 0)
         self.assertEqual(readtxt(ff.OUT), before)   # still the (clearly marked) sample, not an empty "live" file
 
+    def test_prices_down_news_up_keeps_flagged_sample_prices(self):
+        ff.write(ff.make_sample())
+        rss = fx("cnbc.xml", "rb")
+        cal = fx("ff_thisweek.json", "rb")
+
+        def fake(url, **kw):
+            if "cnbc" in url:
+                return rss
+            if "thisweek" in url:
+                return cal
+            raise RuntimeError("HTTP Error 429")
+        with mock.patch.object(ff, "http_get", side_effect=fake), \
+             mock.patch.object(ff.time, "sleep", lambda s: None):
+            self._main()
+        d = jload(ff.OUT)
+        self.assertIs(d["sample"], False)
+        self.assertIs(d["sample_prices"], True)
+        self.assertEqual(d["news"][0]["source"], "CNBC")
+        self.assertTrue(any(e["title"] == "CPI m/m" for e in d["calendar"]))
+        self.assertTrue(all(q["src"] == "sample" for q in d["quotes"].values()))
+        # next run, still no prices: stays flagged, sample prices are not turned into "stale real" ones
+        with mock.patch.object(ff, "http_get", side_effect=fake), \
+             mock.patch.object(ff.time, "sleep", lambda s: None), \
+             mock.patch.object(ff, "fetch_calendar", lambda old: (old["calendar"], None, [], True)):
+            self._main()
+        d2 = jload(ff.OUT)
+        self.assertIs(d2["sample_prices"], True)
+        self.assertFalse(any(q.get("stale") for q in d2["quotes"].values()))
+
     def test_live_run_end_to_end(self):
         ff.write(ff.make_sample())
         day = fx("yahoo_gspc_1d.json", "rb")
@@ -283,6 +428,7 @@ class WriteTests(Base):
             self._main()
         d = jload(ff.OUT)
         self.assertIs(d["sample"], False)
+        self.assertIs(d["sample_prices"], False)
         self.assertEqual(d["updated"], "2026-11-15T09:00:00Z")
         self.assertNotIn("note", d)
         self.assertTrue(all(q.get("src") != "sample" for q in d["quotes"].values()))  # no sample values carried over
