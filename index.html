@@ -1,114 +1,411 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0f1420">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#07090f">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Jarvis">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
 <title>Jarvis 2.0</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0f1420;--card:#182033;--line:#26314a;--text:#e9eef8;--muted:#93a0bb;--accent:#4f8cff;--good:#2fbf71;--warn:#f2a93b;--bad:#ef5b5b}
-:root[data-theme="light"]{--bg:#f4f6fb;--card:#fff;--line:#dfe4ee;--text:#18202f;--muted:#5d6880}
-*{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
-.wrap{max-width:560px;margin:0 auto;padding:16px 16px 40px}
-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-h1{font-size:22px;margin:0;letter-spacing:.3px}
-h1 span{color:var(--accent)}
-.sub{color:var(--muted);font-size:14px}
-.mic-zone{display:flex;flex-direction:column;align-items:center;gap:12px;margin:18px 0 10px}
-#mic{width:132px;height:132px;border-radius:50%;border:0;background:var(--accent);color:#fff;cursor:pointer;box-shadow:0 10px 30px rgba(79,140,255,.35);display:flex;align-items:center;justify-content:center;transition:transform .15s}
-#mic:active{transform:scale(.96)}
-#mic.on{background:var(--bad);animation:pulse 1.2s infinite}
-@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(239,91,91,.6)}70%{box-shadow:0 0 0 26px rgba(239,91,91,0)}100%{box-shadow:0 0 0 0 rgba(239,91,91,0)}}
-#mic svg{width:54px;height:54px}
-#heard{min-height:24px;text-align:center;color:var(--muted);font-size:15px;padding:0 8px}
-#reply{min-height:24px;text-align:center;font-weight:600;padding:0 8px}
-.tabs{display:flex;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:5px;margin:18px 0 12px}
-.tabs button{flex:1;border:0;background:none;color:var(--muted);padding:10px 4px;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer}
-.tabs button.active{background:var(--accent);color:#fff}
-.panel{display:none}.panel.active{display:block}
-.item{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start}
-.item .body{flex:1;min-width:0;word-wrap:break-word}
-.item .meta{color:var(--muted);font-size:13px;margin-top:2px}
-.item.done .body{opacity:.5;text-decoration:line-through}
-.x{border:0;background:none;color:var(--muted);font-size:20px;line-height:1;cursor:pointer;padding:2px 6px}
-.empty{color:var(--muted);text-align:center;padding:18px 8px;font-size:15px}
-.summary{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
-.total{font-size:30px;font-weight:700}
-.bar{height:10px;background:var(--line);border-radius:6px;overflow:hidden;margin:4px 0 10px}
-.bar i{display:block;height:100%;background:var(--accent)}
-.row{display:flex;justify-content:space-between;font-size:14px}
-.month{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
-.month button{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:8px;padding:4px 12px;font-size:16px;cursor:pointer}
-.help{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:14px;color:var(--muted)}
-.help b{color:var(--text)}
-.help ul{margin:6px 0 0;padding-left:18px}
-.paste{display:flex;gap:6px;margin-top:10px}
-.paste input{flex:1;min-width:0;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:15px}
-.paste button{border:0;background:var(--accent);color:#fff;border-radius:10px;padding:0 14px;font-weight:600}
-.warn{background:rgba(242,169,59,.15);border:1px solid var(--warn);color:var(--text);border-radius:12px;padding:10px 12px;font-size:14px;margin:10px 0;display:none}
-.small-btn{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:10px;padding:8px 12px;font-size:14px;cursor:pointer}
+:root{
+  --accent:#6d5dfc; --accent2:#22d3ee; --accent-soft:rgba(109,93,252,.16);
+  --good:#22c55e; --warn:#f59e0b; --bad:#f43f5e;
+  --radius:22px; --ease:cubic-bezier(.2,.8,.2,1);
+  --safe-b:env(safe-area-inset-bottom,0px); --safe-t:env(safe-area-inset-top,0px);
+}
+:root[data-theme="dark"]{
+  --bg:#07090f; --bg2:#0d1120; --card:rgba(255,255,255,.045); --card-solid:#121729; --line:rgba(255,255,255,.08);
+  --text:#f3f5fb; --muted:#8b93aa; --faint:#5b637a; --glass:rgba(13,17,32,.72); --shadow:0 20px 50px rgba(0,0,0,.45);
+}
+:root[data-theme="light"]{
+  --bg:#f3f4f9; --bg2:#e9ebf5; --card:#ffffff; --card-solid:#ffffff; --line:rgba(20,24,40,.08);
+  --text:#121626; --muted:#626a80; --faint:#9aa1b4; --glass:rgba(255,255,255,.78); --shadow:0 16px 40px rgba(30,40,80,.12);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--text);font:15px/1.45 Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:-20% -20% auto -20%;height:70vh;background:radial-gradient(600px 300px at 20% 10%,rgba(109,93,252,.28),transparent 60%),radial-gradient(500px 280px at 90% 0%,rgba(34,211,238,.18),transparent 60%);pointer-events:none;z-index:0;filter:blur(10px)}
+button{font:inherit;color:inherit}
+.app{position:relative;z-index:1;max-width:520px;margin:0 auto;padding:calc(14px + var(--safe-t)) 16px calc(120px + var(--safe-b))}
+.view{display:none;animation:fadeUp .35s var(--ease)}
+.view.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+/* top bar */
+.top{display:flex;align-items:center;justify-content:space-between;margin:4px 0 18px}
+.brand{display:flex;align-items:center;gap:10px}
+.logo{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-items:center;box-shadow:0 8px 20px rgba(109,93,252,.4)}
+.logo svg{width:20px;height:20px}
+.brand b{font-size:18px;font-weight:800;letter-spacing:-.3px}
+.brand small{display:block;color:var(--muted);font-size:12px;font-weight:500;margin-top:-2px}
+.icon-btn{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;cursor:pointer}
+.icon-btn svg{width:20px;height:20px}
+h2{font-size:26px;font-weight:800;letter-spacing:-.6px;margin:0 0 4px}
+.lede{color:var(--muted);margin:0 0 18px}
+.section-h{display:flex;align-items:center;justify-content:space-between;margin:22px 2px 10px}
+.section-h h3{margin:0;font-size:16px;font-weight:700}
+.link{color:var(--accent);font-weight:600;font-size:13px;background:none;border:0;cursor:pointer;padding:4px}
+
+/* cards */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.hero{position:relative;overflow:hidden;border-radius:26px;padding:20px;background:linear-gradient(135deg,#6d5dfc 0%,#4f46e5 45%,#0ea5e9 100%);color:#fff;box-shadow:0 20px 45px rgba(79,70,229,.35)}
+.hero::after{content:"";position:absolute;right:-60px;top:-60px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,.12)}
+.hero .hi{font-size:14px;opacity:.85;font-weight:500}
+.hero .big{font-size:24px;font-weight:800;letter-spacing:-.5px;margin:2px 0 14px;line-height:1.2}
+.hero-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;position:relative;z-index:1}
+.hero-stats div{background:rgba(255,255,255,.14);border-radius:14px;padding:10px}
+.hero-stats b{display:block;font-size:18px;font-weight:800}
+.hero-stats span{font-size:11.5px;opacity:.85}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 6px;margin:16px -16px 0;padding-left:16px;padding-right:16px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:9px 14px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:6px}
+.chip:active{transform:scale(.97)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.stat .label{color:var(--muted);font-size:12.5px;font-weight:600}
+.stat .val{font-size:22px;font-weight:800;letter-spacing:-.4px;margin-top:4px}
+.stat .delta{font-size:12px;font-weight:600;margin-top:2px}
+
+/* list items */
+.list{display:flex;flex-direction:column;gap:10px}
+.item{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;position:relative;transition:transform .2s var(--ease),opacity .2s}
+.item .ic{flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:19px}
+.item .body{flex:1;min-width:0}
+.item .title{font-weight:600;word-wrap:break-word}
+.item .meta{color:var(--muted);font-size:12.5px;margin-top:3px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.item .amt{font-weight:800;font-size:16px;white-space:nowrap}
+.item .actions{display:flex;gap:2px}
+.mini{border:0;background:none;color:var(--muted);width:32px;height:32px;border-radius:10px;display:grid;place-items:center;cursor:pointer}
+.mini:hover{background:var(--card)}
+.mini svg{width:17px;height:17px}
+.mini.on{color:var(--warn)}
+.tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;background:var(--accent-soft);color:var(--accent)}
+.tag.red{background:rgba(244,63,94,.14);color:var(--bad)}
+.tag.green{background:rgba(34,197,94,.14);color:var(--good)}
+.item.done .title{text-decoration:line-through;opacity:.5}
+.check{flex:none;width:26px;height:26px;border-radius:50%;border:2px solid var(--faint);background:none;cursor:pointer;display:grid;place-items:center;margin-top:7px}
+.check.on{background:var(--good);border-color:var(--good)}
+.check svg{width:14px;height:14px;color:#fff}
+.note-card{border-left:4px solid var(--accent)}
+.empty{text-align:center;color:var(--muted);padding:28px 16px;border:1px dashed var(--line);border-radius:18px}
+.empty .e-ic{font-size:30px;margin-bottom:6px}
+
+/* search + segmented */
+.search{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:0 12px;margin-bottom:12px}
+.search input{flex:1;border:0;background:none;color:var(--text);padding:12px 0;font-size:15px;outline:none;min-width:0}
+.search svg{width:18px;height:18px;color:var(--muted)}
+.seg{display:flex;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:4px;margin-bottom:14px}
+.seg button{flex:1;border:0;background:none;padding:9px 6px;border-radius:10px;font-weight:600;font-size:13px;color:var(--muted);cursor:pointer}
+.seg button.active{background:var(--accent);color:#fff;box-shadow:0 6px 16px rgba(109,93,252,.35)}
+
+/* budget */
+.donut-wrap{display:flex;align-items:center;gap:18px}
+.donut{position:relative;width:132px;height:132px;flex:none}
+.donut svg{width:100%;height:100%;transform:rotate(-90deg)}
+.donut .center{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+.donut .center b{font-size:20px;font-weight:800;letter-spacing:-.4px;display:block}
+.donut .center span{font-size:11px;color:var(--muted);font-weight:600}
+.legend{flex:1;display:flex;flex-direction:column;gap:8px;min-width:0}
+.legend div{display:flex;align-items:center;gap:8px;font-size:13px}
+.legend i{width:10px;height:10px;border-radius:3px;flex:none}
+.legend span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.legend b{font-weight:700}
+.progress{height:10px;background:var(--line);border-radius:999px;overflow:hidden;margin-top:10px}
+.progress i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .6s var(--ease)}
+.bars{display:flex;align-items:flex-end;gap:3px;height:90px;margin-top:12px}
+.bars i{flex:1;background:linear-gradient(180deg,var(--accent2),var(--accent));border-radius:4px 4px 2px 2px;min-height:3px;opacity:.9}
+.bars i.zero{background:var(--line);opacity:1}
+.month-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.month-nav b{font-size:15px}
+
+/* bottom nav */
+.nav{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(12px + var(--safe-b));width:calc(100% - 24px);max-width:496px;z-index:20;background:var(--glass);border:1px solid var(--line);border-radius:26px;backdrop-filter:blur(22px) saturate(1.4);-webkit-backdrop-filter:blur(22px) saturate(1.4);box-shadow:var(--shadow);display:grid;grid-template-columns:1fr 1fr 84px 1fr 1fr;align-items:center;height:70px;padding:0 6px}
+.nav button.tab{border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--faint);font-size:10.5px;font-weight:600;cursor:pointer;padding:8px 0}
+.nav button.tab svg{width:22px;height:22px}
+.nav button.tab.active{color:var(--text)}
+.nav button.tab.active svg{color:var(--accent)}
+.orb{justify-self:center;width:68px;height:68px;margin-top:-34px;border-radius:50%;border:0;cursor:pointer;background:radial-gradient(circle at 30% 30%,#a99dff,var(--accent) 45%,#3b2fd6);box-shadow:0 12px 30px rgba(109,93,252,.55),inset 0 2px 6px rgba(255,255,255,.35);display:grid;place-items:center;color:#fff;position:relative;transition:transform .2s var(--ease)}
+.orb:active{transform:scale(.94)}
+.orb svg{width:28px;height:28px}
+.orb::before{content:"";position:absolute;inset:-6px;border-radius:50%;border:2px solid rgba(109,93,252,.35);animation:breathe 3s ease-in-out infinite}
+@keyframes breathe{50%{transform:scale(1.08);opacity:.4}}
+
+/* assistant sheet */
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:30;opacity:0;pointer-events:none;transition:opacity .3s}
+.sheet-bg.open{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:50%;bottom:0;transform:translate(-50%,105%);width:100%;max-width:520px;height:min(86vh,760px);z-index:31;background:var(--bg2);border:1px solid var(--line);border-bottom:0;border-radius:28px 28px 0 0;display:flex;flex-direction:column;transition:transform .42s var(--ease);box-shadow:0 -20px 60px rgba(0,0,0,.4)}
+.sheet.open{transform:translate(-50%,0)}
+.grab{width:42px;height:5px;border-radius:9px;background:var(--faint);opacity:.5;margin:10px auto 4px}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;padding:6px 16px 8px}
+.sheet-head b{font-size:16px}
+.chat{flex:1;overflow-y:auto;padding:8px 16px 12px;display:flex;flex-direction:column;gap:10px}
+.msg{max-width:84%;padding:11px 14px;border-radius:18px;font-size:15px;animation:fadeUp .3s var(--ease);word-wrap:break-word}
+.msg.me{align-self:flex-end;background:var(--accent);color:#fff;border-bottom-right-radius:6px}
+.msg.ai{align-self:flex-start;background:var(--card-solid);border:1px solid var(--line);border-bottom-left-radius:6px}
+.msg.ai .who{font-size:11px;font-weight:700;color:var(--accent);margin-bottom:2px}
+.voice-stage{display:flex;flex-direction:column;align-items:center;gap:10px;padding:8px 16px 4px}
+.wave{display:flex;align-items:center;gap:4px;height:40px}
+.wave i{width:4px;border-radius:4px;background:linear-gradient(180deg,var(--accent2),var(--accent));height:6px;transition:height .1s}
+.listening .wave i{animation:wv 1s ease-in-out infinite}
+.wave i:nth-child(2){animation-delay:.1s}.wave i:nth-child(3){animation-delay:.2s}.wave i:nth-child(4){animation-delay:.3s}.wave i:nth-child(5){animation-delay:.4s}.wave i:nth-child(6){animation-delay:.3s}.wave i:nth-child(7){animation-delay:.2s}.wave i:nth-child(8){animation-delay:.1s}
+@keyframes wv{0%,100%{height:6px}50%{height:34px}}
+.live{min-height:22px;color:var(--muted);text-align:center;font-size:15px;padding:0 10px}
+.composer{display:flex;gap:8px;align-items:center;padding:10px 12px calc(12px + var(--safe-b));border-top:1px solid var(--line)}
+.composer input{flex:1;min-width:0;border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:999px;padding:13px 16px;font-size:16px;outline:none}
+.composer input:focus{border-color:var(--accent)}
+.round{flex:none;width:48px;height:48px;border-radius:50%;border:0;display:grid;place-items:center;cursor:pointer;background:var(--card);border:1px solid var(--line)}
+.round svg{width:22px;height:22px}
+.round.primary{background:var(--accent);border:0;color:#fff;box-shadow:0 8px 18px rgba(109,93,252,.4)}
+.round.rec{background:var(--bad);animation:pulse 1.3s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(244,63,94,.55)}70%{box-shadow:0 0 0 18px rgba(244,63,94,0)}100%{box-shadow:0 0 0 0 rgba(244,63,94,0)}}
+.suggest{display:flex;gap:8px;overflow-x:auto;padding:0 16px 8px;scrollbar-width:none}
+.suggest::-webkit-scrollbar{display:none}
+
+/* settings */
+.set-group{background:var(--card);border:1px solid var(--line);border-radius:20px;overflow:hidden;margin-bottom:16px}
+.set-row{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.set-row:last-child{border-bottom:0}
+.set-row .lbl{flex:1;min-width:0}
+.set-row .lbl b{display:block;font-weight:600}
+.set-row .lbl small{color:var(--muted);font-size:12.5px}
+.set-ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-size:17px;flex:none}
+select,.set-row input[type=number],.set-row input[type=text]{background:var(--bg2);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font:inherit;font-size:14px;max-width:150px}
+input[type=range]{width:120px;accent-color:var(--accent)}
+.switch{position:relative;width:50px;height:30px;flex:none}
+.switch input{opacity:0;width:0;height:0}
+.switch span{position:absolute;inset:0;border-radius:999px;background:var(--faint);transition:.2s;cursor:pointer}
+.switch span::after{content:"";position:absolute;left:3px;top:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:.2s var(--ease)}
+.switch input:checked+span{background:var(--good)}
+.switch input:checked+span::after{transform:translateX(20px)}
+.swatches{display:flex;gap:8px}
+.swatches button{width:26px;height:26px;border-radius:50%;border:2px solid transparent;cursor:pointer}
+.swatches button.on{border-color:var(--text)}
+.btn{border:0;border-radius:14px;padding:12px 16px;font-weight:700;cursor:pointer;background:var(--accent);color:#fff}
+.btn.ghost{background:var(--card);color:var(--text);border:1px solid var(--line)}
+.btn.danger{background:rgba(244,63,94,.14);color:var(--bad)}
+.voice-list{max-height:260px;overflow-y:auto}
+.vrow{display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:1px solid var(--line);cursor:pointer}
+.vrow:last-child{border-bottom:0}
+.vrow .radio{width:20px;height:20px;border-radius:50%;border:2px solid var(--faint);flex:none}
+.vrow.on .radio{border:6px solid var(--accent)}
+.vrow .nm{flex:1;min-width:0;font-size:14px}
+.vrow .nm small{display:block;color:var(--muted);font-size:11.5px}
+.star{font-size:10px;font-weight:800;color:var(--good);background:rgba(34,197,94,.14);padding:2px 6px;border-radius:999px}
+.tip{font-size:13px;color:var(--muted);background:var(--accent-soft);border-radius:14px;padding:12px 14px;margin:-6px 0 16px}
+.tip b{color:var(--text)}
+
+/* toast + modal */
+.toast{position:fixed;left:50%;bottom:calc(98px + var(--safe-b));transform:translate(-50%,20px);background:var(--card-solid);border:1px solid var(--line);color:var(--text);padding:12px 14px 12px 16px;border-radius:16px;box-shadow:var(--shadow);z-index:40;opacity:0;pointer-events:none;transition:.3s var(--ease);display:flex;gap:12px;align-items:center;max-width:calc(100% - 32px);font-weight:500}
+.toast.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+.toast button{border:0;background:none;color:var(--accent);font-weight:700;cursor:pointer}
+.modal{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.55);backdrop-filter:blur(6px)}
+.modal.open{display:flex}
+.modal .box{width:100%;max-width:420px;background:var(--bg2);border:1px solid var(--line);border-radius:24px;padding:18px;animation:fadeUp .25s var(--ease)}
+.modal h4{margin:0 0 12px;font-size:17px}
+.modal textarea,.modal input,.modal select{width:100%;background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:12px;font:inherit;font-size:16px;margin-bottom:10px;max-width:none}
+.modal textarea{min-height:110px;resize:vertical}
+.modal .row{display:flex;gap:8px;justify-content:flex-end;margin-top:6px}
+.banner{display:none;margin-bottom:14px}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <div><h1>Jarvis <span>2.0</span></h1><div class="sub" id="greet">Tap the mic and talk.</div></div>
-    <button class="small-btn" id="bell" title="Allow reminder alerts">🔔 Alerts</button>
-  </header>
+<div class="app">
 
-  <div class="warn" id="noSpeech">Voice input isn't supported in this browser. On iPhone use Safari; on Android use Chrome. You can still paste text below.</div>
+  <!-- ============ HOME ============ -->
+  <section class="view active" id="v-home">
+    <div class="top">
+      <div class="brand">
+        <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M4 12h2l2-6 4 12 3-9 2 3h3"/></svg></div>
+        <div><b>Jarvis</b><small id="today"></small></div>
+      </div>
+      <button class="icon-btn" data-go="settings" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+    </div>
 
-  <div class="mic-zone">
-    <button id="mic" aria-label="Tap to talk">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v5"/></svg>
-    </button>
-    <div id="heard">Try: “Paid 15 dollars for groceries”</div>
-    <div id="reply"></div>
-  </div>
+    <div class="card banner" id="noSpeech" style="border-color:var(--warn)">🎙️ Voice isn't available in this browser. Use <b>Safari</b> on iPhone or <b>Chrome</b> on Android. You can still type.</div>
 
-  <div class="tabs">
-    <button data-tab="notes" class="active">Notes</button>
-    <button data-tab="reminders">Reminders</button>
-    <button data-tab="budget">Budget</button>
-  </div>
+    <div class="hero">
+      <div class="hi" id="greet">Good morning</div>
+      <div class="big" id="heroLine">What can I do for you today?</div>
+      <div class="hero-stats">
+        <div><b id="hsSpent">$0</b><span>Spent this month</span></div>
+        <div><b id="hsRem">0</b><span>Reminders today</span></div>
+        <div><b id="hsNotes">0</b><span>Notes</span></div>
+      </div>
+    </div>
 
-  <section class="panel active" id="notes"></section>
-  <section class="panel" id="reminders"></section>
-  <section class="panel" id="budget"></section>
+    <div class="chips" id="homeChips"></div>
 
-  <div class="help" style="margin-top:16px">
-    <b>Things you can say</b>
-    <ul>
-      <li>“Note: call the bank about my card”</li>
-      <li>“Remind me to pay rent tomorrow at 9 am”</li>
-      <li>“Remind me in 20 minutes to check the oven”</li>
-      <li>“Paid 15 dollars for groceries” · “Spent 40 on gas”</li>
-      <li>“How much did I spend this month?”</li>
-      <li>“Read my notes” · “What are my reminders?”</li>
-      <li>“Delete last note” · “Undo last expense”</li>
-    </ul>
-    <div class="paste"><input id="pasteBox" placeholder="Or paste text here"><button id="pasteGo">Go</button></div>
+    <div class="section-h"><h3>Budget</h3><button class="link" data-go="budget">Details</button></div>
+    <div class="card" id="homeBudget"></div>
+
+    <div class="section-h"><h3>Up next</h3><button class="link" data-go="reminders">All</button></div>
+    <div class="list" id="homeRem"></div>
+
+    <div class="section-h"><h3>Recent notes</h3><button class="link" data-go="notes">All</button></div>
+    <div class="list" id="homeNotes"></div>
+  </section>
+
+  <!-- ============ NOTES ============ -->
+  <section class="view" id="v-notes">
+    <h2>Notes</h2><p class="lede">Say “Note: …” or tap a note to edit it.</p>
+    <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="noteSearch" placeholder="Search notes"></div>
+    <div class="seg" id="noteFilter"><button data-f="all" class="active">All</button><button data-f="pinned">Pinned</button><button data-f="idea">Ideas</button><button data-f="work">Work</button><button data-f="personal">Personal</button></div>
+    <div class="list" id="noteList"></div>
+    <button class="btn ghost" style="width:100%;margin-top:14px" id="addNoteBtn">+ New note</button>
+  </section>
+
+  <!-- ============ REMINDERS ============ -->
+  <section class="view" id="v-reminders">
+    <h2>Reminders</h2><p class="lede">“Remind me to call mom every Sunday at 6 pm”</p>
+    <div class="seg" id="remFilter"><button data-f="upcoming" class="active">Upcoming</button><button data-f="overdue">Overdue</button><button data-f="done">Done</button></div>
+    <div class="list" id="remList"></div>
+    <button class="btn ghost" style="width:100%;margin-top:14px" id="addRemBtn">+ New reminder</button>
+  </section>
+
+  <!-- ============ BUDGET ============ -->
+  <section class="view" id="v-budget">
+    <h2>Budget</h2><p class="lede">“Paid 15 dollars for groceries” · “Got paid 2000”</p>
+    <div class="month-nav"><button class="icon-btn" id="prevM" aria-label="Previous month">‹</button><b id="monthLabel"></b><button class="icon-btn" id="nextM" aria-label="Next month">›</button></div>
+    <div class="grid2" id="budgetStats"></div>
+    <div class="card" style="margin-top:12px" id="budgetGoal"></div>
+    <div class="section-h"><h3>Where it went</h3></div>
+    <div class="card" id="donutCard"></div>
+    <div class="section-h"><h3>Daily spending</h3></div>
+    <div class="card" id="dailyCard"></div>
+    <div class="section-h"><h3>Transactions</h3><button class="link" id="addExpBtn">+ Add</button></div>
+    <div class="list" id="txList"></div>
+  </section>
+
+  <!-- ============ SETTINGS ============ -->
+  <section class="view" id="v-settings">
+    <h2>Settings</h2><p class="lede">Make Jarvis yours.</p>
+
+    <div class="section-h"><h3>Voice</h3></div>
+    <div class="tip" id="voiceTip"></div>
+    <div class="set-group">
+      <div class="set-row"><div class="set-ic" style="background:rgba(109,93,252,.15)">🔊</div><div class="lbl"><b>Speak replies</b><small>Jarvis talks back</small></div><label class="switch"><input type="checkbox" id="sSpeak"><span></span></label></div>
+      <div class="set-row"><div class="set-ic" style="background:rgba(34,211,238,.15)">⏩</div><div class="lbl"><b>Speed</b></div><input type="range" id="sRate" min="0.7" max="1.4" step="0.05"></div>
+      <div class="set-row"><div class="set-ic" style="background:rgba(245,158,11,.15)">🎚️</div><div class="lbl"><b>Pitch</b></div><input type="range" id="sPitch" min="0.6" max="1.4" step="0.05"></div>
+    </div>
+    <div class="set-group"><div class="set-row" style="padding-bottom:8px"><div class="lbl"><b>Choose a voice</b><small>Tap to hear it. ★ = most natural.</small></div></div><div class="voice-list" id="voiceList"></div></div>
+
+    <div class="section-h"><h3>Personal</h3></div>
+    <div class="set-group">
+      <div class="set-row"><div class="set-ic" style="background:rgba(34,197,94,.15)">👤</div><div class="lbl"><b>Your name</b></div><input type="text" id="sName"></div>
+      <div class="set-row"><div class="set-ic" style="background:rgba(34,197,94,.15)">💵</div><div class="lbl"><b>Currency</b></div><select id="sCur"><option>$</option><option>€</option><option>£</option><option>L£</option><option>AED</option><option>SAR</option></select></div>
+      <div class="set-row"><div class="set-ic" style="background:rgba(34,197,94,.15)">🎯</div><div class="lbl"><b>Monthly budget</b><small>Or say “Set my budget to 1500”</small></div><input type="number" id="sBudget" inputmode="decimal"></div>
+    </div>
+
+    <div class="section-h"><h3>Look</h3></div>
+    <div class="set-group">
+      <div class="set-row"><div class="set-ic" style="background:rgba(109,93,252,.15)">🌗</div><div class="lbl"><b>Theme</b></div><select id="sTheme"><option value="dark">Dark</option><option value="light">Light</option><option value="auto">Match phone</option></select></div>
+      <div class="set-row"><div class="set-ic" style="background:rgba(244,63,94,.15)">🎨</div><div class="lbl"><b>Accent color</b></div><div class="swatches" id="swatches"></div></div>
+    </div>
+
+    <div class="section-h"><h3>Alerts &amp; data</h3></div>
+    <div class="set-group">
+      <div class="set-row"><div class="set-ic" style="background:rgba(245,158,11,.15)">🔔</div><div class="lbl"><b>Reminder alerts</b><small id="notifState">Pop-up alerts on this device</small></div><button class="btn ghost" id="notifBtn">Turn on</button></div>
+      <div class="set-row"><div class="set-ic" style="background:rgba(34,211,238,.15)">💾</div><div class="lbl"><b>Backup</b><small>Save or restore all your data</small></div><button class="btn ghost" id="exportBtn">Save</button><button class="btn ghost" id="importBtn">Restore</button></div>
+      <div class="set-row"><div class="set-ic" style="background:rgba(244,63,94,.15)">🗑️</div><div class="lbl"><b>Erase everything</b></div><button class="btn danger" id="wipeBtn">Erase</button></div>
+    </div>
+    <p style="text-align:center;color:var(--faint);font-size:12px">Jarvis 2.0 · v2 · Your data stays on this device.</p>
+    <input type="file" id="importFile" accept="application/json" hidden>
+  </section>
+</div>
+
+<!-- bottom nav -->
+<nav class="nav">
+  <button class="tab active" data-go="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</button>
+  <button class="tab" data-go="notes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>Notes</button>
+  <button class="orb" id="orb" aria-label="Talk to Jarvis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="2.5" width="6" height="12" rx="3"/><path d="M5 10.5a7 7 0 0 0 14 0M12 17.5V21"/></svg></button>
+  <button class="tab" data-go="reminders"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg>Reminders</button>
+  <button class="tab" data-go="budget"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20M6 15h4"/></svg>Budget</button>
+</nav>
+
+<!-- assistant sheet -->
+<div class="sheet-bg" id="sheetBg"></div>
+<div class="sheet" id="sheet" role="dialog" aria-label="Jarvis assistant">
+  <div class="grab"></div>
+  <div class="sheet-head"><b>Jarvis</b><button class="icon-btn" id="closeSheet" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+  <div class="chat" id="chat"></div>
+  <div class="voice-stage" id="stage"><div class="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="live" id="live">Tap the mic and talk, or type below.</div></div>
+  <div class="suggest" id="suggest"></div>
+  <div class="composer">
+    <input id="textIn" placeholder="Type or paste a message…" autocomplete="off" enterkeyhint="send">
+    <button class="round" id="sendBtn" aria-label="Send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+    <button class="round primary" id="micBtn" aria-label="Talk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="2.5" width="6" height="12" rx="3"/><path d="M5 10.5a7 7 0 0 0 14 0M12 17.5V21"/></svg></button>
   </div>
 </div>
 
+<div class="toast" id="toast"><span id="toastText"></span><button id="toastUndo">Undo</button></div>
+<div class="modal" id="modal"><div class="box" id="modalBox"></div></div>
+
 <script>
-// ---------- storage (kept on this phone only) ----------
+/* =========================================================
+   DATA (saved only on this device)
+   ========================================================= */
 const KEY = 'jarvis2';
-let db = {notes:[], reminders:[], expenses:[]};
-try { db = Object.assign(db, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch(e){}
-const save = () => { try { localStorage.setItem(KEY, JSON.stringify(db)); } catch(e){} };
-const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+const DEFAULT_SETTINGS = {name:'Bilal', currency:'$', budget:0, speak:true, rate:1, pitch:1, voice:'', theme:'dark', accent:'#6d5dfc'};
+let db = {notes:[], reminders:[], expenses:[], settings:{...DEFAULT_SETTINGS}};
+try {
+  const saved = JSON.parse(localStorage.getItem(KEY) || '{}');
+  db = Object.assign(db, saved); db.settings = Object.assign({...DEFAULT_SETTINGS}, saved.settings || {});
+  // upgrade v1 data
+  db.expenses.forEach(e=>{ if (!e.type) e.type = 'expense'; if (e.cat==='Food') e.cat = 'Food & drink'; });
+  db.notes.forEach(n=>{ if (!n.tag) n.tag = guessTag(n.text); });
+  db.reminders.forEach(r=>{ if (!r.repeat) r.repeat = 'none'; });
+} catch(e){}
+const S = db.settings;
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(db)); } catch(e){} }
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
-// ---------- talking back ----------
-function say(text){
-  document.getElementById('reply').textContent = text;
-  try { if ('speechSynthesis' in window){ speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.rate = 1.02; speechSynthesis.speak(u); } } catch(e){}
+/* =========================================================
+   VOICE OUT: choose the most natural voice available
+   ========================================================= */
+let voices = [];
+const GOOD = [/natural/i,/neural/i,/premium/i,/enhanced/i,/siri/i,/google us english/i,/google uk english/i,/\bava\b/i,/\bzoe\b/i,/samantha/i,/\bevan\b/i,/\bnoelle\b/i,/aria/i,/jenny/i,/guy/i,/serena/i,/daniel/i,/karen/i,/moira/i];
+const BAD = [/compact/i,/eloquence/i,/albert|bahh|bells|boing|bubbles|cellos|deranged|good news|hysterical|jester|organ|superstar|trinoids|whisper|wobble|zarvox|fred|junior|ralph|kathy|bad news|grandma|grandpa|flo|reed|rocko|sandy|shelley/i];
+function voiceScore(v){
+  let s = 0; const n = v.name;
+  if (/^en/i.test(v.lang)) s += 50;
+  if (/^en-(US|GB)/i.test(v.lang)) s += 8;
+  GOOD.forEach((r,i)=>{ if (r.test(n)) s += 40 - i; });
+  if (/natural|neural|premium|enhanced/i.test(n)) s += 40;
+  if (!v.localService) s += 6; // cloud voices are usually more natural
+  BAD.forEach(r=>{ if (r.test(n)) s -= 80; });
+  return s;
 }
+function isNatural(v){ return /natural|neural|premium|enhanced|siri|google/i.test(v.name) && !BAD.some(r=>r.test(v.name)); }
+function loadVoices(){
+  try { voices = speechSynthesis.getVoices().filter(v=>/^en/i.test(v.lang)).sort((a,b)=>voiceScore(b)-voiceScore(a)); } catch(e){ voices = []; }
+  renderVoices();
+}
+function currentVoice(){ return voices.find(v=>v.name===S.voice) || voices[0] || null; }
+function speak(text){
+  if (!S.speak) return;
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text.replace(/[•·]/g,','));
+    const v = currentVoice(); if (v){ u.voice = v; u.lang = v.lang; }
+    u.rate = +S.rate; u.pitch = +S.pitch; speechSynthesis.speak(u);
+  } catch(e){}
+}
+if ('speechSynthesis' in window){ loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; setTimeout(loadVoices, 600); }
 
-// ---------- number words → digits ----------
-const UNITS = {zero:0,one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,eleven:11,twelve:12,thirteen:13,fourteen:14,fifteen:15,sixteen:16,seventeen:17,eighteen:18,nineteen:19,a:1,an:1};
+/* =========================================================
+   UNDERSTANDING SPEECH
+   ========================================================= */
+const UNITS = {zero:0,one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,eleven:11,twelve:12,thirteen:13,fourteen:14,fifteen:15,sixteen:16,seventeen:17,eighteen:18,nineteen:19};
 const TENS = {twenty:20,thirty:30,forty:40,fifty:50,sixty:60,seventy:70,eighty:80,ninety:90};
 function wordsToNumbers(s){
   const out = []; let cur = null, total = 0;
@@ -116,7 +413,7 @@ function wordsToNumbers(s){
   for (const tok of s.split(/\s+/)){
     const w = tok.toLowerCase().replace(/[^a-z-]/g,'');
     const parts = w ? w.split('-') : [];
-    let isNum = parts.length > 0 && parts.every(p => p in TENS || (p in UNITS && p!=='a' && p!=='an') || ((p==='hundred'||p==='thousand') && cur!==null));
+    const isNum = parts.length > 0 && parts.every(p => p in TENS || p in UNITS || ((p==='hundred'||p==='thousand') && cur!==null));
     if (isNum){
       for (const p of parts){
         if (p in TENS) cur = (cur||0) + TENS[p];
@@ -126,27 +423,28 @@ function wordsToNumbers(s){
       }
     } else { flush(); out.push(tok); }
   }
-  flush();
-  return out.join(' ');
+  flush(); return out.join(' ');
 }
-
-// ---------- time parsing for reminders ----------
+function escRe(s){ return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
 function parseTime(text){
-  let t = text.toLowerCase(); const now = new Date(); let d = null; let matched = [];
-  let m;
-  if ((m = t.match(/\bin (\d+(?:\.\d+)?) (minute|minutes|min|mins|hour|hours|hr|hrs|day|days|week|weeks)\b/))){
-    const n = parseFloat(m[1]); const u = m[2];
-    const ms = /min/.test(u)?6e4:/h/.test(u)?36e5:/day/.test(u)?864e5:6048e5;
-    d = new Date(now.getTime() + n*ms); matched.push(m[0]);
-  } else if ((m = t.match(/\bin (half an hour|an hour|a minute)\b/))){
-    d = new Date(now.getTime() + (m[1]==='half an hour'?18e5:m[1]==='an hour'?36e5:6e4)); matched.push(m[0]);
+  const t = text.toLowerCase(); const now = new Date(); let d = null; const matched = []; let m; let repeat = 'none';
+  if ((m = t.match(/\b(every ?day|daily|each day)\b/))){ repeat='daily'; matched.push(m[0]); }
+  else if ((m = t.match(/\b(every week|weekly)\b/))){ repeat='weekly'; matched.push(m[0]); }
+  else if ((m = t.match(/\b(every month|monthly)\b/))){ repeat='monthly'; matched.push(m[0]); }
+  else if ((m = t.match(/\bevery (sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/))){ repeat='weekly'; matched.push('every'); }
+  if ((m = t.match(/\bin (\d+(?:\.\d+)?) (seconds?|secs?|minutes?|mins?|hours?|hrs?|days?|weeks?)\b/))){
+    const n = parseFloat(m[1]), u = m[2];
+    const ms = /^s/.test(u)?1e3:/^m/.test(u)?6e4:/^h/.test(u)?36e5:/^d/.test(u)?864e5:6048e5;
+    d = new Date(now.getTime()+n*ms); matched.push(m[0]);
+  } else if ((m = t.match(/\bin (half an hour|an hour|a minute|a few minutes)\b/))){
+    d = new Date(now.getTime()+({'half an hour':18e5,'an hour':36e5,'a minute':6e4,'a few minutes':3e5})[m[1]]); matched.push(m[0]);
   }
   if (!d){
-    let base = new Date(now); let dayWord = false;
+    let base = new Date(now), dayWord = false, night = false;
     if ((m = t.match(/\b(tomorrow)\b/))){ base.setDate(base.getDate()+1); dayWord = true; matched.push(m[0]); }
-    else if ((m = t.match(/\b(today|tonight)\b/))){ dayWord = true; matched.push(m[0]); if (m[1]==='tonight') base._night = true; }
+    else if ((m = t.match(/\b(today|tonight|this evening)\b/))){ dayWord = true; matched.push(m[0]); night = m[1]!=='today'; }
     const days = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
-    if ((m = t.match(/\b(?:on |next )?(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/))){
+    if ((m = t.match(/\b(?:on |next |this )?(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/))){
       let diff = (days.indexOf(m[1]) - now.getDay() + 7) % 7; if (diff===0) diff = 7;
       base = new Date(now); base.setDate(now.getDate()+diff); dayWord = true; matched.push(m[0]);
     }
@@ -156,181 +454,440 @@ function parseTime(text){
       if (h===12) h = pm?12:0; else if (pm) h += 12; matched.push(m[0]);
     } else if ((m = t.match(/\bat (\d{1,2})(?::(\d{2}))?\b/))){
       h = parseInt(m[1]); min = parseInt(m[2]||'0'); matched.push(m[0]);
-      if (h < 12 && h <= 7) h += 12; // "at 5" usually means 5 pm
-      if (base._night && h < 12) h += 12;
-    } else if ((m = t.match(/\b(?:in the )?(morning|afternoon|evening|noon|midnight)\b/))){
+      if (h <= 7 || (night && h < 12)) h += 12;
+    } else if ((m = t.match(/\b(?:in the |this )?(morning|afternoon|evening|noon|midnight)\b/))){
       h = {morning:9,afternoon:14,evening:19,noon:12,midnight:0}[m[1]]; matched.push(m[0]);
     }
-    if (h === null && base._night) h = 20;
-    if (h !== null || dayWord){
+    if (h===null && night) h = 20;
+    if (h!==null || dayWord){
       d = new Date(base); d.setHours(h===null?9:h, h===null?0:min, 0, 0);
       if (!dayWord && d <= now) d.setDate(d.getDate()+1);
     }
+    if (!d && repeat!=='none'){ d = new Date(now); d.setHours(9,0,0,0); if (d<=now) d.setDate(d.getDate()+1); }
   }
   let rest = text;
-  for (const s of matched){ rest = rest.replace(new RegExp(s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'i'), ' '); }
-  rest = rest.replace(/\s+/g,' ').replace(/\b(at|on|in)\s*$/i,'').trim();
-  return {date:d, rest};
+  matched.forEach(s=>{ rest = rest.replace(new RegExp(escRe(s),'i'),' '); });
+  rest = rest.replace(/\s+/g,' ').replace(/\b(at|on|in)\s*$/i,'').replace(/^\s*(to|that|about)\s+/i,'').trim();
+  return {date:d, rest, repeat};
 }
 
-// ---------- categories ----------
 const CATS = {
-  Groceries:['grocer','supermarket','food shop','market','vegetable','fruit'],
-  Food:['restaurant','lunch','dinner','breakfast','coffee','cafe','pizza','burger','snack','takeout','delivery','food'],
-  Transport:['gas','fuel','petrol','taxi','uber','bus','train','parking','car','transport'],
-  Bills:['rent','electric','water bill','internet','phone','bill','subscription','netflix','spotify'],
-  Shopping:['clothes','shoes','amazon','shopping','gift'],
-  Health:['pharmacy','doctor','medicine','gym','health'],
-  Fun:['movie','cinema','game','party','drinks','fun','concert']
+  Groceries:{ic:'🛒',c:'#22c55e',k:['grocer','supermarket','market','vegetable','fruit','milk','bread']},
+  'Food & drink':{ic:'🍔',c:'#f59e0b',k:['restaurant','lunch','dinner','breakfast','coffee','cafe','pizza','burger','snack','takeout','delivery','food','shawarma','manakish','drink']},
+  Transport:{ic:'🚗',c:'#0ea5e9',k:['gas','fuel','petrol','taxi','uber','bolt','bus','train','parking','car','transport','service']},
+  Bills:{ic:'🧾',c:'#a855f7',k:['rent','electric','generator','water','internet','phone','bill','subscription','netflix','spotify','insurance']},
+  Shopping:{ic:'🛍️',c:'#ec4899',k:['clothes','shoes','amazon','shopping','gift','shirt']},
+  Health:{ic:'💊',c:'#ef4444',k:['pharmacy','doctor','medicine','gym','health','dentist']},
+  Fun:{ic:'🎉',c:'#6366f1',k:['movie','cinema','game','party','fun','concert','bar','club']},
+  Other:{ic:'💸',c:'#64748b',k:[]}
 };
-function categorize(desc){ const d = desc.toLowerCase(); for (const [c,keys] of Object.entries(CATS)) if (keys.some(k=>d.includes(k))) return c; return 'Other'; }
+const INCOME_IC = '💰';
+function categorize(desc){ const d = desc.toLowerCase(); for (const [c,v] of Object.entries(CATS)) if (v.k.some(k=>d.includes(k))) return c; return 'Other'; }
+function guessTag(text){ const t = (text||'').toLowerCase();
+  if (/idea|maybe|what if|could build|app|startup/.test(t)) return 'idea';
+  if (/work|meeting|client|boss|office|report|email|deadline|project/.test(t)) return 'work';
+  return 'personal'; }
+const TAGS = {idea:{ic:'💡',c:'#f59e0b'}, work:{ic:'💼',c:'#0ea5e9'}, personal:{ic:'🏠',c:'#22c55e'}};
 
-// ---------- money ----------
-const fmt = n => '$' + n.toLocaleString('en-US',{minimumFractionDigits:(n%1?2:0),maximumFractionDigits:2});
-function monthKey(d){ d = new Date(d); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
-function monthTotal(key){ return db.expenses.filter(e=>monthKey(e.at)===key).reduce((s,e)=>s+e.amount,0); }
-
-// ---------- the brain: understand what was said ----------
-function handle(raw){
-  const said = raw.trim(); if (!said) return;
-  document.getElementById('heard').textContent = '“' + said + '”';
-  const t = wordsToNumbers(said.toLowerCase()).replace(/[,!?]/g,'').trim();
-
-  // questions about spending
-  if (/how much (did|have) i (spend|spent)|what did i spend|my spending|budget summary|total spending/.test(t)){
-    const key = monthKey(Date.now()); const tot = monthTotal(key);
-    const byCat = {}; db.expenses.filter(e=>monthKey(e.at)===key).forEach(e=>byCat[e.cat]=(byCat[e.cat]||0)+e.amount);
-    const top = Object.entries(byCat).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([c,v])=>c+' '+fmt(v)).join(', ');
-    showTab('budget');
-    return say(tot ? `This month you spent ${fmt(tot)}. Biggest: ${top}.` : `No spending recorded this month yet.`);
-  }
-  // read back
-  if (/(read|what are|show|list).*(note)/.test(t)){
-    showTab('notes'); const n = db.notes.slice(0,5);
-    return say(n.length ? 'Your latest notes: ' + n.map(x=>x.text).join('. ') : 'You have no notes yet.');
-  }
-  if (/(read|what are|show|list|any).*(reminder)/.test(t)){
-    showTab('reminders'); const r = db.reminders.filter(x=>!x.done).sort((a,b)=>a.at-b.at).slice(0,5);
-    return say(r.length ? 'Coming up: ' + r.map(x=>x.text+', '+whenText(x.at)).join('. ') : 'You have no reminders.');
-  }
-  // undo / delete
-  if (/(delete|remove|undo|cancel) (the )?last (note)/.test(t)){ const x = db.notes.shift(); save(); render(); return say(x?'Deleted your last note.':'No notes to delete.'); }
-  if (/(delete|remove|undo|cancel) (the )?last (expense|payment|spend)/.test(t)){ db.expenses.sort((a,b)=>b.at-a.at); const x = db.expenses.shift(); save(); render(); return say(x?`Removed ${fmt(x.amount)} for ${x.desc}.`:'No expenses to remove.'); }
-  if (/(delete|remove|undo|cancel) (the )?last (reminder)/.test(t)){ db.reminders.sort((a,b)=>b.created-a.created); const x = db.reminders.shift(); save(); render(); return say(x?'Removed your last reminder.':'No reminders to remove.'); }
-
-  // reminders
-  let m = said.match(/^(?:hey jarvis,?\s*)?(?:please\s+)?(?:remind me|set a reminder|reminder)\s*(?:to|that|about|for)?\s*(.*)$/i);
-  if (m){
-    const {date, rest} = parseTime(wordsToNumbers(m[1]));
-    let text = rest.replace(/^(to|that|about)\s+/i,'').trim() || 'Reminder';
-    const when = date || new Date(Date.now()+36e5);
-    db.reminders.push({id:uid(), text, at:when.getTime(), done:false, created:Date.now()}); save(); render(); showTab('reminders');
-    askNotify();
-    return say(`I'll remind you to ${text}, ${whenText(when.getTime())}.` + (date?'':' I picked one hour from now since you did not say a time.'));
-  }
-
-  // notes (anything else is saved as a note)
-  m = said.match(/^(?:hey jarvis,?\s*)?(?:take a note|new note|note|write down|remember that|remember)\s*[:,-]?\s*(?:that\s+)?(.*)$/i);
-  if (m){ const text = m[1].trim(); db.notes.unshift({id:uid(), text: text.charAt(0).toUpperCase()+text.slice(1), at:Date.now()}); save(); render(); showTab('notes'); return say('Note saved.'); }
-  // expenses: "paid 15 dollars for groceries", "spent $40 on gas", "15 dollars for lunch"
-  m = t.match(/(?:i\s+)?(?:paid|spent|spend|pay|bought|buy|expense|cost)\b.*?\$?\s?(\d+(?:\.\d{1,2})?)\s*(?:dollars?|bucks|usd|\$)?(?:\s*(?:and\s+)?(\d{1,2})\s*cents?)?\s*(?:for|on|at|in)?\s*(.*)$/)
-       || t.match(/^\$?\s?(\d+(?:\.\d{1,2})?)\s*(?:dollars?|bucks|usd)(?:\s*(?:and\s+)?(\d{1,2})\s*cents?)?\s*(?:for|on|at)\s+(.*)$/);
-  if (m){
-    let amount = parseFloat(m[1]) + (m[2]?parseInt(m[2])/100:0);
-    let desc = (m[3]||'').replace(/^(the|some|a|an)\s+/,'').trim();
-    if (!desc){ const before = t.match(/bought (.*?) for/); desc = before?before[1]:'something'; }
-    const exp = {id:uid(), amount, desc, cat:categorize(desc), at:Date.now()};
-    db.expenses.unshift(exp); save(); render(); showTab('budget');
-    return say(`Got it. ${fmt(amount)} for ${desc}, under ${exp.cat}. This month: ${fmt(monthTotal(monthKey(Date.now())))}.`);
-  }
-
-  const text = said;
-  db.notes.unshift({id:uid(), text: text.charAt(0).toUpperCase()+text.slice(1), at:Date.now()}); save(); render(); showTab('notes');
-  say(m ? 'Note saved.' : 'Saved as a note.');
-}
+const fmt = n => { const v = Math.abs(n); const s = v.toLocaleString('en-US',{minimumFractionDigits:(v%1?2:0),maximumFractionDigits:2}); const c = S.currency; return (n<0?'-':'') + (c.length>1? s+' '+c : c+s); };
+const monthKey = d => { d = new Date(d); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); };
+const inMonth = (key, type='expense') => db.expenses.filter(e=>monthKey(e.at)===key && e.type===type);
+const sum = arr => arr.reduce((s,e)=>s+e.amount,0);
 
 function whenText(ts){
   const d = new Date(ts), now = new Date();
   const time = d.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
-  const sameDay = (a,b)=>a.toDateString()===b.toDateString();
+  const same = (a,b)=>a.toDateString()===b.toDateString();
   const tmr = new Date(now); tmr.setDate(now.getDate()+1);
-  if (sameDay(d,now)) return 'today at '+time;
-  if (sameDay(d,tmr)) return 'tomorrow at '+time;
-  return d.toLocaleDateString([], {weekday:'long', month:'short', day:'numeric'})+' at '+time;
+  const yst = new Date(now); yst.setDate(now.getDate()-1);
+  if (same(d,now)) return 'Today, '+time;
+  if (same(d,tmr)) return 'Tomorrow, '+time;
+  if (same(d,yst)) return 'Yesterday, '+time;
+  return d.toLocaleDateString([], {weekday:'short', month:'short', day:'numeric'})+', '+time;
+}
+function whenSpoken(ts){ const w = whenText(ts); return /^(Today|Tomorrow|Yesterday)/.test(w) ? w.charAt(0).toLowerCase()+w.slice(1) : 'on '+w; }
+function ago(ts){ const s = (Date.now()-ts)/1000; if (s<60) return 'just now'; if (s<3600) return Math.floor(s/60)+'m ago'; if (s<86400) return Math.floor(s/3600)+'h ago'; return new Date(ts).toLocaleDateString([], {month:'short',day:'numeric'}); }
+
+/* ---------- the brain ---------- */
+function handle(raw){
+  const said = String(raw||'').trim(); if (!said) return;
+  addMsg('me', said);
+  const reply = think(said);
+  addMsg('ai', reply); speak(reply); renderAll();
+}
+function think(said){
+  const t = wordsToNumbers(said.toLowerCase()).replace(/(\d),(\d{3})/g,'$1$2').replace(/[!?]/g,'').replace(/,/g,' ').replace(/\s+/g,' ').trim();
+  const key = monthKey(Date.now()); let m;
+
+  if (/^(hi|hello|hey|good (morning|afternoon|evening))( jarvis)?$/.test(t)) return `${greeting()}, ${S.name}. What can I do for you?`;
+  if (/\b(help|what can you do)\b/.test(t)) return 'I can take notes, set reminders, track spending and income, and tell you how your month is going. Try: remind me to pay rent tomorrow at 9 am.';
+  if (/thank/.test(t)) return `Anytime, ${S.name}.`;
+
+  // budget goal
+  if ((m = t.match(/(?:set|change|make)(?: my)?(?: monthly)? budget (?:to|at|is)?\s*\$?(\d+(?:\.\d+)?)/)) || (m = t.match(/my (?:monthly )?budget is \$?(\d+(?:\.\d+)?)/))){
+    S.budget = parseFloat(m[1]); save(); go('budget');
+    return `Done. Your monthly budget is now ${fmt(S.budget)}. You've used ${fmt(sum(inMonth(key)))} so far.`;
+  }
+  // spending questions
+  if (/how much (did|have) i (spend|spent)|what did i spend|my spending|spending summary|budget summary|how('s| is) my (budget|month)|how am i doing/.test(t)){
+    go('budget');
+    const tot = sum(inMonth(key)); if (!tot) return 'No spending recorded this month yet.';
+    const byCat = {}; inMonth(key).forEach(e=>byCat[e.cat]=(byCat[e.cat]||0)+e.amount);
+    const top = Object.entries(byCat).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([c,v])=>`${c} ${fmt(v)}`).join(', ');
+    let s = `This month you've spent ${fmt(tot)}. Top categories: ${top}.`;
+    if (S.budget) s += tot > S.budget ? ` That's ${fmt(tot-S.budget)} over your budget.` : ` You have ${fmt(S.budget-tot)} left in your budget.`;
+    return s;
+  }
+  if (/(what('s| is) my balance|how much (did i|have i) (earn|made|make)|my income)/.test(t)){
+    const inc = sum(inMonth(key,'income')), exp = sum(inMonth(key)); go('budget');
+    return `This month: ${fmt(inc)} in, ${fmt(exp)} out. Balance ${fmt(inc-exp)}.`;
+  }
+  // read back
+  if (/(read|what are|show|list|open).*(note)/.test(t)){ go('notes'); const n = db.notes.slice(0,5); return n.length ? 'Your latest notes: ' + n.map(x=>x.text).join('. ') : 'You have no notes yet.'; }
+  if (/(read|what are|show|list|open|any|what('s| is)).*(reminder|today|schedule|plan)/.test(t)){
+    go('reminders'); const r = upcoming().slice(0,5);
+    return r.length ? 'Coming up: ' + r.map(x=>`${x.text}, ${whenText(x.at)}`).join('. ') : 'You have no upcoming reminders.';
+  }
+  if (/(open|show|go to) (the )?(budget|money|expenses)/.test(t)){ go('budget'); return 'Here is your budget.'; }
+  if (/(open|show|go to) (the )?settings/.test(t)){ go('settings'); return 'Opening settings.'; }
+  if (/(dark|light) (mode|theme)/.test(t)){ S.theme = /dark/.test(t)?'dark':'light'; save(); applyTheme(); return `Switched to ${S.theme} mode.`; }
+  // undo
+  if (/(delete|remove|undo|cancel|scratch) (the |my )?last (note)/.test(t)){ const x = db.notes.sort((a,b)=>b.at-a.at).shift(); save(); return x?'Deleted your last note.':'No notes to delete.'; }
+  if ((m = t.match(/(delete|remove|undo|cancel|scratch) (the |my )?last (expense|payment|transaction|income)/))){ const want = m[3]==='income'?'income':m[3]==='transaction'?null:'expense'; const list = db.expenses.filter(e=>!want||e.type===want).sort((a,b)=>b.at-a.at); const x = list[0]; if (x) db.expenses = db.expenses.filter(e=>e!==x); save(); return x?`Removed ${fmt(x.amount)} for ${x.desc}.`:'Nothing to remove.'; }
+  if (/(delete|remove|undo|cancel|scratch) (the |my )?last (reminder)/.test(t)){ db.reminders.sort((a,b)=>b.created-a.created); const x = db.reminders.shift(); save(); return x?'Removed your last reminder.':'No reminders to remove.'; }
+
+  // reminders
+  if ((m = said.match(/^(?:hey jarvis,?\s*)?(?:please\s+)?(?:can you\s+)?(?:remind me|set (?:a )?reminder|reminder|don'?t let me forget)\s*(?:to|that|about|for)?\s*(.*)$/i))){
+    const {date, rest, repeat} = parseTime(wordsToNumbers(m[1]));
+    const text = cap(rest || 'Reminder');
+    const when = date || new Date(Date.now()+36e5);
+    db.reminders.push({id:uid(), text, at:when.getTime(), done:false, repeat, created:Date.now()}); save(); go('reminders');
+    askNotify();
+    return `I'll remind you to ${text.charAt(0).toLowerCase()+text.slice(1)}, ${whenSpoken(when.getTime())}${repeat!=='none'?', repeating '+repeat:''}.` + (date?'':' You did not say a time, so I set it for an hour from now.');
+  }
+  // explicit notes
+  if ((m = said.match(/^(?:hey jarvis,?\s*)?(?:take a note|new note|add a note|note|write down|write this down|remember that|remember|jot down)\s*[:,-]?\s*(?:that\s+)?(.+)$/i))){
+    addNote(m[1]); go('notes'); return 'Got it, note saved.';
+  }
+  // income
+  if (/\b(got paid|received|earned|i made|income|salary|got my salary)\b/.test(t) && !/\b(spent|spend|bought|paid for|pay for)\b/.test(t) && (m = t.match(/\$?(\d+(?:\.\d{1,2})?)\s*(?:dollars?|bucks|usd|euros?|pounds?)?\s*(?:from|for|as|in)?\s*(.*)$/))){
+    const amount = parseFloat(m[1]); const desc = cap(m[2] || (/salary/.test(t)?'Salary':'Income'));
+    db.expenses.unshift({id:uid(), type:'income', amount, desc, cat:'Income', at:Date.now()}); save(); go('budget');
+    return `Nice! Added ${fmt(amount)} income. You've earned ${fmt(sum(inMonth(key,'income')))} this month.`;
+  }
+  // expenses
+  m = t.match(/(?:i\s+)?(?:paid|spent|spend|pay|bought|buy|expense|cost|charged)\b.*?\$?\s?(\d+(?:\.\d{1,2})?)\s*(?:dollars?|bucks|usd|euros?|pounds?|lira|\$)?(?:\s*(?:and\s+)?(\d{1,2})\s*cents?)?\s*(?:for|on|at|in|to)?\s*(.*)$/)
+    || t.match(/^\$?\s?(\d+(?:\.\d{1,2})?)\s*(?:dollars?|bucks|usd|euros?)(?:\s*(?:and\s+)?(\d{1,2})\s*cents?)?\s*(?:for|on|at)\s+(.*)$/);
+  if (m){
+    const amount = parseFloat(m[1]) + (m[2]?parseInt(m[2])/100:0);
+    let desc = (m[3]||'').replace(/^(the|some|a|an|my)\s+/,'').trim();
+    if (!desc){ const b = t.match(/bought (.*?) for/); desc = b?b[1].replace(/^(a|an|the|some)\s+/,''):'Something'; }
+    const cat = categorize(desc);
+    db.expenses.unshift({id:uid(), type:'expense', amount, desc:cap(desc), cat, at:Date.now()}); save(); go('budget');
+    const tot = sum(inMonth(key));
+    let s = `Logged ${fmt(amount)} for ${desc}, under ${cat}. Month total: ${fmt(tot)}.`;
+    if (S.budget && tot > S.budget) s += ` Heads up, you're over budget.`;
+    else if (S.budget && tot > S.budget*.8) s += ` You've used ${Math.round(tot/S.budget*100)}% of your budget.`;
+    return s;
+  }
+  // fallback: save as a note
+  addNote(said); go('notes');
+  return 'I saved that as a note.';
+}
+function cap(s){ s = String(s).trim(); return s.charAt(0).toUpperCase()+s.slice(1); }
+function addNote(text){ db.notes.unshift({id:uid(), text:cap(text), tag:guessTag(text), pinned:false, at:Date.now()}); save(); }
+function upcoming(){ return db.reminders.filter(r=>!r.done && r.at>=Date.now()-6e4).sort((a,b)=>a.at-b.at); }
+function overdue(){ return db.reminders.filter(r=>!r.done && r.at<Date.now()-6e4).sort((a,b)=>b.at-a.at); }
+function greeting(){ const h = new Date().getHours(); return h<5?'Good evening':h<12?'Good morning':h<18?'Good afternoon':'Good evening'; }
+
+/* =========================================================
+   SCREENS
+   ========================================================= */
+let viewMonth = new Date(); viewMonth.setDate(1);
+let noteFilter = 'all', remFilter = 'upcoming';
+const ICON = {
+  pin:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 3a1 1 0 0 1 .7 1.7L15 6.4v4.2l2.7 2.7A1 1 0 0 1 17 15h-4v6l-1 1-1-1v-6H7a1 1 0 0 1-.7-1.7L9 10.6V6.4L7.3 4.7A1 1 0 0 1 8 3z"/></svg>',
+  trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>',
+  snooze:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M5 3 2 6M19 3l3 3"/></svg>',
+  speak:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 5 6 9H2v6h4l5 4zM15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></svg>'
+};
+function emptyHTML(ic, text){ return `<div class="empty"><div class="e-ic">${ic}</div>${text}</div>`; }
+function noteHTML(n){
+  const tg = TAGS[n.tag]||TAGS.personal;
+  return `<div class="item note-card" style="border-left-color:${tg.c}" data-edit-note="${n.id}">
+    <div class="body"><div class="title">${esc(n.text)}</div><div class="meta"><span class="tag" style="background:${tg.c}22;color:${tg.c}">${tg.ic} ${n.tag}</span>${ago(n.at)}</div></div>
+    <div class="actions"><button class="mini ${n.pinned?'on':''}" data-pin="${n.id}" aria-label="Pin">${ICON.pin}</button><button class="mini" data-say="${esc(n.text)}" aria-label="Read aloud">${ICON.speak}</button><button class="mini" data-del="notes:${n.id}" aria-label="Delete">${ICON.trash}</button></div></div>`;
+}
+function remHTML(r){
+  const late = !r.done && r.at < Date.now()-6e4;
+  return `<div class="item ${r.done?'done':''}">
+    <button class="check ${r.done?'on':''}" data-done="${r.id}" aria-label="Done">${r.done?ICON.check:''}</button>
+    <div class="body"><div class="title">${esc(r.text)}</div><div class="meta">${late?'<span class="tag red">Overdue</span>':''}${r.repeat&&r.repeat!=='none'?`<span class="tag">🔁 ${r.repeat}</span>`:''}${whenText(r.at)}</div></div>
+    <div class="actions">${!r.done?`<button class="mini" data-snooze="${r.id}" aria-label="Snooze 10 minutes">${ICON.snooze}</button>`:''}<button class="mini" data-del="reminders:${r.id}" aria-label="Delete">${ICON.trash}</button></div></div>`;
+}
+function txHTML(e){
+  const inc = e.type==='income'; const c = inc?{ic:INCOME_IC,c:'#22c55e'}:(CATS[e.cat]||CATS.Other);
+  return `<div class="item"><div class="ic" style="background:${c.c}22">${c.ic}</div>
+    <div class="body"><div class="title">${esc(e.desc)}</div><div class="meta">${inc?'Income':e.cat} · ${new Date(e.at).toLocaleDateString([], {month:'short',day:'numeric'})}</div></div>
+    <div class="amt" style="color:${inc?'var(--good)':'var(--text)'}">${inc?'+':'-'}${fmt(e.amount)}</div>
+    <button class="mini" data-del="expenses:${e.id}" aria-label="Delete">${ICON.trash}</button></div>`;
+}
+function donutSVG(parts, total){
+  const R = 52, C = 2*Math.PI*R; let off = 0;
+  const segs = parts.map(([c,v])=>{ const len = v/total*C; const s = `<circle cx="66" cy="66" r="${R}" fill="none" stroke="${(CATS[c]||CATS.Other).c}" stroke-width="16" stroke-dasharray="${Math.max(len-2,0.01)} ${C}" stroke-dashoffset="${-off}" stroke-linecap="butt"/>`; off += len; return s; }).join('');
+  return `<svg viewBox="0 0 132 132"><circle cx="66" cy="66" r="${R}" fill="none" stroke="var(--line)" stroke-width="16"/>${segs}</svg>`;
+}
+function budgetGoalHTML(spent){
+  if (!S.budget) return `<div style="display:flex;align-items:center;gap:12px"><div style="font-size:26px">🎯</div><div style="flex:1"><b>Set a monthly budget</b><div style="color:var(--muted);font-size:13px">Say “Set my budget to 1500”</div></div><button class="btn" id="setBudgetBtn">Set</button></div>`;
+  const pct = Math.min(spent/S.budget*100, 100); const over = spent > S.budget;
+  const dLeft = new Date(viewMonth.getFullYear(), viewMonth.getMonth()+1, 0).getDate() - new Date().getDate() + 1;
+  const isCur = monthKey(viewMonth)===monthKey(Date.now());
+  return `<div style="display:flex;justify-content:space-between;align-items:baseline"><b>Monthly budget</b><span style="color:var(--muted);font-size:13px">${fmt(spent)} of ${fmt(S.budget)}</span></div>
+    <div class="progress"><i style="width:${pct}%;${over?'background:var(--bad)':pct>80?'background:linear-gradient(90deg,var(--warn),var(--bad))':''}"></i></div>
+    <div style="margin-top:8px;font-size:13px;color:${over?'var(--bad)':'var(--muted)'};font-weight:600">${over?`Over by ${fmt(spent-S.budget)}`:`${fmt(S.budget-spent)} left`}${isCur&&!over&&dLeft>0?` · about ${fmt(Math.floor((S.budget-spent)/dLeft))} a day for ${dLeft} days`:''}</div>`;
 }
 
-// ---------- screens ----------
-let viewMonth = new Date(); viewMonth.setDate(1);
-function esc(s){ return String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
-function render(){
-  const N = document.getElementById('notes');
-  N.innerHTML = db.notes.length ? db.notes.map(n=>`<div class="item"><div class="body">${esc(n.text)}<div class="meta">${new Date(n.at).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</div></div><button class="x" data-del="notes" data-id="${n.id}" aria-label="Delete">×</button></div>`).join('') : '<div class="empty">No notes yet. Tap the mic and say “Note: …”</div>';
+function renderHome(){
+  const key = monthKey(Date.now()); const spent = sum(inMonth(key));
+  $('today').textContent = new Date().toLocaleDateString([], {weekday:'long', month:'long', day:'numeric'});
+  $('greet').textContent = `${greeting()}, ${S.name}`;
+  const up = upcoming(); const todayCount = up.filter(r=>new Date(r.at).toDateString()===new Date().toDateString()).length;
+  const lines = [];
+  if (up[0]) lines.push(`Next: ${up[0].text}`);
+  $('heroLine').textContent = lines[0] || 'What can I do for you today?';
+  $('hsSpent').textContent = fmt(spent); $('hsRem').textContent = todayCount; $('hsNotes').textContent = db.notes.length;
+  $('homeBudget').innerHTML = budgetGoalHTML(spent) + (()=>{ const byCat={}; inMonth(key).forEach(e=>byCat[e.cat]=(byCat[e.cat]||0)+e.amount); const top = Object.entries(byCat).sort((a,b)=>b[1]-a[1])[0]; return top?`<div style="margin-top:10px;font-size:13px;color:var(--muted)">Biggest category: <b style="color:var(--text)">${(CATS[top[0]]||CATS.Other).ic} ${top[0]} · ${fmt(top[1])}</b></div>`:''; })();
+  const od = overdue();
+  $('homeRem').innerHTML = (od.length||up.length) ? [...od.slice(0,2), ...up.slice(0,3)].map(remHTML).join('') : emptyHTML('⏰','Nothing coming up. Say “Remind me to…”');
+  $('homeNotes').innerHTML = db.notes.length ? sortedNotes().slice(0,3).map(noteHTML).join('') : emptyHTML('📝','No notes yet. Say “Note: …”');
+}
+function sortedNotes(){ return db.notes.slice().sort((a,b)=>(b.pinned-a.pinned)||(b.at-a.at)); }
+function renderNotes(){
+  const q = $('noteSearch').value.trim().toLowerCase();
+  let list = sortedNotes();
+  if (noteFilter==='pinned') list = list.filter(n=>n.pinned); else if (noteFilter!=='all') list = list.filter(n=>n.tag===noteFilter);
+  if (q) list = list.filter(n=>n.text.toLowerCase().includes(q));
+  $('noteList').innerHTML = list.length ? list.map(noteHTML).join('') : emptyHTML('📝', q?'No notes match your search.':'Nothing here yet. Tap the mic and say “Note: …”');
+}
+function renderReminders(){
+  const list = remFilter==='upcoming'?upcoming():remFilter==='overdue'?overdue():db.reminders.filter(r=>r.done).sort((a,b)=>b.at-a.at);
+  $('remList').innerHTML = list.length ? list.map(remHTML).join('') : emptyHTML(remFilter==='done'?'✅':'⏰', remFilter==='upcoming'?'No upcoming reminders.':remFilter==='overdue'?'Nothing overdue. Nice!':'Nothing completed yet.');
+  const n = overdue().length; document.querySelector('#remFilter [data-f="overdue"]').textContent = 'Overdue' + (n?` (${n})`:'');
+}
+function renderBudget(){
+  const key = monthKey(viewMonth);
+  $('monthLabel').textContent = viewMonth.toLocaleDateString([], {month:'long', year:'numeric'});
+  const exp = inMonth(key), inc = inMonth(key,'income'); const spent = sum(exp), earned = sum(inc);
+  const prev = new Date(viewMonth); prev.setMonth(prev.getMonth()-1); const prevSpent = sum(inMonth(monthKey(prev)));
+  const delta = prevSpent ? Math.round((spent-prevSpent)/prevSpent*100) : null;
+  $('budgetStats').innerHTML = `
+    <div class="card stat"><div class="label">Spent</div><div class="val">${fmt(spent)}</div><div class="delta" style="color:${delta===null?'var(--muted)':delta>0?'var(--bad)':'var(--good)'}">${delta===null?`${exp.length} expenses`:`${delta>0?'▲':'▼'} ${Math.abs(delta)}% vs last month`}</div></div>
+    <div class="card stat"><div class="label">Income</div><div class="val" style="color:var(--good)">${fmt(earned)}</div><div class="delta" style="color:var(--muted)">Balance ${fmt(earned-spent)}</div></div>`;
+  $('budgetGoal').innerHTML = budgetGoalHTML(spent);
+  const byCat = {}; exp.forEach(e=>byCat[e.cat]=(byCat[e.cat]||0)+e.amount);
+  const parts = Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
+  $('donutCard').innerHTML = parts.length ? `<div class="donut-wrap"><div class="donut">${donutSVG(parts, spent)}<div class="center"><div><b>${fmt(spent)}</b><span>total</span></div></div></div>
+    <div class="legend">${parts.slice(0,6).map(([c,v])=>`<div><i style="background:${(CATS[c]||CATS.Other).c}"></i><span>${(CATS[c]||CATS.Other).ic} ${c}</span><b>${Math.round(v/spent*100)}%</b></div>`).join('')}</div></div>` : emptyHTML('🍩','No spending this month yet.');
+  const days = new Date(viewMonth.getFullYear(), viewMonth.getMonth()+1, 0).getDate(); const perDay = Array(days).fill(0);
+  exp.forEach(e=>perDay[new Date(e.at).getDate()-1]+=e.amount); const mx = Math.max(...perDay, 1);
+  const avg = spent / (monthKey(viewMonth)===monthKey(Date.now()) ? new Date().getDate() : days);
+  $('dailyCard').innerHTML = `<div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted)"><span>Average per day</span><b style="color:var(--text)">${fmt(Math.round(avg*100)/100)}</b></div>
+    <div class="bars">${perDay.map(v=>`<i class="${v?'':'zero'}" style="height:${v?Math.max(v/mx*100,6):3}%"></i>`).join('')}</div>
+    <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--faint);margin-top:4px"><span>1</span><span>${Math.ceil(days/2)}</span><span>${days}</span></div>`;
+  const tx = [...exp, ...inc].sort((a,b)=>b.at-a.at);
+  $('txList').innerHTML = tx.length ? tx.map(txHTML).join('') : emptyHTML('💳','No transactions. Say “Paid 15 dollars for groceries”.');
+  const sb = $('setBudgetBtn'); if (sb) sb.onclick = ()=>openBudgetModal();
+  document.querySelectorAll('#setBudgetBtn').forEach(b=>b.onclick=()=>openBudgetModal());
+}
+function renderVoices(){
+  const el = $('voiceList'); if (!el) return;
+  const v = currentVoice();
+  $('voiceTip').innerHTML = /iphone|ipad|mac/i.test(navigator.userAgent)
+    ? '💡 <b>Want a much better voice, free?</b> On iPhone: Settings → Accessibility → Spoken Content → Voices → English → pick <b>Ava</b>, <b>Zoe</b> or <b>Evan</b> and download the <b>Premium</b> version. Then reopen Jarvis and choose it below.'
+    : '💡 <b>Tip:</b> voices marked ★ sound the most human. On Android, you can add better voices in Settings → Accessibility → Text-to-speech → Google → Install voice data.';
+  if (!voices.length){ el.innerHTML = '<div class="vrow"><div class="nm">No voices found on this device yet.</div></div>'; return; }
+  el.innerHTML = voices.slice(0,30).map(x=>`<div class="vrow ${v&&x.name===v.name?'on':''}" data-voice="${esc(x.name)}"><div class="radio"></div><div class="nm">${esc(x.name.replace(/Microsoft |Google /,''))}<small>${x.lang}${x.localService?'':' · online'}</small></div>${isNatural(x)?'<span class="star">★ natural</span>':''}</div>`).join('');
+}
+function renderAll(){ renderHome(); renderNotes(); renderReminders(); renderBudget(); renderChips(); }
 
-  const R = document.getElementById('reminders');
-  const rs = db.reminders.slice().sort((a,b)=>(a.done-b.done)||(a.at-b.at));
-  R.innerHTML = rs.length ? rs.map(r=>`<div class="item ${r.done?'done':''}"><div class="body">${esc(r.text)}<div class="meta">${r.done?'Done · ':''}${whenText(r.at)}</div></div><button class="x" data-del="reminders" data-id="${r.id}" aria-label="Delete">×</button></div>`).join('') : '<div class="empty">No reminders. Say “Remind me to … tomorrow at 9 am”</div>';
-
-  const B = document.getElementById('budget');
-  const key = monthKey(viewMonth); const list = db.expenses.filter(e=>monthKey(e.at)===key).sort((a,b)=>b.at-a.at);
-  const tot = list.reduce((s,e)=>s+e.amount,0);
-  const byCat = {}; list.forEach(e=>byCat[e.cat]=(byCat[e.cat]||0)+e.amount);
-  const cats = Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
-  B.innerHTML = `<div class="summary">
-      <div class="month"><button id="prevM" aria-label="Previous month">‹</button><b>${viewMonth.toLocaleDateString([], {month:'long', year:'numeric'})}</b><button id="nextM" aria-label="Next month">›</button></div>
-      <div class="total">${fmt(tot)}</div><div class="sub" style="margin-bottom:10px">${list.length} expense${list.length===1?'':'s'}</div>
-      ${cats.map(([c,v])=>`<div class="row"><span>${c}</span><span>${fmt(v)} · ${Math.round(v/tot*100)}%</span></div><div class="bar"><i style="width:${v/tot*100}%"></i></div>`).join('')}
-    </div>` + (list.length ? list.map(e=>`<div class="item"><div class="body"><b>${fmt(e.amount)}</b> · ${esc(e.desc)}<div class="meta">${e.cat} · ${new Date(e.at).toLocaleDateString([], {month:'short',day:'numeric'})}</div></div><button class="x" data-del="expenses" data-id="${e.id}" aria-label="Delete">×</button></div>`).join('') : '<div class="empty">No expenses this month. Say “Paid 15 dollars for groceries”</div>');
-  document.getElementById('prevM').onclick = ()=>{ viewMonth.setMonth(viewMonth.getMonth()-1); render(); };
-  document.getElementById('nextM').onclick = ()=>{ viewMonth.setMonth(viewMonth.getMonth()+1); render(); };
+/* ---------- navigation ---------- */
+let current = 'home';
+function go(name){
+  current = name;
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active', v.id==='v-'+name));
+  document.querySelectorAll('.nav .tab').forEach(b=>b.classList.toggle('active', b.dataset.go===name));
+  if (!$('sheet').classList.contains('open')) window.scrollTo({top:0, behavior:'smooth'});
 }
 document.addEventListener('click', e=>{
-  const b = e.target.closest('[data-del]'); if (!b) return;
-  db[b.dataset.del] = db[b.dataset.del].filter(x=>x.id!==b.dataset.id); save(); render();
+  const g = e.target.closest('[data-go]'); if (g){ go(g.dataset.go); return; }
+  const d = e.target.closest('[data-del]'); if (d){ e.stopPropagation(); const [col,id] = d.dataset.del.split(':'); const idx = db[col].findIndex(x=>x.id===id); const item = db[col][idx]; db[col].splice(idx,1); save(); renderAll(); toast('Deleted', ()=>{ db[col].splice(idx,0,item); save(); renderAll(); }); return; }
+  const p = e.target.closest('[data-pin]'); if (p){ e.stopPropagation(); const n = db.notes.find(x=>x.id===p.dataset.pin); n.pinned = !n.pinned; save(); renderAll(); toast(n.pinned?'Pinned':'Unpinned'); return; }
+  const sy = e.target.closest('[data-say]'); if (sy){ e.stopPropagation(); const was = S.speak; S.speak = true; speak(sy.dataset.say); S.speak = was; return; }
+  const dn = e.target.closest('[data-done]'); if (dn){ completeReminder(dn.dataset.done); return; }
+  const sn = e.target.closest('[data-snooze]'); if (sn){ const r = db.reminders.find(x=>x.id===sn.dataset.snooze); r.at = Math.max(Date.now(), r.at) + 6e5; r.done=false; save(); renderAll(); toast('Snoozed 10 minutes'); return; }
+  const en = e.target.closest('[data-edit-note]'); if (en){ openNoteModal(db.notes.find(x=>x.id===en.dataset.editNote)); return; }
+  const vv = e.target.closest('[data-voice]'); if (vv){ S.voice = vv.dataset.voice; save(); renderVoices(); const was=S.speak; S.speak=true; speak(`Hi ${S.name}, I'm Jarvis. This is how I sound.`); S.speak=was; return; }
+  const ch = e.target.closest('[data-cmd]'); if (ch){ openSheet(false); handle(ch.dataset.cmd); return; }
 });
-function showTab(name){
-  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
-  document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active', p.id===name));
+function completeReminder(id){
+  const r = db.reminders.find(x=>x.id===id); if (!r) return;
+  if (r.done){ r.done = false; }
+  else if (r.repeat && r.repeat!=='none'){ const d = new Date(r.at); do { if (r.repeat==='daily') d.setDate(d.getDate()+1); else if (r.repeat==='weekly') d.setDate(d.getDate()+7); else d.setMonth(d.getMonth()+1); } while (d < new Date()); r.at = d.getTime(); toast('Done. Next one: '+whenText(r.at)); }
+  else { r.done = true; toast('Nice, done ✓'); }
+  save(); renderAll();
 }
-document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
+document.querySelectorAll('#noteFilter button').forEach(b=>b.onclick=()=>{ noteFilter=b.dataset.f; document.querySelectorAll('#noteFilter button').forEach(x=>x.classList.toggle('active',x===b)); renderNotes(); });
+document.querySelectorAll('#remFilter button').forEach(b=>b.onclick=()=>{ remFilter=b.dataset.f; document.querySelectorAll('#remFilter button').forEach(x=>x.classList.toggle('active',x===b)); renderReminders(); });
+$('noteSearch').oninput = renderNotes;
+$('prevM').onclick = ()=>{ viewMonth.setMonth(viewMonth.getMonth()-1); renderBudget(); };
+$('nextM').onclick = ()=>{ viewMonth.setMonth(viewMonth.getMonth()+1); renderBudget(); };
 
-// ---------- reminders firing ----------
-function askNotify(){ try { if ('Notification' in window && Notification.permission==='default') Notification.requestPermission(); } catch(e){} }
-document.getElementById('bell').onclick = ()=>{ try { if ('Notification' in window) Notification.requestPermission().then(p=>say(p==='granted'?'Alerts are on.':'Alerts are off. I will still speak reminders while this page is open.')); else say('This browser cannot show alerts, but I will speak reminders while the page is open.'); } catch(e){} };
-function checkReminders(){
-  const now = Date.now(); let changed = false;
-  db.reminders.forEach(r=>{ if (!r.done && r.at <= now){ r.done = true; changed = true;
-    say('Reminder: ' + r.text);
-    try { if ('Notification' in window && Notification.permission==='granted') new Notification('Jarvis reminder', {body:r.text}); } catch(e){}
-    try { navigator.vibrate && navigator.vibrate([300,100,300]); } catch(e){}
-  }});
-  if (changed){ save(); render(); }
+/* ---------- quick actions ---------- */
+function renderChips(){
+  const chips = [['💸','Paid 10 dollars for coffee'],['⏰','Remind me in 30 minutes to stretch'],['📊','How much did I spend this month?'],['📝','Note: '],['📅','What are my reminders?'],['💰','Got paid 2000 salary']];
+  $('homeChips').innerHTML = chips.map(([i,c])=> c==='Note: ' ? `<button class="chip" id="chipNote">${i} New note</button>` : `<button class="chip" data-cmd="${c}">${i} ${c}</button>`).join('');
+  $('chipNote').onclick = ()=>openNoteModal();
+  $('suggest').innerHTML = ['How much did I spend this month?','What are my reminders?','Read my notes','Undo last expense'].map(c=>`<button class="chip" data-cmd="${c}">${c}</button>`).join('');
 }
-setInterval(checkReminders, 15000);
 
-// ---------- microphone ----------
+/* ---------- toast + modals ---------- */
+let toastTimer, undoFn;
+function toast(text, undo){ $('toastText').textContent = text; undoFn = undo; $('toastUndo').style.display = undo?'':'none'; $('toast').classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(()=>$('toast').classList.remove('show'), 3500); }
+$('toastUndo').onclick = ()=>{ if (undoFn) undoFn(); $('toast').classList.remove('show'); };
+function modal(html){ $('modalBox').innerHTML = html; $('modal').classList.add('open'); }
+function closeModal(){ $('modal').classList.remove('open'); }
+$('modal').onclick = e=>{ if (e.target.id==='modal') closeModal(); };
+function openNoteModal(n){
+  modal(`<h4>${n?'Edit note':'New note'}</h4><textarea id="mText" placeholder="Write your note…">${n?esc(n.text):''}</textarea>
+  <select id="mTag">${Object.keys(TAGS).map(k=>`<option value="${k}" ${n&&n.tag===k?'selected':''}>${TAGS[k].ic} ${k}</option>`).join('')}</select>
+  <div class="row"><button class="btn ghost" id="mCancel">Cancel</button><button class="btn" id="mSave">Save</button></div>`);
+  $('mCancel').onclick = closeModal;
+  $('mSave').onclick = ()=>{ const t = $('mText').value.trim(); if (!t) return closeModal();
+    if (n){ n.text = t; n.tag = $('mTag').value; } else db.notes.unshift({id:uid(), text:cap(t), tag:$('mTag').value, pinned:false, at:Date.now()});
+    save(); renderAll(); closeModal(); toast('Note saved'); };
+  setTimeout(()=>$('mText').focus(), 50);
+}
+function openRemModal(){
+  const d = new Date(Date.now()+36e5); d.setMinutes(0,0,0);
+  const local = new Date(d.getTime()-d.getTimezoneOffset()*6e4).toISOString().slice(0,16);
+  modal(`<h4>New reminder</h4><input id="mText" placeholder="What should I remind you about?"><input id="mWhen" type="datetime-local" value="${local}">
+  <select id="mRep"><option value="none">Doesn't repeat</option><option value="daily">Every day</option><option value="weekly">Every week</option><option value="monthly">Every month</option></select>
+  <div class="row"><button class="btn ghost" id="mCancel">Cancel</button><button class="btn" id="mSave">Save</button></div>`);
+  $('mCancel').onclick = closeModal;
+  $('mSave').onclick = ()=>{ const t = $('mText').value.trim(); if (!t) return; db.reminders.push({id:uid(), text:cap(t), at:new Date($('mWhen').value).getTime(), done:false, repeat:$('mRep').value, created:Date.now()}); save(); renderAll(); closeModal(); askNotify(); toast('Reminder set'); };
+}
+function openExpModal(){
+  modal(`<h4>Add transaction</h4><select id="mType"><option value="expense">Expense</option><option value="income">Income</option></select>
+  <input id="mAmt" type="number" inputmode="decimal" placeholder="Amount"><input id="mDesc" placeholder="What for?">
+  <select id="mCat">${Object.keys(CATS).map(c=>`<option>${c}</option>`).join('')}</select>
+  <div class="row"><button class="btn ghost" id="mCancel">Cancel</button><button class="btn" id="mSave">Save</button></div>`);
+  $('mDesc').oninput = ()=>{ $('mCat').value = categorize($('mDesc').value); };
+  $('mCancel').onclick = closeModal;
+  $('mSave').onclick = ()=>{ const a = parseFloat($('mAmt').value); if (!a) return; const type = $('mType').value; db.expenses.unshift({id:uid(), type, amount:a, desc:cap($('mDesc').value||(type==='income'?'Income':'Expense')), cat:type==='income'?'Income':$('mCat').value, at:Date.now()}); save(); renderAll(); closeModal(); toast('Saved'); };
+}
+function openBudgetModal(){
+  modal(`<h4>Monthly budget</h4><input id="mAmt" type="number" inputmode="decimal" placeholder="e.g. 1500" value="${S.budget||''}"><div class="row"><button class="btn ghost" id="mCancel">Cancel</button><button class="btn" id="mSave">Save</button></div>`);
+  $('mCancel').onclick = closeModal;
+  $('mSave').onclick = ()=>{ S.budget = parseFloat($('mAmt').value)||0; save(); syncSettings(); renderAll(); closeModal(); toast('Budget saved'); };
+}
+$('addNoteBtn').onclick = ()=>openNoteModal();
+$('addRemBtn').onclick = openRemModal;
+$('addExpBtn').onclick = openExpModal;
+
+/* ---------- assistant sheet + microphone ---------- */
+const chatLog = [];
+function addMsg(who, text){
+  chatLog.push({who, text});
+  const el = document.createElement('div'); el.className = 'msg '+who;
+  el.innerHTML = who==='ai' ? `<div class="who">Jarvis</div>${esc(text)}` : esc(text);
+  $('chat').appendChild(el); $('chat').scrollTop = $('chat').scrollHeight;
+}
+function openSheet(listen){
+  $('sheet').classList.add('open'); $('sheetBg').classList.add('open');
+  if (!chatLog.length) addMsg('ai', `${greeting()}, ${S.name}. Tap the mic and tell me what you need.`);
+  if (listen) startListening();
+}
+function closeSheet(){ $('sheet').classList.remove('open'); $('sheetBg').classList.remove('open'); stopListening(); }
+$('orb').onclick = ()=>openSheet(true);
+$('closeSheet').onclick = closeSheet; $('sheetBg').onclick = closeSheet;
+
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-const mic = document.getElementById('mic'); let rec = null, listening = false, finalText = '';
-if (!SR){ document.getElementById('noSpeech').style.display='block'; }
-mic.onclick = ()=>{
-  if (!SR){ say('Voice is not supported in this browser. Try Chrome or Safari.'); return; }
-  if (listening){ rec.stop(); return; }
+let rec = null, listening = false, finalText = '';
+if (!SR) $('noSpeech').style.display = 'block';
+function startListening(){
+  if (!SR){ $('live').textContent = 'Voice is not supported in this browser. Type below instead.'; return; }
+  if (listening) return;
   try { speechSynthesis.cancel(); } catch(e){}
   rec = new SR(); rec.lang = navigator.language || 'en-US'; rec.interimResults = true; rec.continuous = false;
   finalText = '';
-  rec.onstart = ()=>{ listening = true; mic.classList.add('on'); document.getElementById('heard').textContent = 'Listening…'; document.getElementById('reply').textContent=''; };
-  rec.onresult = ev=>{ let interim = ''; for (let i=ev.resultIndex;i<ev.results.length;i++){ const r = ev.results[i]; if (r.isFinal) finalText += r[0].transcript; else interim += r[0].transcript; } document.getElementById('heard').textContent = (finalText + interim) || 'Listening…'; };
-  rec.onerror = ev=>{ if (ev.error==='not-allowed' || ev.error==='service-not-allowed') say('I need microphone permission. Allow the microphone for this page and try again.'); else if (ev.error==='no-speech') say("I didn't hear anything. Tap and try again."); };
-  rec.onend = ()=>{ listening = false; mic.classList.remove('on'); if (finalText.trim()) handle(finalText); };
-  rec.start();
-};
-document.getElementById('pasteGo').onclick = ()=>{ const b = document.getElementById('pasteBox'); handle(b.value); b.value=''; };
-document.getElementById('pasteBox').addEventListener('keydown', e=>{ if (e.key==='Enter') document.getElementById('pasteGo').click(); });
+  rec.onstart = ()=>{ listening = true; $('micBtn').classList.add('rec'); $('stage').classList.add('listening'); $('live').textContent = 'Listening…'; };
+  rec.onresult = ev=>{ let interim=''; for (let i=ev.resultIndex;i<ev.results.length;i++){ const r = ev.results[i]; if (r.isFinal) finalText += r[0].transcript; else interim += r[0].transcript; } $('live').textContent = (finalText+interim) || 'Listening…'; };
+  rec.onerror = ev=>{ if (ev.error==='not-allowed'||ev.error==='service-not-allowed') $('live').textContent = 'Please allow the microphone for this page, then tap the mic again.'; else if (ev.error==='no-speech') $('live').textContent = "I didn't catch that. Tap the mic and try again."; };
+  rec.onend = ()=>{ listening = false; $('micBtn').classList.remove('rec'); $('stage').classList.remove('listening'); if (finalText.trim()){ $('live').textContent = 'Tap the mic to talk again.'; handle(finalText); } };
+  try { rec.start(); } catch(e){}
+}
+function stopListening(){ if (rec && listening) try { rec.stop(); } catch(e){} }
+$('micBtn').onclick = ()=> listening ? stopListening() : startListening();
+function sendTyped(){ const v = $('textIn').value; $('textIn').value=''; handle(v); }
+$('sendBtn').onclick = sendTyped;
+$('textIn').addEventListener('keydown', e=>{ if (e.key==='Enter') sendTyped(); });
 
-// ---------- start ----------
-const hr = new Date().getHours();
-document.getElementById('greet').textContent = (hr<12?'Good morning':hr<18?'Good afternoon':'Good evening') + ', Bilal. Tap the mic and talk.';
-render(); checkReminders();
-window.jarvisHandle = handle; // for testing
+/* ---------- reminders firing ---------- */
+function askNotify(){ try { if ('Notification' in window && Notification.permission==='default') Notification.requestPermission().then(syncSettings); } catch(e){} }
+function checkReminders(){
+  const now = Date.now(); let changed = false;
+  db.reminders.forEach(r=>{
+    if (!r.done && r.at <= now && !r.fired){
+      r.fired = true; changed = true;
+      const msg = `Reminder: ${r.text}`;
+      toast('⏰ '+r.text); speak(msg);
+      try { if ('Notification' in window && Notification.permission==='granted'){ navigator.serviceWorker && navigator.serviceWorker.ready ? navigator.serviceWorker.ready.then(reg=>reg.showNotification('Jarvis', {body:r.text, icon:'icon-192.png', badge:'icon-192.png'})).catch(()=>new Notification('Jarvis',{body:r.text})) : new Notification('Jarvis',{body:r.text}); } } catch(e){}
+      try { navigator.vibrate && navigator.vibrate([250,100,250]); } catch(e){}
+      if (r.repeat && r.repeat!=='none'){ const d = new Date(r.at); do { if (r.repeat==='daily') d.setDate(d.getDate()+1); else if (r.repeat==='weekly') d.setDate(d.getDate()+7); else d.setMonth(d.getMonth()+1); } while (d.getTime() <= now); r.at = d.getTime(); r.fired = false; }
+    }
+  });
+  if (changed){ save(); renderAll(); }
+}
+setInterval(checkReminders, 10000);
+
+/* ---------- settings ---------- */
+const ACCENTS = ['#6d5dfc','#0ea5e9','#22c55e','#f59e0b','#f43f5e','#ec4899'];
+function applyTheme(){
+  let th = S.theme; if (th==='auto') th = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  document.documentElement.dataset.theme = th;
+  document.querySelector('meta[name=theme-color]').content = th==='dark' ? '#07090f' : '#f3f4f9';
+  document.documentElement.style.setProperty('--accent', S.accent);
+  document.documentElement.style.setProperty('--accent-soft', S.accent+'29');
+}
+function syncSettings(){
+  $('sSpeak').checked = S.speak; $('sRate').value = S.rate; $('sPitch').value = S.pitch; $('sName').value = S.name; $('sCur').value = S.currency; $('sBudget').value = S.budget||''; $('sTheme').value = S.theme;
+  $('swatches').innerHTML = ACCENTS.map(c=>`<button style="background:${c}" class="${c===S.accent?'on':''}" data-accent="${c}" aria-label="Accent"></button>`).join('');
+  document.querySelectorAll('[data-accent]').forEach(b=>b.onclick=()=>{ S.accent=b.dataset.accent; save(); applyTheme(); syncSettings(); });
+  const p = ('Notification' in window) ? Notification.permission : 'unsupported';
+  $('notifState').textContent = p==='granted'?'On. You will get pop-up alerts.':p==='denied'?'Blocked in your browser settings.':p==='unsupported'?'Add Jarvis to your home screen to get alerts.':'Pop-up alerts on this device';
+  $('notifBtn').style.display = p==='default' ? '' : 'none';
+}
+$('sSpeak').onchange = e=>{ S.speak = e.target.checked; save(); };
+$('sRate').oninput = e=>{ S.rate = +e.target.value; save(); };
+$('sRate').onchange = ()=>{ const w=S.speak; S.speak=true; speak('This is my speed.'); S.speak=w; };
+$('sPitch').oninput = e=>{ S.pitch = +e.target.value; save(); };
+$('sPitch').onchange = ()=>{ const w=S.speak; S.speak=true; speak('This is my pitch.'); S.speak=w; };
+$('sName').onchange = e=>{ S.name = e.target.value.trim()||'there'; save(); renderAll(); };
+$('sCur').onchange = e=>{ S.currency = e.target.value; save(); renderAll(); };
+$('sBudget').onchange = e=>{ S.budget = parseFloat(e.target.value)||0; save(); renderAll(); };
+$('sTheme').onchange = e=>{ S.theme = e.target.value; save(); applyTheme(); };
+$('notifBtn').onclick = ()=>{ try { Notification.requestPermission().then(syncSettings); } catch(e){} };
+$('exportBtn').onclick = ()=>{ const blob = new Blob([JSON.stringify(db,null,2)], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'jarvis-backup-'+new Date().toISOString().slice(0,10)+'.json'; a.click(); toast('Backup saved'); };
+$('importBtn').onclick = ()=>$('importFile').click();
+$('importFile').onchange = async e=>{ try { const data = JSON.parse(await e.target.files[0].text()); if (!data.notes) throw 0; db = Object.assign({notes:[],reminders:[],expenses:[]}, data); db.settings = Object.assign({...DEFAULT_SETTINGS}, data.settings||{}); Object.assign(S, db.settings); db.settings = S; save(); applyTheme(); syncSettings(); renderAll(); toast('Backup restored'); } catch(err){ toast('That file is not a Jarvis backup'); } };
+$('wipeBtn').onclick = ()=>{ modal(`<h4>Erase everything?</h4><p style="color:var(--muted);margin:0 0 12px">All notes, reminders and transactions on this device will be deleted. Save a backup first if you might want them.</p><div class="row"><button class="btn ghost" id="mCancel">Cancel</button><button class="btn danger" id="mSave">Erase</button></div>`); $('mCancel').onclick=closeModal; $('mSave').onclick=()=>{ db.notes=[]; db.reminders=[]; db.expenses=[]; save(); renderAll(); closeModal(); toast('Everything erased'); }; };
+
+/* ---------- start ---------- */
+applyTheme(); syncSettings(); renderAll(); checkReminders();
+setInterval(renderHome, 60000);
+if ('serviceWorker' in navigator && location.protocol==='https:') navigator.serviceWorker.register('sw.js').catch(()=>{});
+window.jarvisHandle = handle; window.jarvisDB = ()=>db; // for testing
 </script>
 </body>
 </html>
