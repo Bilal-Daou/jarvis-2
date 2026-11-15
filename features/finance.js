@@ -732,6 +732,12 @@ function intent(said, t0){
     const c = marketClock(); const sub = c.sub.replace(/^opens /,'it opens ').replace(/^closes /,'it closes ');
     return c.state==='open' ? `Yes, the US stock market is open now${sub ? ', and '+sub : ''}.` : c.state==='pre' ? `Not yet. It's pre-market right now${sub ? ', '+sub : ''}.` : c.state==='post' ? `The regular session is over. It's after hours now${sub ? ', '+sub : ''}.` : `The US stock market is closed right now${sub ? ', '+sub : ''}.`;
   }
+  // the dollar: there's no dollar index in the feed, so answer with the euro rate
+  if (/^how(?:'s|s| is| are) (?:the )?(?:us )?dollar(?: doing| today| looking)*$|\bdollar index\b|^(?:how(?:'s|s| is) )?(?:the )?dxy\b/.test(t)){
+    if (!data){ return notReady(); }
+    const q = quote('EURUSD=X'); J.go('finance');
+    return q ? `I don't track the dollar index yet. One euro buys ${spokenPrice(q)} dollars, ${spokenMove(q)}.` : "I don't track the dollar yet.";
+  }
   // open the screen
   if ((m = t.match(/^(?:open|show|show me|go to|take me to)\s+(?:the |my )?(markets?|stocks|stock market|watch ?list|finance|economic calendar|market news)(?: app| screen| page| tab)?$/))){
     const w = m[1]; st.seg = /watch/.test(w) ? 'watch' : /calendar/.test(w) ? 'cal' : /news/.test(w) ? 'news' : 'overview'; J.save(); J.go('finance');
@@ -783,7 +789,7 @@ function intent(said, t0){
   // market brief
   if (/\b(?:markets?|stock market|trading|wall street) (?:brief|briefing|summary|update|recap|report|wrap(?: up)?|rundown)\b/.test(t)
     || /^(?:give me|read me|tell me|what(?:'s|s| is)) (?:my |the |a )?(?:daily |morning )?(?:market|markets|stock market) (?:brief|briefing|update|summary|rundown)/.test(t)
-    || /^how(?:'s|s| is| are| did| were) (?:the )?(?:stock )?markets?(?: doing| looking| today| now| right now| this morning| close| do| end| today so far)*$/.test(t)
+    || /^how(?:'s|s| is| are| did| were) (?:the )?(?:stock )?(?:markets?|stocks)(?: doing| looking| today| now| right now| this morning| close| do| end| today so far| holding up| going)*$/.test(t)
     || /^what(?:'s|s| is| are) the (?:stock )?markets? doing(?: today| right now)?$/.test(t)
     || /^how(?:'s|s| is) wall street(?: doing| today)*$/.test(t)
     || /^(?:how did|where did) (?:the )?(?:stock )?markets? (?:close|end|finish)(?: today)?$/.test(t)){
@@ -826,7 +832,7 @@ function intent(said, t0){
   const QP = [
     /^(?:what(?:'s|s| is) )?(?:the )?(?:current )?(?:stock |share )?price (?:of|for|on) (.+?)(?: today| right now| now)?$/,
     /^(.+?) (?:stock|share) price(?: today| right now| now)?$/,
-    /^(?:how(?:'s|s| is| are| did)|what(?:'s|s| is| are)|where(?:'s|s| is| are)) (?:the )?(.+?)(?: stock| shares| share price| stock price| price)?(?: doing| trading| looking| at| trading at| performing| today| right now| now| so far)*$/,
+    /^(?:how(?:'s|s| is| are| did)|what(?:'s|s| is| are)|where(?:'s|s| is| are)) (?:the )?(.+?)(?: stock| shares| share price| stock price| price)?(?: doing| trading| looking| at| trading at| performing| today| right now| now| so far| do| close| end| finish| close today)*$/,
     /^(?:check|quote|look up|get me|price check on) (.+?)(?: stock| price| quote)?$/,
     /^how much is (?:a share of |one )?(.+?)(?: stock| shares| worth| trading at| going for)*(?: today| right now| now)?$/
   ];

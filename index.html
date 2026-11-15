@@ -539,12 +539,42 @@ function whenSpoken(ts){ const w = whenText(ts); return /^(Today|Tomorrow|Yester
 function ago(ts){ const s = (Date.now()-ts)/1000; if (s<60) return 'just now'; if (s<3600) return Math.floor(s/60)+'m ago'; if (s<86400) return Math.floor(s/3600)+'h ago'; return new Date(ts).toLocaleDateString([], {month:'short',day:'numeric'}); }
 
 /* ---------- the brain ---------- */
+/* Clean up what the phone's speech-to-text gives us: curly apostrophes (iPhone), the wake word, end punctuation */
+/* ...and the way people really talk: "Um, okay so can you tell me what's the weather, please?" -> "what's the weather" */
+const SP_FILLER = /^(?:(?:um+|uh+|uhm+|erm+|hmm+|so|okay|ok|alright|oh|yeah|yes|yep|hey|hi|hello|yo|listen|actually|quick question)\b[\s,.:;!?-]*|(?:well|right|like|and|all right|now)\s*[,.:;!?-]+\s*)/i;
+const SP_WAKE = /^jarvis\b[\s,.:;!?-]*/i;
+const SP_ASK = /^(?:(?:can|could|would) you (?:please )?tell me|(?:please )?tell me|let me know|i (?:want|wanna|would like|'d like|need) to know|do you know|you know|i was wondering|any idea)\b[\s,]*(?=(?:what|what's|whats|how|how's|hows|when|when's|whens|where|where's|who|who's|which|why|if|whether|is|are|am|will|was|were|do|does|did|should|can|could|have|has|any)\b)/i;
+const SP_POLITE = /^(?:(?:can|could|would|will) (?:you|u)(?: please)?|please|kindly|i was wondering if you could|do me a favou?r and)\b[\s,]*/i;
+function normalizeSpeech(raw){
+  let s = String(raw||'').replace(/[\u2018\u2019\u201B`\u00B4]/g,"'").replace(/[\u201C\u201D]/g,'"').replace(/\s+/g,' ').trim();
+  s = s.replace(/(^|[\s,])(?:um+|uh+|uhm+|erm+)(?=[\s,.!?]|$)[,]?/gi, '$1').replace(/\s+/g,' ').replace(/^[\s,]+/,'');
+  for (let i = 0; i < 8; i++){
+    const before = s;
+    for (const re of [SP_WAKE, SP_FILLER, SP_ASK, SP_POLITE]){ const n = s.replace(re, ''); if (/[a-z0-9]/i.test(n) && n !== s){ s = n; break; } }
+    if (/^(if|whether) /i.test(s) && before !== s) s = s.replace(/^(if|whether) /i, '');
+    if (s === before) break;
+  }
+  s = s.replace(/[\s,]+jarvis\s*([.!?]*)$/i, '$1');
+  if (/^(hey |hi |hello |ok |okay |yo )?jarvis[\s.!?,]*$/i.test(s)) return '';
+  for (let i = 0; i < 3; i++){ const n = s.replace(/[\s,]+(?:please|for me|thanks|thank you)\s*([.!?]*)$/i, '$1').replace(/[\s,]+jarvis\s*([.!?]*)$/i, '$1'); if (!/[a-z0-9]/i.test(n) || n === s) break; s = n; }
+  s = /^(note|notes|take a note|make a note|new note|add a note|save a note|write|jot|remember that|remember to)\b/i.test(s) ? s.replace(/[.!\s,]+$/,'').trim() : s.replace(/[.!?\s,]+$/,'').trim();
+  return s;
+}
+/* the last exchange, so "save that" knows what "that" is */
+let lastTurn = null, turnKind = 'feature', pendingNote = 0;   // pendingNote: when "take a note" was said on its own (expires after a minute)
 function handle(raw){
-  const said = String(raw||'').trim(); if (!said) return;
-  addMsg('me', said);
-  let reply; renderHold++;
+  const shown = String(raw||'').trim(); if (!shown) return;
+  const said = normalizeSpeech(shown) || 'hello';
+  addMsg('me', shown);
+  let reply; renderHold++; turnKind = 'feature';
   try { reply = think(said); } finally { renderHold--; renderWanted = false; }
+  lastTurn = {said, reply, kind: turnKind};
   addMsg('ai', reply); speak(reply); renderAll();
+}
+/* a reply that arrives later (after a weather lookup): shown in chat, and "save that" will save it */
+function addLateReply(text){
+  addMsg('ai', text);
+  if (lastTurn && /^(One moment|Checking|Looking up)/.test(lastTurn.reply)) lastTurn.reply = text;
 }
 /* =========================================================
    PLUGIN API: each feature file (features/*.js) registers here
@@ -556,7 +586,7 @@ const Jarvis = window.Jarvis = {
   get db(){ return db; }, get settings(){ return S; },
   save, uid, esc, fmt, cap, toast, modal, closeModal, speak, go, whenText, whenSpoken, ago, greeting, monthKey, sum, inMonth,
   categorize, CATS, wordsToNumbers, parseTime, handle, get icons(){ return ICON; },
-  renderAll: (...a)=>renderAll(...a),
+  renderAll: (...a)=>renderAll(...a), addLateReply: t=>addLateReply(t), normalizeSpeech: t=>normalizeSpeech(t),
   addExpense(o){ const e = Object.assign({id:uid(), type:'expense', at:Date.now()}, o); if (!e.cat) e.cat = e.type==='income'?'Income':categorize(e.desc||''); e.desc = cap(e.desc|| (e.type==='income'?'Income':'Expense')); db.expenses.unshift(e); save(); renderAll(); return e; },
   addReminder(o){ const r = Object.assign({id:uid(), done:false, repeat:'none', created:Date.now()}, o); db.reminders.push(r); save(); renderAll(); return r; },
   addNote(text, tag){ addNote(text); if (tag) db.notes[0].tag = tag; save(); renderAll(); return db.notes[0]; },
@@ -594,11 +624,20 @@ function renderPlugins(full){
 function think(said){
   const t = wordsToNumbers(said.toLowerCase()).replace(/(\d),(\d{3})/g,'$1$2').replace(/[!?]/g,'').replace(/,/g,' ').replace(/\s+/g,' ').trim();
   const key = monthKey(Date.now()); let m;
+  // "take a note" on its own: the next thing said becomes the note
+  const wasPending = pendingNote && Date.now() - pendingNote < 60e3; pendingNote = 0;
+  if (wasPending){
+    if (/^(take a note|take note|make a note|new note|add a note|save a note|create a note|write a note|note|write (this |something )?down|jot (this |something )?down|jot down|note down)$/.test(t)){ pendingNote = Date.now(); turnKind = 'chat'; return 'Sure. What should the note say?'; }
+    if (/^(never ?mind|forget it|cancel|stop|nothing|no|nope|no thanks)$/.test(t)) { turnKind = 'chat'; return 'Okay, no note.'; }
+    addNote(said); go('notes'); turnKind = 'note'; return 'Got it, note saved.';
+  }
+  // conversation first (exact phrases only), so no feature mistakes "can you hear me" for a command
+  const chat = smallTalk(t, said); if (chat) return chat;
   for (const fn of plugins.intents){ try { const r = fn(said, t); if (r) return r; } catch(e){ console.error(e); } }
 
-  if (/^(hi|hello|hey|good (morning|afternoon|evening))( jarvis)?$/.test(t)) return `${greeting()}, ${S.name}. What can I do for you?`;
-  if (/\b(help|what can you do)\b/.test(t)) return 'I can give you a morning brief and the weather, take notes, set reminders, track spending and your budget, scan receipts, log food and water, track habits and goals, and follow the markets. Try: brief me, or remind me to pay rent tomorrow at 9 am.';
-  if (/thank/.test(t)) return `Anytime, ${S.name}.`;
+  if (/^(hi|hello|hey|hey there|hi there|good (morning|afternoon|evening)|afternoon|evening)( jarvis)?$/.test(t)) { turnKind = 'chat'; return `${greeting()}, ${S.name}. What can I do for you?`; }
+  if (/\b(help|what can you do)\b/.test(t)) { turnKind = 'chat'; return HELP_TEXT; }
+  if (/\b(thanks|thank you)\b/.test(t) && t.split(' ').length <= 6) { turnKind = 'chat'; return `Anytime, ${S.name}.`; }
 
   // budget goal
   if ((m = t.match(/(?:set|change|make)(?: my)?(?: monthly)? budget (?:to|at|is)?\s*\$?(\d+(?:\.\d+)?)/)) || (m = t.match(/my (?:monthly )?budget is \$?(\d+(?:\.\d+)?)/))){
@@ -607,20 +646,27 @@ function think(said){
   }
   // spending questions
   // spending on one category: "how much did I spend on food this month?"
-  if ((m = t.match(/(?:how much|what) (?:did|have) i (?:spend|spent)(?: so far)? (?:on|for|at) (.+?)(?: this month| so far| in total| lately)*$/))){
+  const per = spendPeriod(t), spentIn = per ? db.expenses.filter(e=>e.type==='expense' && e.at>=per.from && (!per.to || e.at<per.to)) : inMonth(key), perWord = per ? per.label : 'this month';
+  if ((m = t.match(/(?:how much|what) (?:did|have|do) i (?:spend|spent)(?: so far)? (?:on|for|at) (.+?)(?: this month| so far| in total| lately| today| yesterday| this week| the week| last week| last 7 days)*$/))){
     const q = m[1].replace(/^(the|my)\s+/,''); const cat = Object.keys(CATS).find(c=>c.toLowerCase().split(/ & /).some(w=>q.includes(w.replace(/s$/,'')))) || categorize(q);
     if (cat !== 'Other'){
-      go('budget'); const list = inMonth(key).filter(e=>e.cat===cat); const v = sum(list);
-      return v ? `You've spent ${fmt(v)} on ${cat.toLowerCase()} this month, across ${list.length} payment${list.length===1?'':'s'}.` : `Nothing spent on ${cat.toLowerCase()} this month yet.`;
+      go('budget'); const list = spentIn.filter(e=>e.cat===cat); const v = sum(list);
+      return v ? `You've spent ${fmt(v)} on ${cat.toLowerCase()} ${perWord}, across ${list.length} payment${list.length===1?'':'s'}.` : `Nothing spent on ${cat.toLowerCase()} ${perWord} yet.`;
     }
   }
-  if (/how much (did|have) i (spend|spent)|what did i spend|my spending|spending summary|budget summary|how('s| is) my (budget|month)|how am i doing/.test(t)){
+  // "am I over budget?", "how much do I have left?"
+  if (/^(am i|are we) (over|under|on|within|still (under|within|on)|close to|near) (my |the )?budget\b|^how much (money )?(is |do i have |have i got |have i )?(left|remaining)( in| on| of)?( my| the)?( budget| this month| for the month)?$|^how much (money )?(can i (still )?spend|is left (in|on|of) (my |the )?budget)\b|^what('s| is) (left (in|of) )?my budget$|^what('s| is) my (monthly )?budget( at| set to)?$/.test(t)){
+    go('budget'); const tot = sum(inMonth(key));
+    if (!S.budget) return `You haven't set a budget yet. You've spent ${fmt(tot)} this month. Say: set my budget to 2000.`;
+    return tot > S.budget ? `Yes, you're ${fmt(tot-S.budget)} over your ${fmt(S.budget)} budget this month.` : `You're within budget. You've spent ${fmt(tot)} of ${fmt(S.budget)}, so ${fmt(S.budget-tot)} is left this month.`;
+  }
+  if (/how much (did|have|do) i (spend|spent)|what (did|have) i (spend|spent)|my spending|spending summary|budget summary|how('s| is) my (budget|month|spending)|how am i doing( with| on)?( my)? (money|budget|spending|finances)|^how am i doing( this month)?$|where('s| is| did| does| has)( all)? my money( been)?( go| gone| going| spent)?\b|what are my expenses|\btotal (spending|spent|expenses)\b|^(my |show me my |show my )?(expenses|spending)$|^budget$|^(show|open|show me|go to|take me to) (my |the )?(budget|spending|expenses|money)( page| screen)?$/.test(t)){
     go('budget');
-    const tot = sum(inMonth(key)); if (!tot) return 'No spending recorded this month yet.';
-    const byCat = {}; inMonth(key).forEach(e=>byCat[e.cat]=(byCat[e.cat]||0)+e.amount);
+    const tot = sum(spentIn); if (!tot) return `No spending recorded ${perWord}${per && per.to ? '' : ' yet'}.`;
+    const byCat = {}; spentIn.forEach(e=>byCat[e.cat]=(byCat[e.cat]||0)+e.amount);
     const top = Object.entries(byCat).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([c,v])=>`${c} ${fmt(v)}`).join(', ');
-    let s = `This month you've spent ${fmt(tot)}. Top categories: ${top}.`;
-    if (S.budget) s += tot > S.budget ? ` That's ${fmt(tot-S.budget)} over your budget.` : ` You have ${fmt(S.budget-tot)} left in your budget.`;
+    let s = `${cap(perWord)} you've spent ${fmt(tot)}. Top categories: ${top}.`;
+    if (S.budget){ const mt = sum(inMonth(key)); s += mt > S.budget ? ` That's ${fmt(mt-S.budget)} over your monthly budget.` : ` You have ${fmt(S.budget-mt)} left in your budget this month.`; }
     return s;
   }
   if (/(what('s| is) my balance|how much (did i|have i) (earn|made|make)|my income)/.test(t)){
@@ -628,8 +674,8 @@ function think(said){
     return `This month: ${fmt(inc)} in, ${fmt(exp)} out. Balance ${fmt(inc-exp)}.`;
   }
   // read back
-  if (/(read|what are|show|list|open).*(note)/.test(t)){ go('notes'); const n = db.notes.slice(0,5); return n.length ? 'Your latest notes: ' + n.map(x=>x.text).join('. ') : 'You have no notes yet.'; }
-  if (/(read|what are|show|list|open|any|what('s| is)).*(reminder|today|schedule|plan)/.test(t)){
+  if (/(read|what are|show|list|open).*(note)|^(my )?notes$|^(what's|what is) in my notes$|^what (notes )?do i have( in my notes)?$/.test(t)){ go('notes'); const n = db.notes.slice(0,5); return n.length ? 'Your latest notes: ' + n.map(x=>x.text).join('. ') : 'You have no notes yet.'; }
+  if (/(read|what are|show|list|open|any|what('s| is)|what|do i have).*\b(reminders?|schedule|agenda)\b|^what (do i have|have i got|is) (coming up|next|planned)\b|^(do i have|have i got|is there|are there|anything|what('s| is)|any)\b.*\b(coming up|upcoming|due soon|scheduled)\b|^what('s| is) (coming up|next)( on my list| for me)?$|^(my )?reminders$/.test(t)){
     go('reminders'); const r = upcoming().slice(0,5);
     return r.length ? 'Coming up: ' + r.map(x=>`${x.text}, ${whenText(x.at)}`).join('. ') : 'You have no upcoming reminders.';
   }
@@ -642,6 +688,7 @@ function think(said){
   if (/(delete|remove|undo|cancel|scratch) (the |my )?last (reminder)/.test(t)){ db.reminders.sort((a,b)=>b.created-a.created); const x = db.reminders.shift(); save(); return x?'Removed your last reminder.':'No reminders to remove.'; }
 
   // reminders
+  if (/^remind me (what|who|where|which|how|why|if|whether)\b/.test(t)) { turnKind = 'chat'; return `I don't keep a memory of our chats yet. To keep something, say note, then what you want saved.`; }
   if ((m = said.match(/^(?:hey jarvis,?\s*)?(?:please\s+)?(?:can you\s+)?(?:remind me|set (?:a )?reminder|reminder|don'?t let me forget)\s*(?:to|that|about|for)?\s*(.*)$/i))){
     const {date, rest, repeat} = parseTime(wordsToNumbers(m[1]));
     const text = cap(rest || 'Reminder');
@@ -651,8 +698,11 @@ function think(said){
     return `I'll remind you to ${text.charAt(0).toLowerCase()+text.slice(1)}, ${whenSpoken(when.getTime())}${repeat!=='none'?', repeating '+repeat:''}.` + (date?'':' You did not say a time, so I set it for an hour from now.');
   }
   // explicit notes
-  if ((m = said.match(/^(?:hey jarvis,?\s*)?(?:take a note|new note|add a note|note|write down|write this down|remember that|remember|jot down)\s*[:,-]?\s*(?:that\s+)?(.+)$/i))){
-    addNote(m[1]); go('notes'); return 'Got it, note saved.';
+  if (/^(take a note|take note|make a note|new note|add a note|save a note|create a note|write a note|note|write (this |something )?down|jot (this |something )?down|jot down|note down)$/.test(t)){ pendingNote = Date.now(); turnKind = 'chat'; return 'Sure. What should the note say?'; }
+  if ((m = said.match(/^(?:hey jarvis,?\s*)?(take a note|take note of|take note|make a note of|make a note|new note|add a note|save a note|save note|write a note|create a note|leave a note|add (?:this |it )?to my notes|put (?:this |it )?in my notes|note to self|note down|note|write down|write this down|remember that|remember to|jot down|jot this down)\b\s*[:,-]?\s*(.+)$/i))){
+    let text = m[2].replace(/^(?:that|this)[\s,:]+/i, '');
+    if (/^(take|make|add|write|leave|create|new) a note|^save a note/i.test(m[1])) text = text.replace(/^(?:to|saying|about)\s+/i, '');
+    if (text.trim()){ addNote(text.trim()); go('notes'); turnKind = 'note'; return 'Got it, note saved.'; }
   }
   // income
   if (/\b(got paid|received|earned|i made|income|salary|got my salary)\b/.test(t) && !/\b(spent|spend|bought|paid for|pay for)\b/.test(t) && (m = t.match(/\$?(\d+(?:\.\d{1,2})?)\s*(?:dollars?|bucks|usd|euros?|pounds?)?\s*(?:from|for|as|in)?\s*(.*)$/))){
@@ -675,12 +725,95 @@ function think(said){
     else if (S.budget && tot > S.budget*.8) s += ` You've used ${Math.round(tot/S.budget*100)}% of your budget.`;
     return s;
   }
-  // fallback: save as a note
-  addNote(said); go('notes');
-  return 'I saved that as a note.';
+  // nothing matched: answer, never save
+  return fallbackReply(t);
 }
 /** tell features (e.g. receipts) that an expense was removed or put back */
 function expenseEvent(kind, e){ try { window.dispatchEvent(new CustomEvent('jarvis:expense-'+kind, {detail:{id:e.id, expense:e}})); } catch(err){} }
+/* Conversation: simple answers, never saves anything (except "save that", which you asked for) */
+const HELP_TEXT = "I can brief you on your day, check the weather and markets, track spending, food, water and habits, scan receipts, set reminders, and save notes when you ask. Try: brief me.";
+const pick = list => list[Math.floor(Math.random()*list.length)];
+function spendPeriod(t){
+  const d0 = new Date(); d0.setHours(0,0,0,0);
+  if (/\btoday\b|\bso far today\b/.test(t)) return {from:+d0, label:'today'};
+  if (/\byesterday\b/.test(t)){ const y = new Date(d0); y.setDate(y.getDate()-1); return {from:+y, to:+d0, label:'yesterday'}; }
+  if (/\blast week\b/.test(t)){ const w = new Date(d0); w.setDate(w.getDate()-((w.getDay()+6)%7)); const p0 = new Date(w); p0.setDate(p0.getDate()-7); return {from:+p0, to:+w, label:'last week'}; }
+  if (/\b(this|the) week\b|\blast 7 days\b/.test(t)){ const w = new Date(d0); w.setDate(w.getDate()-((w.getDay()+6)%7)); return {from:+w, label:'this week'}; }
+  return null;
+}
+function saveThat(){
+  if (!lastTurn) return "There's nothing to save yet. Say note, then what you want saved.";
+  if (lastTurn.kind === 'note') return "That's already saved in your notes.";
+  if (lastTurn.kind === 'saved') return "Already saved.";
+  if (lastTurn.kind === 'fallback'){ addNote(lastTurn.said); go('notes'); turnKind = 'saved'; return 'Done, I saved that as a note.'; }
+  if (lastTurn.kind === 'chat' || !lastTurn.reply) return "There's nothing to save from that. Say note, then what you want saved.";
+  addNote(lastTurn.reply); go('notes'); turnKind = 'saved'; return "Done, I saved my last answer as a note.";
+}
+function smallTalk(t, said){
+  const now = new Date(), N = S.name;
+  const chat = r => { turnKind = 'chat'; return r; };
+  // "save that" / "note that" / "write that down": you asked, so it's saved
+  if (/^(save|keep|store) (that|this|it)( as a note| to my notes| in my notes| for me| for later)?$|^(add|put) (that|this|it) (to|in|into) (my )?notes$|^(note|write|jot) (that|this|it)( down)?$|^(note|write|jot) down (that|this)$|^remember (that|this)$|^make (that|this|it) a note$|^save (that|this|it) as a note$/.test(t)) return saveThat();
+  if (/^(can you |do you |you )?hear me( now| okay| ok| alright)?$|^(are )?you (there|listening|awake|on|with me)( now)?$|^(is )?(this|it|this thing|the mic|the microphone) (working|on)( now)?$|^(test|testing|mic check)( test| testing| 1| 2| 3| 1 2 3| 123)*$|^hello hello$|^(hello )+(are you there|anyone there)$/.test(t)) return chat(`Yes, I can hear you loud and clear, ${N}. What can I do for you?`);
+  if (/^(help|help me|what can you do|what else can you do|what are you able to do|what do you do|what are your (features|skills|options)|how do (i|you) use (you|this|this app|jarvis)|how does this (work|app work)|what can i (ask|say|tell)( you| jarvis)?|what should i (ask|say)( you)?|show me what you can do|options|commands|features)$/.test(t)) return chat(HELP_TEXT);
+  if (/^(right now |so )?(what('s| is) the time|what time is it|what time it is|time|the time|tell me the time|current time|got the time|do you have the time|have you got the time)( now| right now| please)?$/.test(t)) return chat(`It's ${now.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})}.`);
+  if (/^(what('s| is) (the |today's )?date|today's date|the date|date|what day is (it|today)|what('s| is) (the )?day( today)?|which day is (it|today)|what('s| is) today|what month is it|what year is it|what('s| is) the month|what day of the week is it|what('s| is) the day of the week)( today| now)?$/.test(t)) return chat(`Today is ${now.toLocaleDateString([], {weekday:'long', month:'long', day:'numeric', year:'numeric'})}.`);
+  if (/^what did i (just )?say$/.test(t)) return chat(lastTurn ? `You said: ${lastTurn.said}.` : "You haven't said anything yet.");
+  if (/^(do you )?(know|remember) (my name|who i am)$|^what('s| is) my name$|^who am i$/.test(t)) return chat(`You're ${N}.`);
+  if (/^do you remember\b|^remember (when|the time|what|how|who|where|if)\b/.test(t)) return chat("I don't keep a memory of our chats yet. To keep something, say note, then what you want saved.");
+  if (/^(how are you|how are you doing|how're you|how you doing|how are things|how('s| is) it going|how('s| is) everything|how('s| is) life|how('s| is) your life|how do you do|what's up|whats up|sup|what's good|how have you been|you good|you okay|you ok|are you okay|are you ok)( today| doing| jarvis)?$/.test(t)) return chat(pick([`I'm doing great, thanks for asking, ${N}. What can I do for you?`, `All good here, ${N}. How can I help?`]));
+  if (/^(how was your day|how('s| is) your day( going)?)$/.test(t)) return chat(`Pretty good. I've been keeping an eye on your day. How's yours going, ${N}?`);
+  if (/^(who are you|what are you|what('s| is) your name|introduce yourself|tell me about yourself|are you (real|human|a robot|a person|an ai|a bot)|who (made|built|created|designed) you)$/.test(t)) return chat(`I'm Jarvis, your personal assistant, built just for you. I can brief you on your day, the weather and markets, your money, food and habits, and save notes when you ask.`);
+  if (/^(how old are you|where are you from|where do you live|where are you)$/.test(t)) return chat(`I'm Jarvis, and I live right here on your phone, ${N}.`);
+  if (/^(tell me a joke|say something funny|make me laugh|another joke|a joke|joke|tell me another joke)$/.test(t)) return chat(pick(["Why did the stock market go to therapy? Too many emotional swings.","I told my budget a joke. It didn't find it very rich.","Why don't accountants ever get bored? They always find something to count on.","Why did the banana go to the doctor? It wasn't peeling well."]));
+  if (/^(tell me a story|sing( me)? a song|sing something)$/.test(t)) return chat(`I'm better with facts than stories, ${N}. Want a joke instead? Just say tell me a joke.`);
+  if (/^(thanks|thank you|thank you so much|thanks a lot|thanks so much|thx|cheers|much appreciated|appreciate it|(awesome|great|perfect|ok|okay|cool|nice) (thanks|thank you)|thanks (jarvis|man|buddy|bro)|that's great thanks)$/.test(t)) return chat(pick([`Anytime, ${N}.`, `You're welcome, ${N}.`, `Happy to help.`]));
+  if (/^(ok|okay|cool|nice|great|awesome|perfect|got it|alright|all right|sure|good|wow|fine|sounds good|sounds great|okay cool|ok cool|i see|makes sense|interesting|lovely|amazing)$/.test(t)) return chat(`Anything else, ${N}?`);
+  if (/^(yes|yeah|yep|yup|yes please|please|sure thing|of course|definitely)$/.test(t)) return chat(`Great. What would you like me to do?`);
+  if (/^(no|nope|nah|no thanks|no thank you|nothing|nothing else|never ?mind( that| it)?|forget it|forget about it|stop|cancel|that's it|that's all|thats all|that's all for now|i'm good|im good|i'm fine|all good|that's fine)$/.test(t)) return chat(/^(stop|cancel)$/.test(t) ? 'Okay, stopped.' : pick(['No problem.', `Okay, I'm here if you need me.`]));
+  if (/^(wait|hold on|(one|1) sec(ond)?|hang on|give me a (sec|second|minute)|just a (sec|second|minute))$/.test(t)) return chat('Sure, take your time.');
+  if (/^(what|huh|pardon|sorry what|come again|say that again|repeat that|what did you say)$/.test(t)) return chat(lastTurn && lastTurn.reply ? lastTurn.reply : "Sorry, I didn't catch that. Could you say it again?");
+  if (/^(sorry|my bad|oops|i'm sorry)$/.test(t)) return chat('No worries at all.');
+  if (/^(really|seriously|are you sure)$/.test(t)) return chat('Yep, as far as I can tell.');
+  if (/^(i don't know|i dont know|not sure|i'm not sure|dunno|idk)$/.test(t)) return chat(`No rush. You can ask for your brief, the weather, or your spending anytime.`);
+  if (/^(bye|goodbye|bye bye|good night|goodnight|night|nighty night|see you|see you later|see ya|later|talk (to you )?(later|soon)|catch you later|i'm going to sleep|going to bed)( jarvis)?$/.test(t)) return chat(/night|sleep|bed/.test(t) ? `Good night, ${N}. Sleep well.` : `Talk soon, ${N}.`);
+  if (/^(i love you|love you|you('re| are) (great|awesome|amazing|the best|smart|funny|cool|helpful|so helpful)|good job|well done|nice (one|1)|good boy|you rock|great job|nice work|good work)( jarvis)?$/.test(t)) return chat(`Thanks, ${N}! I'm here whenever you need me.`);
+  if (/^(what('s| is) your favou?rite\b|do you (sleep|eat|dream|get tired|get bored|have feelings|have a (family|girlfriend|boyfriend|wife|husband))\b|are you (happy|tired|bored|alive|single|married|awake)$|do you like (football|soccer|sports|music|movies|food|it here)\b)/.test(t)) return chat(`I'm just your assistant, so I don't have favorites, ${N}. But I always like helping you.`);
+  if (/^(lol|lmao|haha+|ha ha( ha)*|hahaha+|that's (so )?funny|funny|hilarious|that's hilarious)$/.test(t)) return chat(`Ha! Glad you're having fun, ${N}.`);
+  if (/^(oh my god|oh my gosh|my god|my gosh|omg|oh wow|no way|whoa|wow really)$/.test(t)) return chat(`I know, right?`);
+  if (/^(bless you)$/.test(t)) return chat(`Thank you, ${N}.`);
+  if (/^(guess what|you know what|i have news|i've got news)$/.test(t)) return chat(`What's up? I'm listening.`);
+  if (/^(i'm back|i am back|i'm home|i am home|back|i'm here|i am here)$/.test(t)) return chat(`Welcome back, ${N}. What can I do for you?`);
+  if (/^(i appreciate you|appreciate you|i appreciate it|you're a lifesaver)$/.test(t)) return chat(`Anytime, ${N}. That's what I'm here for.`);
+  if (/^do you like me$/.test(t)) return chat(`Of course. You're my favorite person to help, ${N}.`);
+  if (/^(let's talk|let's chat|talk to me|i('m| am) just (talking|chatting)( to you| with you)?|just talking|just chatting|i just want(ed)? to talk|i want to talk|keep me company)$/.test(t)) return chat(`I'm always up for a chat, ${N}. Ask me about your day, the weather or the markets anytime.`);
+  if (/^what do you think( about it| of that)?$/.test(t)) return chat(`I think you're doing great, ${N}. What would you like to know?`);
+  if (/^i('m| am) (so |really |very |kind of |a bit )?(bored)$/.test(t)) return chat(`Want a joke? Or I can give you a quick market update. Just ask.`);
+  if (/^i('m| am) (so |really |very |kind of |a bit )?(tired|exhausted|stressed|stressed out|sad|down|not feeling (good|great|well))$|^(i had|it's been|it was|that was) (a )?(long|rough|hard|tough|busy|crazy|bad) day$/.test(t)) return chat(pick([`Sorry to hear that, ${N}. Take it easy. I'm here if you need anything.`, `That sounds tough, ${N}. Take a breather. I've got your reminders covered.`]));
+  if (/^i('m| am) (so |really |very |kind of |a bit )?(hungry|starving)$/.test(t)) return chat(`Ask me what should I eat, and I'll suggest something that fits your calories.`);
+  if (/^i('m| am) (doing )?(good|great|fine|well|okay|ok|happy|excited|awesome|amazing)( today| thanks| thank you)?$|^i('m| am) (so |really |very )?happy( today)?$|^(not bad|pretty good|all good)$/.test(t)) return chat(`Love to hear that, ${N}.`);
+  return null;
+}
+let fbLast = '';
+function fallbackReply(t){
+  turnKind = 'fallback';
+  const one = list => { const opts = list.filter(x=>x!==fbLast); const r = opts[Math.floor(Math.random()*opts.length)] || list[0]; fbLast = r; return r; };
+  if (/^(call|phone|ring|dial|facetime|video call)\b/.test(t)) return one(["I can't make calls yet. Say remind me to call, and I'll make sure you don't forget."]);
+  if (/^(text|message|send|email|e-mail|whatsapp|reply to)\b/.test(t)) return one(["I can't send messages yet. I can remind you to, or save it as a note."]);
+  if (/^(play|put on|shuffle|skip|pause|resume)\b|\b(music|song|songs|playlist|spotify|podcast)\b/.test(t)) return one(["I can't play music yet. I can give you your brief, the weather or the markets."]);
+  if (/\b(alarm|timer|stopwatch)\b/.test(t)) return one(["I can't set alarms or timers yet. Say remind me, then a time, and I'll remind you."]);
+  if (/^(open|launch|start) /.test(t)) return one(["I can't open other apps yet. I can open your notes, reminders, budget, food, habits and markets."]);
+  if (/^(what's|what is|whats) the news$|^(the )?news$|^(any|latest) news$|^(read|tell) me the news$/.test(t)) return one(["I only have market news for now. Say market news to hear the headlines."]);
+  const isQ = /^(what|who|whom|whose|where|when|why|how|which|is|are|was|were|do|does|did|can|could|will|would|should|has|have|tell me|explain|define|translate|find|search|look up|google)\b/.test(t);
+  if (/^i (just )?(paid|bought|purchased)\b/.test(t) && !/\d/.test(t)) return one(["Want me to log it? Tell me the amount, like: I paid 500 for rent."]);
+  if (/^(i need to|i have to|i've got to|i got to|i gotta|i must|i should|i want to|i wanna|i'm going to|im going to|i am going to|i'm gonna|gotta|we should|we need to|we have to|don't forget|dont forget)\b|\b(tomorrow|tonight|later today|this (evening|afternoon|weekend)|next week|at \d{1,2}( ?(am|pm|o'clock))?|on (monday|tuesday|wednesday|thursday|friday|saturday|sunday))\b/.test(t) && !isQ)
+    return one(["Want me to keep that? Say remind me to, or say save that to make it a note.", "Got it. If you want, say remind me to, or say save that and I'll note it."]);
+  if (isQ)
+    return one(["I can't look that up yet. Ask me about your day, the weather, the markets or your money.", "I can't answer that one yet. I can do your brief, weather, markets, spending, food and habits.", "Sorry, I can't answer that yet. Try asking for your brief, the weather or your budget."]);
+  if (!/^(open|turn|switch|order|book|buy|take|make|find|show|get|give|set|start|go|navigate|drive|send|call|play|read|search|look|check|add|remove|delete|help|translate|sing|draw|print|share|download|install|change|lock|unlock|close|pay|transfer|schedule|move|calculate|convert|count|wake)\b/.test(t))
+    return one(["I hear you. I can't chat about that yet. Say save that if you want it kept as a note.", "Got it. I can't really chat about that yet, but say save that and I'll note it."]);
+  return one(["Sorry, I can't do that yet. Try asking for your brief, the weather or your spending.", "I can't help with that one yet. I can do your brief, weather, markets, money, food and habits.", "That's something I can't do yet. Ask me about the weather, the markets or your budget."]);
+}
 function cap(s){ s = String(s).trim(); return s.charAt(0).toUpperCase()+s.slice(1); }
 function addNote(text){ db.notes.unshift({id:uid(), text:cap(text), tag:guessTag(text), pinned:false, at:Date.now()}); save(); }
 function upcoming(){ return db.reminders.filter(r=>!r.done && r.at>=Date.now()-6e4).sort((a,b)=>a.at-b.at); }

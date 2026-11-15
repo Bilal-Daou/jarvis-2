@@ -1294,13 +1294,15 @@
       return `${cap(names)} ${one && (p.items[0].qty===1 || p.items[0].grams)?'has':'have'} about ${N(tot.kcal)} calories${one?'':' in total'}: ${gramsSay(tot.p)} of protein, ${N(tot.c)} of carbs and ${N(tot.f)} of fat.${p.unknown.length?` I don't know ${p.unknown.join(' or ')} yet.`:''}`;
     }
     // ---- today summary
-    if (/\b(?:how many|how much) (?:calories|calorie|kcal|cals)\b/.test(t) || /\b(?:calories|calorie count|kcal) (?:today|so far|left|remaining|eaten)\b/.test(t) || /\bwhat (?:did|have) i (?:eat|eaten|had)\b/.test(t) || /\bhow (?:am i|i'm) doing (?:on|with) (?:my )?(?:calories|food|diet)\b/.test(t) || /\bhow much (?:protein|carbs|fat)\b/.test(t) || /^(?:my )?calories$/.test(t)) return summaryReply(t);
+    if (/\b(?:how many|how much) (?:calories|calorie|kcal|cals)\b/.test(t) || /\b(?:calories|calorie count|kcal) (?:today|so far|left|remaining|eaten)\b/.test(t) || /\bwhat (?:did|have) i (?:eat|eaten|had)\b|^what did i have (?:for|at|today|this|so far)\b/.test(t) || /\bhow (?:am i|i'm) doing (?:on|with) (?:my )?(?:calories|food|diet)\b/.test(t) || /\bhow much (?:protein|carbs|fat)\b/.test(t) || /^(?:my )?calories$/.test(t)) return summaryReply(t);
     function summaryReply(t){
       const key = /\byesterday\b/.test(t) ? shiftKey(todayKey(), -1) : todayKey();
       viewKey = key; J.go('food');
       const d = getDay(key), tt = dayTotals(key);
       if (!d.items.length) return key===todayKey() ? `You haven't logged any food today. Your goal is ${N(F().goal)} calories. Say something like “I ate 2 eggs and a banana”, or scan a barcode.` : 'Nothing was logged yesterday.';
       if (/\bwhat (?:did|have) i\b/.test(t)){
+        const mw = t.match(/\bfor (breakfast|brunch|lunch|dinner|supper|snacks?)\b/);
+        if (mw){ const id = {brunch:'breakfast', supper:'dinner', snacks:'snack'}[mw[1]] || mw[1]; const it = d.items.filter(x=>x.meal===id); if (!it.length) return `Nothing logged for ${MEAL_WORD[id] || id} ${key===todayKey()?'today':'yesterday'}.`; return `For ${MEAL_WORD[id] || id} you had ${listJoin(it.map(x=>x.name.toLowerCase().replace(/\s*\(.*?\)/g,'')))}, about ${N(it.reduce((a,x)=>a+itemTotals(x).kcal,0))} calories.`; }
         const byMeal = MEALS.map(mm=>{ const it = d.items.filter(x=>x.meal===mm.id); if (!it.length) return null; const cnt = {}; it.forEach(x=>{ const n = x.name.toLowerCase().replace(/\s*\(.*?\)/g,''); cnt[n] = (cnt[n]||0) + 1; }); return `${mm.id==='snack'?'Snacks':mm.label}: ${listJoin(Object.entries(cnt).map(([n,c])=>c>1?`${n} ${c===2?"twice":c+" times"}`:n))}`; }).filter(Boolean);
         return `${byMeal.join('. ')}. ${summarySay(key)}`;
       }

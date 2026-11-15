@@ -1200,8 +1200,14 @@ function intent(said, t0){
 
   // status questions
   if (/^(?:how (?:are|is) my habits?(?: going| doing)?|how am i doing (?:on|with) (?:my )?habits|(?:my |show )?habits? (?:status|summary|progress|update|report)|what habits? (?:do i (?:have )?left|are left)(?: today)?|what(?:'s| is) left (?:on my habits|for my habits)|did i (?:do|finish) (?:all )?my habits(?: today)?)$/.test(t)) { J.go('habits'); setTab('today'); return ret(habitsSummary()); }
+  // one habit: "how's my water habit?"
+  if ((m = t.match(/^(?:how(?:'s| is| am i doing (?:on|with))) (?:my |the )?(.+?) habit(?: going| doing| coming along)?(?: today)?$/))){
+    const h = matchHabit(m[1]);
+    if (h){ J.go('habits'); setTab('today'); const k = dkey(today0()); const st0 = isCount(h) ? `${Math.round(val(h,k)*100)/100} of ${qty(tgt(h), h.unit)} today` : (isDone(h,k) ? 'done today' : 'not done yet today'); return ret(`${h.name}: ${st0}. ${streakReply(h)}`); }
+    return habits().length ? `I couldn't find a ${m[1]} habit. Your habits are: ${habits().map(h=>h.name).join(', ')}.` : "You don't have any habits yet. Say: add a habit to drink water every day.";
+  }
   // one goal: "how's my savings goal?", "how is my reading goal going"
-  if ((m = t.match(/^(?:how(?:'s| is| am i doing (?:on|with))) (?:my |the )?(.+?) goal(?: going| doing| coming along)?$/))){
+  if ((m = t.match(/^(?:how(?:'s| is| am i doing (?:on|with))) (?:my |the )?(.+?) goal(?: going| doing| coming along)?$/)) && !/\b(budget|spending|calorie|calories|kcal|food|diet|protein|carbs?)\b/.test(m[1])){
     const g = matchGoal(m[1]) || (goals().length===1 ? goals()[0] : null);
     if (g){ J.go('habits'); setTab('goals'); ui.goalDetail = null; return ret(goalsSummary(g)); }
     if (!/\b(budget|spending|calorie|calories|kcal|water|food|protein)\b/.test(m[1])){ J.go('habits'); setTab('goals'); return ret(goals().length ? `I couldn't find a ${m[1]} goal. ` + goalsSummary() : goalsSummary()); }

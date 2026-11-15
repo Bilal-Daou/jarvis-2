@@ -454,8 +454,9 @@ try {
     const S = J.settings, parts = [];
     const name = (S.name || '').trim();
     parts.push(name && name.toLowerCase() !== 'there' ? `${J.greeting()}, ${name}.` : `${J.greeting()}.`);
-    const wx = cached(); if (wx){ const w = weatherLines(wx, placeName()); if (w) parts.push(w); }
-    const r = reminderLine(); if (r) parts.push(r);
+    const wx = cached(); let w = null; if (wx){ w = weatherLines(wx, placeName()); if (w) parts.push(w); }
+    if (!w) parts.push(st.loc ? "I'm still getting the weather, ask me again in a moment." : "For the weather, tell me your city, for example: set my city to Beirut.");
+    const r = reminderLine(); parts.push(r || 'You have nothing scheduled today.');
     const s = spendLine(); if (s) parts.push(s);
     briefLines.forEach(fn=>{
       try {
@@ -494,7 +495,8 @@ try {
   // a reply that arrives after a network call: shown in the chat like a normal Jarvis reply
   function lateReply(text){
     const chat = document.getElementById('chat');
-    if (chat){ const el = document.createElement('div'); el.className = 'msg ai'; el.innerHTML = `<div class="who">Jarvis</div>${J.esc(text)}`; chat.appendChild(el); chat.scrollTop = chat.scrollHeight; }
+    if (J.addLateReply){ try { J.addLateReply(text); } catch(e){} }
+    else if (chat){ const el = document.createElement('div'); el.className = 'msg ai'; el.innerHTML = `<div class="who">Jarvis</div>${J.esc(text)}`; chat.appendChild(el); chat.scrollTop = chat.scrollHeight; }
     let tries = 0;
     (function waitTurn(){ let busy = false; try { busy = speechSynthesis.speaking; } catch(e){} if (busy && ++tries < 32) return setTimeout(waitTurn, 250); J.speak(text); })();
   }
@@ -679,7 +681,7 @@ try {
   /* ---------------- voice ---------------- */
   const title = s => s.replace(/(^|[\s-])([a-z])/g, (x, a, b)=>a + b.toUpperCase());
   function clean(t){ return t.replace(/[.]/g,'').replace(/^(hey |ok |okay )?jarvis\s+/,'').replace(/\s+(jarvis|please)$/,'').replace(/\s+(jarvis|please)$/,'').trim(); }
-  const BRIEF_RE = /^(good morning|morning|(the |my )?(morning |daily )?brief(ing)?|brief me|(play|read|give me|start|run|do) (me )?(my |the )?(morning |daily )?brief(ing)?|what('s| is| does) my day look(ing)? like|what does today look like|how('s| is) my day( looking)?( today)?|what('s| is) my day like|what('s| is) the plan for today)$/;
+  const BRIEF_RE = /^(good morning|morning|(the |my |today's |a )?(morning |daily )?brief(ing)?( for today| today)?|brief me( on (my |the )?day)?|(play|read|give|start|run|do|get|show|tell) (me )?(my |the |a |today's )?(morning |daily )?brief(ing)?|what('s| is| are) (the |my |today's )(morning |daily )?brief(ing)?( for today| today)?|what('s| is| does) my day look(ing)?( like)?( today)?|what does (today|my day) look like|how('s| is) my day( looking| going| shaping up)?( today)?|what('s| is) my day like|what('s| is) (the|my) plan (for )?(today|the day)|what('s| is) (going on|happening|on|new|up) (for )?today|what('s| is) on my plate( today)?|what do i have (going on |on |planned )?today|what have i got (going on |on )?today|anything (that )?i should know( about)?( today| for today)?|anything (important |new )?(today|for today)|((tell me|talk me through|run me through|walk me through) )?(about )?my day|(give me |read me )?(a |the )?(rundown|summary|overview|recap) (of|for) (my |the )?(day|today)|catch me up|fill me in|update me( on (my |the )?(day|today))?|what('s| is) (new|going on|happening)( with me)?|give me an update|(my )?daily update|today's update|start my day|let's start the day)$/;
   const NOT_MINE = /^(note|take a note|new note|add a note|remind|set (a )?reminder|remember|write|jot|paid|spent|spend|bought|buy|got paid)\b/;
   function needLocation(){ return "I don't know where you are yet. Tap “Set location” on the Today card at the top of Home, or say “set my city to Beirut”."; }
   function noWeatherYet(after){
@@ -690,6 +692,18 @@ try {
   function dayIndexFor(t, wx){ const v = now(wx); if (!v) return null; return /\btomorrow\b/.test(t) ? v.di + 1 : v.di; }
   function weatherAnswer(t, wx, place){
     const v = now(wx); if (!v) return "I don't have a forecast for today yet.";
+    // sunscreen / UV
+    if (/\b(sunscreen|sun cream|sunblock|sunglasses|uv)\b/.test(t)){
+      const i = /\btomorrow\b/.test(t) ? v.di + 1 : v.di, uv = wx.d.uv[i], when = i === v.di ? 'today' : 'tomorrow';
+      if (!num(uv)) return weatherLines(wx, place, {uv:true});
+      return uv >= 3 ? `Yes. The UV index in ${place} reaches ${Math.round(uv)} ${when}, so sunscreen is a good idea.` : `Not really. The UV index in ${place} stays low ${when}, around ${Math.round(uv)}.`;
+    }
+    // tonight: how low it goes for the rest of today
+    if (/\b(tonight|this evening|overnight)\b/.test(t) && !/\btomorrow\b/.test(t)){
+      const rest = []; for (let k = v.hi; k < wx.h.time.length && wx.h.time[k].slice(0,10) === v.n.slice(0,10); k++) if (num(wx.h.t[k])) rest.push(wx.h.t[k]);
+      const lo = rest.length ? Math.min(...rest) : v.min;
+      if (num(lo)) return `It's ${deg(v.t)} in ${place} now, and it drops to about ${n(lo)} tonight.${lo <= 14 ? ' Take a jacket if you go out.' : ''}`;
+    }
     if (/\btomorrow\b/.test(t)){
       const i = v.di + 1; if (!wx.d.time[i]) return "I don't have tomorrow's forecast yet.";
       const ro = rainOutlook(wx, v, i);
@@ -706,9 +720,26 @@ try {
     if (!tomorrow && g === 'snow') return `It's snowing in ${place} right now, so no rain, but dress warmly.`;
     const ro = rainOutlook(wx, v, i); if (!ro) return `I don't have the rain forecast for ${when} yet.`;
     if (ro.likely && ro.kind === 'snow') return `Snow is more likely than rain in ${place} ${when}, around ${isoTime(ro.at)}. Dress warmly.`;
+    if (/\bsnow/.test(t) && ro.kind !== 'snow') return `No snow expected in ${place} ${when}.` + (ro.likely ? ` Rain is likely around ${isoTime(ro.at)}, though.` : '');
     if (ro.likely) return `Yes, rain is likely in ${place} ${when}, around ${isoTime(ro.at)}, about ${pct10(ro.max)} percent chance. Take an umbrella.`;
     if (ro.max >= 20) return `Maybe. There's about a ${pct10(ro.max)} percent chance of ${ro.kind} in ${place} ${when}${ro.at ? ', most likely around ' + isoTime(ro.at) : ''}.`;
-    return `No, rain isn't expected in ${place} ${tomorrow ? 'tomorrow' : hourOf(v.n) >= 12 ? 'for the rest of today' : 'today'}.`;
+    return `No, ${/\bsnow/.test(t) ? 'snow' : 'rain'} isn't expected in ${place} ${tomorrow ? 'tomorrow' : hourOf(v.n) >= 12 ? 'for the rest of today' : 'today'}.`;
+  }
+
+  // "do I need a jacket?": judged on how cold it feels for the rest of the day (or tomorrow)
+  function coatAnswer(t, wx, place){
+    const v = now(wx); if (!v) return weatherAnswer(t, wx, place);
+    const tomorrow = /\btomorrow\b/.test(t), when = tomorrow ? 'tomorrow' : 'today';
+    let lo, hi;
+    if (tomorrow){ const i = v.di + 1; if (!num(wx.d.min[i])) return "I don't have tomorrow's forecast yet."; lo = wx.d.min[i]; hi = wx.d.max[i]; }
+    else {
+      const rest = []; for (let k = v.hi; k < wx.h.time.length && wx.h.time[k].slice(0,10) === v.n.slice(0,10); k++){ const f = num(wx.h.feels[k]) ? wx.h.feels[k] : wx.h.t[k]; if (num(f)) rest.push(f); }
+      lo = rest.length ? Math.min(...rest) : v.min; hi = num(v.max) ? v.max : v.t;
+    }
+    const now0 = tomorrow ? '' : `It's ${deg(v.t)} in ${place} now. `;
+    if (lo <= 12) return `${now0}Yes, take a jacket. It gets down to about ${n(lo)} ${when}.`;
+    if (lo <= 17) return `${now0}A light jacket is a good idea. It drops to about ${n(lo)} ${tomorrow ? 'tomorrow' : 'later'}.`;
+    return `${now0}No jacket needed ${when}. It stays above ${n(lo)}${num(hi) ? `, with a high of ${n(hi)}` : ''}.`;
   }
 
   J.addIntent((said, raw)=>{
@@ -716,8 +747,13 @@ try {
     if (NOT_MINE.test(t)) return null;
     let m;
 
-    // the full brief
-    if (BRIEF_RE.test(t)){
+    // the full brief (exact phrases, or a question about today that names no single topic)
+    const briefLoose = t.split(' ').length <= 10
+      && /^(what|what's|whats|how|anything|any|give me|tell me|read me|run me|walk me|talk me|fill me|is there|do i|have i)\b/.test(t)
+      && /\b(my day|today|today's|the day|this morning)\b/.test(t)
+      && /\b(agenda|rundown|run down|plan|plans|planned|look|looks|looking|need to know|should know|going on|happening|have|got|on my plate|update|brief|briefing|summary|overview|recap|ahead|in store|lined up|up)\b/.test(t)
+      && !/\b(weather|rain|raining|temperature|temp|hot|cold|warm|sunny|forecast|market|markets|stocks?|spend|spent|spending|budget|money|calories?|food|eat|ate|eaten|water|habits?|goals?|streak|receipts?|remind|reminders?|notes?|date|time|day of the week|what day|news|price)\b/.test(t);
+    if (BRIEF_RE.test(t) || briefLoose){
       ready = false;
       const s = composeBrief(); caption = s;
       if (st.loc && !cached() && navigator.onLine !== false){ refresh(true); }
@@ -743,8 +779,9 @@ try {
       }).catch(()=>lateReply("I couldn't look that place up right now. Check your connection and try again."));
       return `Looking up ${q}…`;
     }
-    const rainQ = /\b(will|is) it (going to )?(rain|be raining|pour|drizzle)\b|\b(chance|odds) of rain\b|\b(do|should) i (need|take|bring) (an |my )?umbrella\b|\bany rain\b|\bis rain (coming|expected)\b/.test(t);
-    const wxQ = /\b(weather|forecast|temperature)\b|\bhow (hot|cold|warm|chilly) is it\b|\bis it (hot|cold|warm|sunny|cloudy|chilly|nice) (outside|out|today)\b|\bwhat should i wear\b/.test(t);
+    const coatQ = /\b(do|should|will|would) i (need|wear|take|bring|want) (a |my |an |some )?(jacket|coat|sweater|hoodie|jumper|scarf|layers?)\b|\b(jacket|coat|sweater) weather\b|\bwhat should i wear\b/.test(t);
+    const rainQ = /\b(will|is) it (going to |gonna )?(rain|be raining|pour|drizzle|snow|be snowing)\b|\bis it snowing\b|\bis it (raining|pouring|drizzling|storming)\b|\b(it's|it is) (going to|gonna) rain\b|\bwill there be (any )?rain\b|\b(chance|odds) of rain\b|\b(do|should) i (need|take|bring) (an |my )?umbrella\b|\bany rain\b|\bis rain (coming|expected)\b/.test(t);
+    const wxQ = /\b(weather|forecast|temperature)\b|\bhow (hot|cold|warm|chilly) is it\b|\bis it (hot|cold|warm|sunny|cloudy|chilly|nice) (outside|out|today)\b|\bwhat should i wear\b|^(what's|what is|how's|how is) it (like )?(outside|out there|out)( today| right now| now)?$|^(is|will) it (going to |gonna )?(be |get )?(hot|cold|warm|chilly|sunny|cloudy|windy|nice|freezing|humid|rainy|snowy|stormy|foggy|clear)\b|^(what's|what is|what will be|what'll be) the (high|low|temp|temperature|humidity|uv|uv index|wind|high and low)\b|\bhow (hot|cold|warm|chilly|windy|humid) (is it|will it be|will it get|is it going to (be|get)|is it gonna (be|get)|does it get)\b|\b(sunscreen|sun cream|sunblock|sunglasses|uv)\b|^(the )?temp$|\bhow('s| is) (it|the weather) (outside|out there|out)\b|^is it (hot|cold|warm|sunny|cloudy|chilly|nice|windy|freezing)( outside| out| today| now| right now)?$/.test(t) || coatQ;
     if (!rainQ && !wxQ) return null;
     if (/\b(app|apps|note|notes)\b/.test(t)) return null;
 
@@ -755,7 +792,7 @@ try {
         geocode(q).then(list=>{
           if (!list.length) return lateReply(`I couldn't find a place called ${q}.`);
           const r = list[0];
-          return fetchForecast(r).then(wx=>lateReply(rainQ ? rainAnswer(t, wx, r.name) : weatherAnswer(t, wx, r.name)));
+          return fetchForecast(r).then(wx=>lateReply(coatQ ? coatAnswer(t, wx, r.name) : rainQ ? rainAnswer(t, wx, r.name) : weatherAnswer(t, wx, r.name)));
         }).catch(()=>lateReply("I couldn't reach the weather service right now. Check your connection and try again."));
         return `Checking ${q}…`;
       }
@@ -764,10 +801,10 @@ try {
     const wx = cached();
     if (!wx || !now(wx)){
       if (navigator.onLine === false) return "You're offline and I don't have a recent forecast saved. Try again when you're connected.";
-      return noWeatherYet(w=>rainQ ? rainAnswer(t, w, placeName()) : weatherAnswer(t, w, placeName()));
+      return noWeatherYet(w=>coatQ ? coatAnswer(t, w, placeName()) : rainQ ? rainAnswer(t, w, placeName()) : weatherAnswer(t, w, placeName()));
     }
     maybeRefresh();
-    return rainQ ? rainAnswer(t, wx, placeName()) : weatherAnswer(t, wx, placeName());
+    return coatQ ? coatAnswer(t, wx, placeName()) : rainQ ? rainAnswer(t, wx, placeName()) : weatherAnswer(t, wx, placeName());
   });
   J.addSuggestions(['Brief me', "What's the weather?", 'Will it rain today?']);
 
