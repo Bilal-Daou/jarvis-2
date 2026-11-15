@@ -1019,8 +1019,9 @@
   const AI_LS = 'jarvis2-ai';
   const AI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models/';
   const AI_STUDIO = 'https://aistudio.google.com/apikey';
-  // newest alias first; then current free-tier models. A model that is gone (404) or out of free quota (429) falls through to the next.
-  const AI_MODELS = ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-3.5-flash', 'gemini-3.1-flash-lite', 'gemini-2.5-flash-lite'];
+  // newest alias first; then the free-tier Flash models listed on ai.google.dev (Nov 2026). A model that is gone (404) or out of
+  // free quota (429) falls through to the next. 2.5 models are last: since Sep 2026 Google only serves them to keys that used them before.
+  const AI_MODELS = ['gemini-flash-latest', 'gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-2.5-flash', 'gemini-2.5-flash-lite'];
   let aiMem = null;
   function aiState(){ if (aiMem) return aiMem; try { aiMem = JSON.parse(localStorage.getItem(AI_LS) || '{}') || {}; } catch(e){ aiMem = {}; } return aiMem; }
   function aiSave(){ try { localStorage.setItem(AI_LS, JSON.stringify(aiMem || {})); } catch(e){} }
@@ -1029,7 +1030,8 @@
   /** pull a key out of whatever was copied (a bare key, or text around it) */
   function extractKey(txt){
     const s = String(txt||'').trim().replace(/^["'`]+|["'`]+$/g,'');
-    const m = s.match(/AIza[0-9A-Za-z_\-]{30,}/); if (m) return m[0];
+    // since May 2026 AI Studio makes "auth keys" that start with "AQ." ; older keys start with "AIza"
+    const m = s.match(/AQ\.[0-9A-Za-z_\-\.]{20,}/) || s.match(/AIza[0-9A-Za-z_\-]{30,}/); if (m) return m[0].replace(/\.+$/,'');
     if (/^[0-9A-Za-z_\-\.]{30,120}$/.test(s)) return s; // other key formats Google may use later
     return '';
   }
@@ -1039,7 +1041,9 @@
     const det = JSON.stringify(er.details || '');
     const all = msg+' '+st+' '+det;
     if (/API_KEY_INVALID|API key not valid|API_KEY_EXPIRED|API key expired|invalid api key/i.test(all)) return aiErr('badkey', {status, msg});
-    if (/location is not supported|not supported in your (?:country|region)|unsupported (?:location|country|region)|not available in your (?:country|region)/i.test(all)) return aiErr('region', {status, msg});
+    if (/location is not supported|not supported in your (?:country|region)|unsupported (?:location|country|region)|not available in your (?:country|region)/i.test(all) || (st==='FAILED_PRECONDITION' && /location|country|region/i.test(msg))) return aiErr('region', {status, msg});
+    // the account/project itself can't use the free plan (restricted project, billing needed, prepaid credit used up)
+    if (status===402 || st==='FAILED_PRECONDITION' || /denied access|free tier (?:is )?(?:not available|unavailable)|enable billing|billing (?:account|is disabled)|payment (?:required|needed)/i.test(msg)) return aiErr('project', {status, msg});
     if (status===429 || st==='RESOURCE_EXHAUSTED') return aiErr('quota', {status, msg, daily:/per ?day|PerDay|daily/i.test(all)});
     if (status===404 || /models\/\S+ is not found|is not found for API version|not supported for generateContent|no longer available|unknown model|model .*not (?:found|available)/i.test(msg)) return aiErr('model', {status, msg});
     if (status===403) return aiErr(/SERVICE_DISABLED|has not been used|is disabled|API_KEY_SERVICE_BLOCKED|referer|referrer/i.test(all) ? 'denied' : 'badkey', {status, msg});
@@ -1091,7 +1095,7 @@
   }
   /** gemini(parts, opts) → {text, json, model}. parts use the REST shape: {text} or {inline_data:{mime_type, data}}.
       opts: {schema, json, temperature, system, timeout, signal, maxTokens, model, key}. Errors carry .kind:
-      nokey · badkey · denied · quota (.daily) · region · offline · network · timeout · server · safety · model · parse · empty · abort */
+      nokey · badkey · denied · project · quota (.daily) · region · offline · network · timeout · server · safety · model · parse · empty · abort */
   async function gemini(parts, opts={}){
     const key = opts.key || aiKey(); if (!key) throw aiErr('nokey');
     if (navigator.onLine===false) throw aiErr('offline');
@@ -1107,7 +1111,7 @@
           return res;
         } catch(e){
           last = e;
-          if (['abort','badkey','denied','region','offline','safety','nokey','timeout'].includes(e.kind)) throw e;
+          if (['abort','badkey','denied','project','region','offline','safety','nokey','timeout'].includes(e.kind)) throw e;
           if (e.kind==='schema' && opts.schema && !noSchema){ noSchema = true; continue; }
           if ((e.kind==='server' || e.kind==='parse') && attempt===0){ await sleep(800); continue; }
           break; // try the next model
@@ -1130,9 +1134,10 @@
     const k = e && e.kind;
     const T = {
       nokey:['AI is not turned on yet', 'Add your free Google key to count calories from a photo.'],
-      badkey:["That key didn't work", 'Google says the key is not valid. Copy it again from Google AI Studio (it starts with “AIza”) and paste it here.'],
+      badkey:["That key didn't work", 'Google says the key is not valid. Copy it again from Google AI Studio (use the copy icon so you get all of it) and paste it here.'],
       denied:["This key can't use the AI", 'Make a new key in Google AI Studio with “Create API key”, then paste it here.'],
       quota: e && e.daily ? ["You've used today's free photos", "Google's free plan has a daily limit. It resets tomorrow. You can still log food by voice or barcode."] : ['Free limit reached for now', "Google's free plan allows a few photos per minute. Wait a minute, then try again."],
+      project:["This account can't use free AI", "Google says this Google account can't use the free plan right now. Try making the key with a different Gmail account. Barcode and voice logging still work."],
       region:['Not available where you are', "Google's free AI isn't offered in your country right now. Barcode scanning and voice logging still work."],
       offline:["You're offline", 'Connect to Wi-Fi or mobile data and try again.'],
       network:["Couldn't reach Google", 'Check your internet connection and try again.'],
@@ -1163,10 +1168,10 @@
      ========================================================= */
   const AI_PROMPT = `You are a careful nutrition expert. Look at this photo so the person can log what they are about to eat.
 1. If it shows a meal or plate: list each distinct food or drink separately (for example: chicken shawarma wrap, french fries, garlic sauce, side salad). Estimate each portion's weight in grams (ml for drinks) from visual cues: plate size (about 26 cm), cutlery, hands, cups, packaging.
-2. If it shows a packaged product: read the brand and product name. If the nutrition facts label is readable, use the label's numbers (prefer them over estimates) and set fromLabel to true. Log one typical serving unless the photo clearly shows a whole small package being eaten; say which in "portion".
+2. If it shows a packaged product: read the brand and product name. If the nutrition facts label is readable, use the label's numbers (prefer them over estimates) and set fromLabel to true. Labels often give values per 100 g: multiply them for the portion's grams. Log one typical serving unless the photo clearly shows a whole small package being eaten; say which in "portion". Only name a brand you can actually read; never guess one.
 3. The person lives in Lebanon, so Lebanese and Middle-Eastern food is common: manakish (zaatar or cheese), shawarma, shish tawook, falafel, hummus, baba ghanoush, tabbouleh, fattoush, kibbeh, mjadra, foul, fatteh, labneh, halloumi, ka'ak, lahm bi ajeen, fatayer, warak enab, knafeh, baklava, Arabic bread. Use their usual recipes (olive oil, tahini, toum garlic sauce, pickles) when estimating.
-4. Include visible oil, butter, sauces, dressings and sugary drinks. Calories, protein, carbs, fat and sugar are for the estimated portion (not per 100 g).
-5. confidence is 0 to 1: how sure you are about the item AND its amount.
+4. Include visible oil, butter, sauces, dressings and sugary drinks. grams is the edible amount (no bones, shells, peels, packaging or the plate). Calories, protein, carbs, fat and sugar are for that portion (not per 100 g), and calories should roughly equal 4×protein + 4×carbs + 9×fat.
+5. confidence is 0 to 1: how sure you are about the item AND its amount. Be honest: if something is hidden, blurry or could be several things, pick the most likely one and give a lower confidence rather than leaving it out.
 6. If there is no food or drink in the photo, set isFood to false, items to an empty list, and say what you see in note.
 Keep names short (at most 4 words) in plain English. portion is a short everyday description like "1 wrap", "1 medium bowl", "2 pieces", "1 cup (240 ml)". title is a short name for the whole meal. note is one short friendly sentence (for example a tip or what you assumed).`;
   const AI_SCHEMA = {
@@ -1187,7 +1192,7 @@ Keep names short (at most 4 words) in plain English. portion is a short everyday
     propertyOrdering:['isFood','kind','title','items','note']
   };
   const numOr = (v, d=0) => { const x = typeof v==='number' ? v : parseFloat(v); return isFinite(x) && x>=0 ? x : d; };
-  const EMOJI_RE = /\p{Extended_Pictographic}/u;
+  const EMOJI_RE = /^(?:[\p{Extended_Pictographic}\p{Emoji_Component}\u200d\ufe0f])+$/u;
   function guessEmoji(name){
     const n = String(name||'').toLowerCase();
     const loc = localMatches(n)[0]; if (loc) return loc.emoji;
@@ -1224,10 +1229,12 @@ Keep names short (at most 4 words) in plain English. portion is a short everyday
       const W = i.naturalWidth, H = i.naturalHeight; if (!W || !H) throw new Error('empty');
       const k = Math.min(1, 1024/Math.max(W, H));
       const cv = document.createElement('canvas'); cv.width = Math.round(W*k); cv.height = Math.round(H*k);
-      const ctx = cv.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height); ctx.drawImage(i, 0, 0, cv.width, cv.height);
+      const ctx = cv.getContext('2d'); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high'; ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height); ctx.drawImage(i, 0, 0, cv.width, cv.height);
       const dataUrl = cv.toDataURL('image/jpeg', .8);
-      const s = Math.min(W, H), t = document.createElement('canvas'); t.width = t.height = 96;
-      t.getContext('2d').drawImage(i, (W-s)/2, (H-s)/2, s, s, 0, 0, 96, 96);
+      // thumbnail from the 1024 px copy (a 12 MP photo straight to 96 px looks jagged and is slow on a phone)
+      const cw = cv.width, ch = cv.height, s = Math.min(cw, ch), t = document.createElement('canvas'); t.width = t.height = 96;
+      const tc = t.getContext('2d'); tc.imageSmoothingEnabled = true; tc.imageSmoothingQuality = 'high';
+      tc.drawImage(cv, (cw-s)/2, (ch-s)/2, s, s, 0, 0, 96, 96);
       return {dataUrl, b64:dataUrl.slice(dataUrl.indexOf(',')+1), thumb:t.toDataURL('image/jpeg', .7), w:cv.width, h:cv.height, file};
     } finally { URL.revokeObjectURL(url); }
   }
@@ -1336,14 +1343,14 @@ Keep names short (at most 4 words) in plain English. portion is a short everyday
     }
   }
   function showPhotoError(t, o={}){
-    const icon = {offline:'📡', network:'📡', quota:'⏳', badkey:'🔑', denied:'🔑', region:'🌍', safety:'🙈', timeout:'🐢'}[o.kind] || '⚠️';
-    const keyIssue = o.kind==='badkey' || o.kind==='denied';
+    const icon = {offline:'📡', network:'📡', quota:'⏳', badkey:'🔑', denied:'🔑', project:'🔑', region:'🌍', safety:'🙈', timeout:'🐢'}[o.kind] || '⚠️';
+    const keyIssue = o.kind==='badkey' || o.kind==='denied' || o.kind==='project';
     openSheet(`<div class="fd-center fdp-err">${ph.img && !o.noRetry ? `<div class="fdp-mini"><img src="${ph.img.dataUrl}" alt=""></div>` : `<div class="big">${icon}</div>`}
       <h4>${esc(t.t)}</h4><p>${esc(t.d)}</p>
       <div class="fd-stack">
         ${keyIssue ? `<button class="fd-cta" data-pa="fixkey">Fix my key</button>` : o.noRetry ? '' : `<button class="fd-cta" data-pa="retry">Try again</button>`}
         ${camLbl('fd-ghost', `${I.cam} Take a new photo`)}
-        ${o.kind==='region' || o.kind==='quota' ? `<button class="fd-ghost" data-pa="barcode">${I.scan} Scan a barcode instead</button>` : ''}
+        ${o.kind==='region' || o.kind==='quota' || o.kind==='project' ? `<button class="fd-ghost" data-pa="barcode">${I.scan} Scan a barcode instead</button>` : ''}
         <button class="fd-ghost" data-pa="manual">${I.pen} Type it in</button>
       </div></div>`, stopPhotoWork);
     wirePhotoSheet();
@@ -1471,13 +1478,13 @@ Keep names short (at most 4 words) in plain English. portion is a short everyday
       <ol class="fdp-steps">
         <li><i>1</i><div><b>Open Google AI Studio</b><small>Tap the button below and sign in with your Google (Gmail) account.</small></div></li>
         <li><i>2</i><div><b>Tap “Create API key”</b><small>If it asks for a project, pick any one or create one. Any name is fine.</small></div></li>
-        <li><i>3</i><div><b>Copy the key</b><small>Tap the copy icon next to your new key. It starts with “AIza”.</small></div></li>
+        <li><i>3</i><div><b>Copy the key</b><small>Tap the copy icon next to your new key. It looks like a long jumble of letters (often starting with “AQ.”).</small></div></li>
         <li><i>4</i><div><b>Come back and tap “Paste key”</b><small>If your iPhone asks, tap Paste. Jarvis checks the key for you.</small></div></li>
       </ol>
       <a class="fd-ghost fdp-wide" href="${AI_STUDIO}" target="_blank" rel="noopener noreferrer" id="fdpStudio">↗︎ Open Google AI Studio</a>
       <button class="fd-cta fdp-wide" id="fdpPaste" style="margin-top:10px">📋 Paste key</button>
       <div class="fdp-box" id="fdpBox" ${o.fix ? '' : 'hidden'}>
-        <label class="fd-field" style="margin:12px 0 8px"><span>Or paste it here (press and hold, then Paste)</span><input id="fdpKeyIn" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="AIza…" inputmode="text"></label>
+        <label class="fd-field" style="margin:12px 0 8px"><span>Or paste it here (press and hold, then Paste)</span><input id="fdpKeyIn" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="AQ.…" inputmode="text"></label>
         <button class="fd-ghost fdp-wide" id="fdpTest">Test key</button>
       </div>
       <button class="fdp-link" id="fdpShowBox" ${o.fix ? 'hidden' : ''}>Paste didn't work? Type or paste it in a box</button>
@@ -1512,7 +1519,7 @@ Keep names short (at most 4 words) in plain English. portion is a short everyday
       const t = aiErrText(r.err);
       const extra = r.err && (r.err.kind==='badkey' || r.err.kind==='denied') ? ' Make sure you copied the whole key.' : '';
       say('bad', `<b>${esc(t.t)}</b> ${esc(t.d + extra)}`);
-      if (r.err && (r.err.kind==='badkey' || r.err.kind==='denied')) showBox();
+      if (r.err && (r.err.kind==='badkey' || r.err.kind==='denied' || r.err.kind==='project')) showBox();
     }
     $('#fdpPaste').onclick = async ()=>{
       let txt = '';
@@ -1525,8 +1532,12 @@ Keep names short (at most 4 words) in plain English. portion is a short everyday
       inp.value = k; tryKey(k);
     };
     $('#fdpShowBox').onclick = ()=>showBox();
-    $('#fdpTest').onclick = ()=>{ const k = extractKey(inp.value); if (!k){ say('bad', `<b>That doesn't look like a key.</b> It should start with “AIza” and be about 39 letters and numbers.`); return; } tryKey(k); };
-    inp.oninput = ()=>{ const k = extractKey(inp.value); if (k && /^AIza/.test(k) && k.length>=39) tryKey(k); };
+    $('#fdpTest').onclick = ()=>{ const k = extractKey(inp.value); if (!k){ say('bad', `<b>That doesn't look like a key.</b> It's a long code of letters and numbers (often starting with “AQ.” or “AIza”). Use the copy icon in Google AI Studio.`); return; } tryKey(k); };
+    // a paste checks the key right away; typing waits for "Test key"
+    let lastLen = 0;
+    inp.oninput = e=>{ const v = inp.value, jump = v.length - lastLen; lastLen = v.length;
+      if (!(e && /paste/i.test(e.inputType||'')) && jump<20) return;
+      const k = extractKey(v); if (k && (/^AQ\./.test(k) ? k.length>=30 : /^AIza/.test(k) && k.length>=39)) tryKey(k); };
     inp.onkeydown = e=>{ if (e.key==='Enter') $('#fdpTest').click(); };
   }
 
@@ -1662,6 +1673,7 @@ Keep names short (at most 4 words) in plain English. portion is a short everyday
   .fdp-mac{flex:1;min-width:0;font-size:11.5px;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .fdp-rm{width:38px;height:38px;border-radius:11px;border:1px solid var(--line);background:none;color:var(--muted);display:grid;place-items:center;cursor:pointer;flex:none}
   .fdp-rm svg{width:15px;height:15px}
+  @media (max-width:370px){.fdp-r2{gap:8px}.fdp-st button{width:36px}.fdp-st span{min-width:52px;font-size:13.5px}.fdp-mac{font-size:11px}}
   .fdp-addbtn{margin-top:8px;color:var(--accent)}
   .fdp-addf{margin-top:8px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:10px}
   .fdp-addf .search{margin-bottom:8px}

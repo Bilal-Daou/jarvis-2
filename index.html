@@ -33,7 +33,7 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%}
 body{background:var(--bg);color:var(--text);font:15px/1.45 Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
-body::before{content:"";position:fixed;inset:-20% -20% auto -20%;height:70vh;background:radial-gradient(600px 300px at 20% 10%,rgba(109,93,252,.28),transparent 60%),radial-gradient(500px 280px at 90% 0%,rgba(34,211,238,.18),transparent 60%);pointer-events:none;z-index:0;filter:blur(10px)}
+body::before{content:"";position:fixed;inset:-20% -20% auto -20%;height:70vh;background:radial-gradient(600px 300px at 20% 10%,rgba(109,93,252,.28),transparent 60%),radial-gradient(500px 280px at 90% 0%,rgba(34,211,238,.18),transparent 60%);background:radial-gradient(600px 300px at 20% 10%,color-mix(in srgb,var(--accent) 28%,transparent),transparent 60%),radial-gradient(500px 280px at 90% 0%,color-mix(in srgb,var(--accent2) 18%,transparent),transparent 60%);pointer-events:none;z-index:0;filter:blur(10px)}
 button{font:inherit;color:inherit}
 .app{position:relative;z-index:1;max-width:520px;margin:0 auto;padding:calc(14px + var(--safe-t)) 16px calc(120px + var(--safe-b))}
 .view{display:none;animation:fadeUp .35s var(--ease)}
@@ -106,7 +106,7 @@ h2{font-size:26px;font-weight:800;letter-spacing:-.6px;margin:0 0 4px}
 .search svg{width:18px;height:18px;color:var(--muted)}
 .seg{display:flex;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:4px;margin-bottom:14px}
 .seg button{flex:1;border:0;background:none;padding:9px 6px;border-radius:10px;font-weight:600;font-size:13px;color:var(--muted);cursor:pointer}
-.seg button.active{background:var(--accent);color:#fff;box-shadow:0 6px 16px rgba(109,93,252,.35)}
+.seg button.active{background:var(--accent);color:#fff;box-shadow:0 6px 16px rgba(109,93,252,.35);box-shadow:0 6px 16px color-mix(in srgb,var(--accent) 35%,transparent)}
 
 /* budget */
 .donut-wrap{display:flex;align-items:center;gap:18px}
@@ -157,8 +157,8 @@ body.at-home .app{padding-bottom:calc(98px + var(--safe-b))}
 .hm-greet{font-size:22px;font-weight:800;letter-spacing:-.55px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hm-date{color:var(--muted);font-size:13px;font-weight:500;margin-top:2px}
 .hm-top .icon-btn{flex:none;border-radius:50%;width:42px;height:42px;color:var(--muted)}
-.hm-stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px 0 22px;min-height:236px}
-.hm-orb{--sz:clamp(116px,calc((100svh - var(--safe-t) - var(--safe-b)) * .2),164px);position:relative;width:var(--sz);height:var(--sz);flex:none;border:0;padding:0;background:none;cursor:pointer;border-radius:50%;display:grid;place-items:center;color:#fff;transition:transform .3s var(--ease)}
+.hm-stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px 0 22px;min-height:0}
+.hm-orb{--sz:clamp(94px,calc(100vh - var(--safe-t) - var(--safe-b) - 600px),164px);--sz:clamp(94px,calc(100svh - var(--safe-t) - var(--safe-b) - 600px),164px);position:relative;width:var(--sz);height:var(--sz);flex:none;border:0;padding:0;background:none;cursor:pointer;border-radius:50%;display:grid;place-items:center;color:#fff;transition:transform .3s var(--ease)}
 .hm-orb:active{transform:scale(.95)}
 .hm-orb:focus-visible{outline-offset:8px;outline-color:color-mix(in srgb,var(--accent) 70%,transparent)}
 .hm-glow{position:absolute;inset:-34%;border-radius:50%;background:radial-gradient(closest-side,rgba(109,93,252,.5),transparent);background:radial-gradient(closest-side,color-mix(in srgb,var(--accent) 52%,transparent),color-mix(in srgb,var(--accent2) 10%,transparent) 62%,transparent);animation:hmBreathe 5s ease-in-out infinite;pointer-events:none}
@@ -181,10 +181,10 @@ body.is-listening .hm-glow{animation-duration:1.8s}
 @keyframes hmRipple{0%{transform:scale(1);opacity:.5}100%{transform:scale(1.6);opacity:0}}
 @keyframes hmSpin{to{transform:rotate(360deg)}}
 @keyframes hmWave{0%,100%{height:18%}50%{height:100%}}
-.hm-hint{margin:24px 0 0;border:0;background:none;padding:2px 10px;max-width:100%;color:var(--muted);font-size:15px;font-weight:500;line-height:1.4;text-align:center;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hm-hint{margin:16px 0 0;border:0;background:none;padding:8px 12px;min-height:40px;max-width:100%;color:var(--muted);font-size:15px;font-weight:500;line-height:1.4;text-align:center;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hm-hint.reply{color:var(--text);opacity:.8;font-size:14.5px}
 .hm-hint b{color:var(--text);font-weight:700}
-.hm-type{margin-top:12px;display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 15px 0 13px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;transition:transform .15s var(--ease)}
+.hm-type{margin-top:6px;display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 15px 0 13px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;transition:transform .15s var(--ease)}
 .hm-type svg{width:17px;height:17px}
 .hm-type:active,.hm-brief:active,.tile:active{transform:scale(.97)}
 .hm-brief{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;border-radius:18px;border:1px solid var(--line);background:var(--card);padding:7px 14px 7px 8px;font-size:14.5px;font-weight:600;text-align:left;cursor:pointer;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);transition:transform .15s var(--ease)}
@@ -222,7 +222,26 @@ body.is-listening .hm-glow{animation-duration:1.8s}
 .t-bar i.good{background:linear-gradient(90deg,#16a34a,var(--good))}
 .t-skel{display:block;height:24px;width:55%;border-radius:8px;margin-top:10px;background:linear-gradient(90deg,var(--line),rgba(255,255,255,.12),var(--line));background-size:200% 100%;animation:hmShim 1.4s linear infinite}
 @keyframes hmShim{to{background-position:-200% 0}}
-@media (max-height:700px){.hm-stage{padding:12px 0 16px;min-height:210px}.hm-hint{margin-top:18px}.tile{min-height:88px}}
+.t-val.sm{font-size:21px;letter-spacing:-.6px}.t-val.xs{font-size:18px;letter-spacing:-.4px}
+:root[data-theme="light"] .t-sub.warn{color:#b45309}
+.hm-brief.ready .pb{background:var(--accent);color:#fff;box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 22%,transparent)}
+.hm-brief.ready .pb::after{content:"";position:absolute;top:-1px;right:-1px;width:10px;height:10px;border-radius:50%;background:#ffb020;border:2px solid var(--bg)}
+.hm-brief .pb{position:relative}
+/* shorter phones (iPhone SE / 8 / mini, Android with tall bars): everything still fits above the menu without scrolling */
+@media (max-height:760px){
+  .hm-top{margin-top:0}
+  .hm-stage{padding:4px 0 12px;min-height:0}
+  .hm-orb{--sz:clamp(88px,calc(100vh - var(--safe-t) - var(--safe-b) - 532px),128px);--sz:clamp(88px,calc(100svh - var(--safe-t) - var(--safe-b) - 532px),128px)}
+  .hm-hint{margin-top:6px}
+  .hm-type{margin-top:4px;height:36px}
+  .hm-brief{min-height:50px;padding:5px 12px 5px 7px;border-radius:16px}
+  .hm-brief .pb{width:34px;height:34px}
+  .hm-tiles{gap:8px;margin-top:8px}
+  .tile{min-height:0;padding:10px 12px 11px;border-radius:18px}
+  .t-val{font-size:22px;padding-top:3px}.t-val.sm{font-size:19px}.t-val.xs{font-size:16.5px}
+  .t-val.txt{font-size:15.5px}
+}
+@media (max-height:620px){.hm-glow{inset:-22%}.hm-orb{--sz:88px}.hm-hint{margin-top:4px}}
 @media (prefers-reduced-motion:reduce){
   .hm-glow,.hm-ring,.hm-core::before,.orb::before,.hm-wave i,.hm-brief .eq i,.t-skel{animation:none!important}
   .hm-ring{opacity:0}.view{animation:none}.nav,.orb{transition:none}
@@ -254,7 +273,7 @@ body.is-listening .hm-glow{animation-duration:1.8s}
 .composer input:focus{border-color:var(--accent)}
 .round{flex:none;width:48px;height:48px;border-radius:50%;border:0;display:grid;place-items:center;cursor:pointer;background:var(--card);border:1px solid var(--line)}
 .round svg{width:22px;height:22px}
-.round.primary{background:var(--accent);border:0;color:#fff;box-shadow:0 8px 18px rgba(109,93,252,.4)}
+.round.primary{background:var(--accent);border:0;color:#fff;box-shadow:0 8px 18px rgba(109,93,252,.4);box-shadow:0 8px 18px color-mix(in srgb,var(--accent) 40%,transparent)}
 .round.rec{background:var(--bad);animation:pulse 1.3s infinite}
 @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(244,63,94,.55)}70%{box-shadow:0 0 0 18px rgba(244,63,94,0)}100%{box-shadow:0 0 0 0 rgba(244,63,94,0)}}
 .suggest{display:flex;gap:8px;overflow-x:auto;padding:0 16px 8px;scrollbar-width:none}
@@ -991,11 +1010,26 @@ function soonText(ts){
 function tileHTML(o){
   return `<button class="tile" ${o.go?`data-go="${o.go}"`:''} ${o.act?`data-tile="${o.act}"`:''}>
     <div class="t-top"><span class="t-lbl">${esc(o.lbl)}</span><span class="t-ic${o.icSm?' sm':''}">${o.ic}</span></div>
-    ${o.skel?'<span class="t-skel"></span>':`<div class="t-val${o.txt?' txt':''}">${o.val}</div>`}
+    ${o.skel?'<span class="t-skel"></span>':`<div class="t-val${o.txt?' txt':valSize(o.val)}">${o.val}</div>`}
     ${o.bar!=null?`<div class="t-bar"><i class="${o.barCls||''}" style="width:${Math.max(0,Math.min(100,o.bar))}%"></i></div>`:''}
     <div class="t-sub ${o.subCls||''}">${o.sub}</div></button>`;
 }
+/* big numbers ($12,450, "1,250 AED") step down a size instead of being cut off */
+function valSize(v){ const n = String(v).replace(/<small>.*?<\/small>|<[^>]+>/g,'').length; return n > 9 ? ' xs' : n > 7 ? ' sm' : ''; }
 const N0 = new Intl.NumberFormat('en-US',{maximumFractionDigits:0});
+/* the next calendar event (synced iPhone calendar or added by Jarvis), as {title, start, end}; all-day events are skipped */
+function calNext(){
+  const C = window.Jarvis && Jarvis.calendar; if (!C) return null;
+  let n = null;
+  try {
+    if (typeof C.next === 'function') n = C.next();
+    else if (C.store){ const now = Date.now(); n = [].concat(C.store.events||[], C.store.local||[]).filter(e=>e && e.title && !e.allDay && +e.end > now).sort((a,b)=>a.start-b.start)[0] || null; }
+  } catch(e){ n = null; }
+  if (!n || !n.title || n.allDay) return null;
+  const start = +(n.start != null ? n.start : n.at); if (!isFinite(start)) return null;
+  const end = isFinite(+n.end) && +n.end > start ? +n.end : start + 36e5;
+  return end > Date.now() ? {title:String(n.title), start, end} : null;
+}
 function homeTiles(){
   const tiles = [];
   // weather (from the morning-brief feature)
@@ -1008,12 +1042,13 @@ function homeTiles(){
   } } catch(e){}
   // next up: the soonest reminder or calendar event
   try {
-    const r = upcoming()[0], od = overdue()[0];
-    let ev = null; try { if (Jarvis.calendar && typeof Jarvis.calendar.next==='function'){ const n = Jarvis.calendar.next(); if (n && n.title && n.at) ev = n; } } catch(e){}
+    const r = upcoming()[0], od = overdue()[0], ev = calNext(), now = Date.now();
     const hasCal = plugins.views.some(x=>x.id==='calendar');
-    const pickEv = ev && (!r || +ev.at < r.at);
-    const nx = pickEv ? {title:ev.title, at:+ev.at, go:hasCal?'calendar':'reminders'} : r ? {title:r.text, at:r.at, go:'reminders'} : null;
-    if (nx) tiles.push({lbl:'Next up', ic:pickEv?TI.cal:TI.clock, icSm:true, val:esc(nx.title), txt:true, sub:soonText(nx.at), go:nx.go});
+    // whichever happens first; an event that is on right now counts as now
+    const pickEv = ev && (!r || Math.max(ev.start, now) <= r.at);
+    if (pickEv){ const live = ev.start <= now;
+      tiles.push({lbl:live?'Happening now':'Next up', ic:TI.cal, icSm:true, val:esc(ev.title), txt:true, sub:live?'Until '+new Date(ev.end).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}):soonText(ev.start), go:hasCal?'calendar':'reminders'}); }
+    else if (r) tiles.push({lbl:'Next up', ic:TI.clock, icSm:true, val:esc(r.text), txt:true, sub:soonText(r.at), go:'reminders'});
     else if (od) tiles.push({lbl:'Next up', ic:TI.clock, icSm:true, val:esc(od.text), txt:true, sub:'Overdue · '+whenText(od.at), subCls:'bad', go:'reminders'});
     else tiles.push({lbl:'Next up', ic:TI.clock, icSm:true, val:'All clear', txt:true, sub:'Nothing coming up', go:hasCal?'calendar':'reminders'});
   } catch(e){}
@@ -1021,9 +1056,11 @@ function homeTiles(){
   try {
     const spent = sum(inMonth(monthKey(Date.now())));
     const d0 = new Date(); d0.setHours(0,0,0,0); const today = sum(db.expenses.filter(e=>e.type==='expense' && e.at>=+d0));
-    const o = {lbl:'Spent this month', ic:TI.wallet, icSm:true, val:fmt(Math.round(spent)), go:'budget'};
+    // whole numbers on the tile, and they always add up ($497 spent + $1,003 left = $1,500)
+    const sp0 = Math.round(spent), b0 = Math.round(S.budget||0);
+    const o = {lbl:'Spent this month', ic:TI.wallet, icSm:true, val:fmt(sp0), go:'budget'};
     if (S.budget){ const pct = spent/S.budget*100, over = spent > S.budget;
-      o.bar = pct; o.barCls = over?'bad':pct>80?'warn':''; o.sub = over ? `Over by ${fmt(Math.round(spent-S.budget))}` : `${fmt(Math.round(S.budget-spent))} left of ${fmt(S.budget)}`; if (over) o.subCls = 'bad'; }
+      o.bar = pct; o.barCls = over?'bad':pct>80?'warn':''; o.sub = over ? `Over by ${fmt(Math.max(1, sp0-b0))}` : `${fmt(Math.max(0, b0-sp0))} left of ${fmt(b0)}`; if (over) o.subCls = 'bad'; }
     else o.sub = today ? `${fmt(today)} today` : 'Tap to set a budget';
     tiles.push(o);
   } catch(e){}
@@ -1035,10 +1072,11 @@ function homeTiles(){
   } else { try { const h = Jarvis.habits && typeof Jarvis.habits.today==='function' && Jarvis.habits.today(); if (h && h.total) tiles.push({lbl:'Habits today', ic:TI.habit, icSm:true, val:`${h.done}<small>/ ${h.total}</small>`, bar:h.done/h.total*100, barCls:'good', sub:h.done>=h.total?'All done today':`${h.total-h.done} to go`, go:'habits'}); } catch(e){} }
   return tiles;
 }
-let lastReply = '', briefOn = false, briefPoll = null;
+let lastReply = '';
 function renderHome(){
   $('today').textContent = new Date().toLocaleDateString([], {weekday:'long', month:'long', day:'numeric'});
-  $('greet').textContent = `${greeting()}, ${S.name}`;
+  const first = String(S.name||'').trim().split(/\s+/)[0];
+  $('greet').textContent = first && first.toLowerCase()!=='there' ? `${greeting()}, ${first}` : greeting();
   const canTalk = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
   $('heroHint').classList.toggle('reply', !!lastReply);
   $('heroHint').innerHTML = lastReply ? '“'+esc(lastReply)+'”' : canTalk ? 'Tap and talk' : 'Voice needs <b>Safari</b> or <b>Chrome</b>. Tap to type.';
@@ -1046,10 +1084,10 @@ function renderHome(){
   // morning brief pill
   const B = $('heroBrief'), hasBrief = !!(Jarvis.brief && typeof Jarvis.brief.play==='function');
   B.hidden = !hasBrief;
-  if (hasBrief){ const h = new Date().getHours();
-    $('heroBriefTxt').textContent = briefOn ? 'Playing your brief' : h>=4 && h<12 ? 'Play my morning brief' : 'Play my daily brief';
-    $('heroBriefSub').textContent = briefOn ? 'Tap to stop' : 'Weather, plans and money, read aloud';
-    B.classList.toggle('playing', briefOn); B.setAttribute('aria-label', briefOn ? 'Stop the brief' : $('heroBriefTxt').textContent); }
+  if (hasBrief){ const h = new Date().getHours(), on = !!Jarvis.brief.playing, ready = !on && !!Jarvis.brief.ready;
+    $('heroBriefTxt').textContent = on ? 'Playing your brief' : ready ? 'Your morning brief is ready' : h>=4 && h<12 ? 'Play my morning brief' : 'Play my daily brief';
+    $('heroBriefSub').textContent = on ? 'Tap to stop' : ready ? 'Tap to listen · weather, plans, money' : 'Weather, plans and money, read aloud';
+    B.classList.toggle('playing', on); B.classList.toggle('ready', ready); B.setAttribute('aria-label', on ? 'Stop the brief' : $('heroBriefTxt').textContent); }
   const tiles = homeTiles(); if (tiles.length % 2) tiles[tiles.length-1].wide = true;
   const html = tiles.map(t=>tileHTML(t).replace('class="tile"', t.wide?'class="tile wide"':'class="tile"')).join('');
   if ($('heroTiles').dataset.h !== html){ $('heroTiles').innerHTML = html; $('heroTiles').dataset.h = html; }
@@ -1135,7 +1173,25 @@ function go(name){
   document.querySelectorAll('.nav .tab').forEach(b=>{ const on = b.dataset.go===tab; b.classList.toggle('active', on); if (on) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
   $('nav').classList.toggle('on-home', name==='home'); document.body.classList.toggle('at-home', name==='home');
   if (!$('sheet').classList.contains('open')) window.scrollTo({top:0, behavior:'smooth'});
+  if (changed && !popping) navHistory(name);
 }
+/* the phone's Back button / gesture: from any screen it returns Home (one level deep, so Back on Home leaves the app as usual) */
+var popping = false, selfBack = false;
+function navHistory(name){
+  try {
+    const inner = history.state && history.state.jv;
+    if (name === 'home'){ if (inner){ selfBack = true; history.back(); } }
+    else if (inner) history.replaceState({jv:name}, '');
+    else history.pushState({jv:name}, '');
+  } catch(e){}
+}
+window.addEventListener('popstate', e=>{
+  if (selfBack){ selfBack = false; return; }
+  const v = (e.state && e.state.jv) || 'home';
+  if ($('modal').classList.contains('open')) closeModal();
+  if ($('sheet').classList.contains('open')) closeSheet();
+  popping = true; try { go(v); } finally { popping = false; }
+});
 document.addEventListener('click', e=>{
   const g = e.target.closest('[data-go]'); if (g){ go(g.dataset.go); return; }
   if (e.target.closest('#setBudgetBtn')){ openBudgetModal(); return; }
@@ -1251,14 +1307,9 @@ document.addEventListener('click', e=>{
   // no city yet: open the brief's own location picker (its card lives on the Today screen)
   const b = document.querySelector('#hc-brief [data-bf="loc"]'); if (b) b.click(); else go('today');
 });
-$('heroBrief').onclick = ()=>{
-  if (!Jarvis.brief) return;
-  const was = briefOn;
-  try { Jarvis.brief.play(); } catch(e){ return; }
-  briefOn = !was && 'speechSynthesis' in window; renderHome();
-  clearInterval(briefPoll);
-  if (briefOn) briefPoll = setInterval(()=>{ let busy = false; try { busy = speechSynthesis.speaking || speechSynthesis.pending; } catch(e){} if (!busy){ briefOn = false; clearInterval(briefPoll); renderHome(); } }, 700);
-};
+/* the brief pill: play / stop; brief.js tells us when it starts, stops or becomes "ready" (no polling here) */
+$('heroBrief').onclick = ()=>{ if (!Jarvis.brief) return; try { Jarvis.brief.play(); } catch(e){} renderHome(); };
+window.addEventListener('jarvis:brief-state', ()=>{ try { renderHome(); } catch(e){} });
 $('closeSheet').onclick = closeSheet; $('sheetBg').onclick = closeSheet;
 
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1307,11 +1358,14 @@ setInterval(checkReminders, 10000);
 
 /* ---------- settings ---------- */
 const ACCENTS = ['#6d5dfc','#0ea5e9','#22c55e','#f59e0b','#f43f5e','#ec4899'];
+/* each accent gets a matching second color for gradients (the orb's shimmer, progress bars), so no combination looks muddy */
+const ACCENT2 = {'#6d5dfc':'#22d3ee', '#0ea5e9':'#6d5dfc', '#22c55e':'#14b8a6', '#f59e0b':'#f43f5e', '#f43f5e':'#f59e0b', '#ec4899':'#8b5cf6'};
 function applyTheme(){
   let th = S.theme; if (th==='auto') th = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
   document.documentElement.dataset.theme = th;
   document.querySelector('meta[name=theme-color]').content = th==='dark' ? '#07090f' : '#f3f4f9';
   document.documentElement.style.setProperty('--accent', S.accent);
+  document.documentElement.style.setProperty('--accent2', ACCENT2[S.accent] || '#22d3ee');
   document.documentElement.style.setProperty('--accent-soft', S.accent+'29');
 }
 function syncSettings(){

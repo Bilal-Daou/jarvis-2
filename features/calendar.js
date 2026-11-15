@@ -78,6 +78,9 @@ function fold(line){
   out.push(cur); return out.join('\r\n');
 }
 const utc = ms => new Date(ms).toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');
+/** local "floating" time (no Z): a repeating 7:00 alarm stays at 7:00 after the clocks change (Beirut has summer time) */
+const p2 = n => String(n).padStart(2,'0');
+const floating = ms => { const d = new Date(ms); return `${d.getFullYear()}${p2(d.getMonth()+1)}${p2(d.getDate())}T${p2(d.getHours())}${p2(d.getMinutes())}${p2(d.getSeconds())}`; };
 const RRULE = {daily:'FREQ=DAILY', weekly:'FREQ=WEEKLY', monthly:'FREQ=MONTHLY'};
 /** items: [{uid, title, start, end, repeat, alert (minutes before, 0 = at start), desc, loc}] */
 function buildICS(items){
@@ -85,7 +88,8 @@ function buildICS(items){
   const stamp = utc(Date.now());
   items.forEach(it=>{
     const start = Math.round(it.start/1000)*1000, end = Math.max(start + 5*MIN, it.end || start + 10*MIN);
-    L.push('BEGIN:VEVENT', 'UID:'+String(it.uid).replace(/[^A-Za-z0-9._-]/g,'')+'@jarvis', 'DTSTAMP:'+stamp, 'DTSTART:'+utc(start), 'DTEND:'+utc(end),
+    const t = RRULE[it.repeat] ? floating : utc;
+    L.push('BEGIN:VEVENT', 'UID:'+String(it.uid).replace(/[^A-Za-z0-9._-]/g,'')+'@jarvis', 'DTSTAMP:'+stamp, 'DTSTART:'+t(start), 'DTEND:'+t(end),
       'SUMMARY:'+icsEsc(it.title));
     if (it.desc) L.push('DESCRIPTION:'+icsEsc(it.desc));
     if (it.loc) L.push('LOCATION:'+icsEsc(it.loc));
@@ -104,13 +108,33 @@ function reminderItem(r){
 }
 function eventItem(e){ return {uid:e.id, title:e.title, start:e.start, end:e.end, alert:e.alert==null?15:e.alert, desc:'Added by Jarvis', loc:e.loc, busy:true}; }
 const dataURL = ics => 'data:text/calendar;charset=utf-8,' + encodeURIComponent(ics);
+function b64u(s){ const b = enc.encode(s); let bin = ''; for (let i = 0; i < b.length; i += 0x8000) bin += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000)); return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
+/* iPhone: Safari blocks opening data: links ("Not allowed to navigate top frame to data URL") and a Home Screen app
+   can't open blob: links, so neither shows the "Add to Calendar" screen. What does work is a normal https link on
+   this site that answers as text/calendar. GitHub Pages can't make files, so Jarvis's service worker (sw.js) answers
+   ics/<name>.ics?d=<the file, base64url> on the phone itself. We check that it does before using it. */
+const icsRoute = {ok:false, checked:false};
+function probeRoute(){
+  try {
+    if (!isIOS || !('serviceWorker' in navigator) || !navigator.serviceWorker.controller || !window.fetch) return; // only iPhone needs it
+    fetch('ics/check.ics?d=' + b64u('BEGIN:VCALENDAR\r\nEND:VCALENDAR\r\n'), {cache:'no-store'})
+      .then(r=>{ icsRoute.ok = !!(r.ok && /text\/calendar/i.test(r.headers.get('content-type')||'')); icsRoute.checked = true; })
+      .catch(()=>{ icsRoute.checked = true; });
+  } catch(e){}
+}
+try { probeRoute(); navigator.serviceWorker && navigator.serviceWorker.addEventListener('controllerchange', probeRoute); } catch(e){}
+const routeURL = (ics, name) => 'ics/' + (name || 'jarvis-reminder.ics') + '?d=' + b64u(ics);
 let blobURLs = [];
-function icsHref(ics){
-  // iPhone/iPad: opening a text/calendar link shows Apple's "Add to Calendar" sheet over the page.
-  // A download attribute would send it to Files instead, so iOS gets a plain link to a data: URL.
-  if (isIOS) return {href:dataURL(ics), dl:''};
-  try { const u = URL.createObjectURL(new Blob([ics], {type:'text/calendar;charset=utf-8'})); blobURLs.push(u); return {href:u, dl:'jarvis-reminder.ics'}; }
-  catch(e){ return {href:dataURL(ics), dl:'jarvis-reminder.ics'}; }
+/** how the Add to Calendar button opens the file: {href, dl} for a link, or {share:true} for the share menu */
+function icsHref(ics, name){
+  name = name || 'jarvis-reminder.ics';
+  if (isIOS){
+    if (icsRoute.ok) return {href:routeURL(ics, name), dl:'', how:'route'};
+    if (navigator.canShare){ try { if (navigator.canShare({files:[new File([ics], name, {type:'text/calendar'})]})) return {share:true, how:'share'}; } catch(e){} }
+    return {href:dataURL(ics), dl:'', how:'data'}; // last resort, older iPhones
+  }
+  try { const u = URL.createObjectURL(new Blob([ics], {type:'text/calendar;charset=utf-8'})); blobURLs.push(u); return {href:u, dl:name, how:'blob'}; }
+  catch(e){ return {href:dataURL(ics), dl:name, how:'data'}; }
 }
 function freeBlobs(){ const old = blobURLs; blobURLs = []; setTimeout(()=>old.forEach(u=>{ try { URL.revokeObjectURL(u); } catch(e){} }), 60000); }
 /** fallback: the share sheet (Save to Files / Mail / Calendar when offered) */
@@ -118,16 +142,23 @@ async function shareICS(ics, name){
   try {
     const file = new File([ics], name || 'jarvis-reminder.ics', {type:'text/calendar'});
     if (navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({files:[file], title:'Jarvis reminder'}); return true; }
-  } catch(e){ if (e && e.name === 'AbortError') return true; }
+  } catch(e){ if (e && e.name === 'AbortError') return false; } // closed the menu without choosing: not added
   // last resort: open the file directly
-  try { const a = document.createElement('a'); const h = icsHref(ics); a.href = h.href; if (h.dl) a.download = h.dl; document.body.appendChild(a); a.click(); a.remove(); return true; } catch(e){}
+  try {
+    const a = document.createElement('a');
+    if (isIOS) a.href = icsRoute.ok ? routeURL(ics, name) : dataURL(ics);
+    else { const h = icsHref(ics, name); a.href = h.href; if (h.dl) a.download = h.dl; }
+    document.body.appendChild(a); a.click(); a.remove(); return true;
+  } catch(e){}
   return false;
 }
 
 /* =========================================================
    2. Shortcuts links (Clock alarm + calendar sync)
    ========================================================= */
-function alarmText(ms){ const d = new Date(ms); let h = d.getHours(); const m = d.getMinutes(); const ap = h < 12 ? 'AM' : 'PM'; h = h % 12 || 12; return `${h}:${String(m).padStart(2,'0')} ${ap}`; }
+/* "2026-11-16 06:30:00": Shortcuts reads this the same way in every language and region (a 24-hour time with a date),
+   unlike "6:30 AM", which depends on the phone's settings */
+function alarmText(ms){ const d = new Date(ms); return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())} ${p2(d.getHours())}:${p2(d.getMinutes())}:00`; }
 function backURL(extra){ const base = /^https?:/.test(location.protocol) ? location.origin + location.pathname : APP_URL; return base + '#jarvis=' + extra; }
 function alarmLink(r){
   const name = encodeURIComponent(st.alarmName || 'Jarvis Alarm'), text = encodeURIComponent(alarmText(r.at));
@@ -158,10 +189,30 @@ function parseDate(raw){
     if (!isFinite(ms)) return null;
     return {ms, date:`${Y}-${Mo}-${D}`, dateOnly:false, hm:`${h}:${mi}`};
   }
-  // forgiving: "Nov 16, 2026 at 9:00 AM" / "16 Nov 2026 at 09:00" (if a different date format was picked)
-  if (/^[a-z]{3,9}\.? \d{1,2},? \d{4}|^\d{1,2} [a-z]{3,9}\.? \d{4}/i.test(s) && MONTHS.some(x=>s.toLowerCase().includes(x))){
-    const ms = Date.parse(s.replace(/\s+at\s+/i, ' ').replace(/\u202f/g,' '));
-    if (isFinite(ms)){ const d = new Date(ms); const p = n => String(n).padStart(2,'0'); return {ms, date:`${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`, dateOnly:!/\d:\d/.test(s), hm:`${p(d.getHours())}:${p(d.getMinutes())}`}; }
+  // forgiving, in case another Date Format was picked in Shortcuts (English names, read by hand so every browser agrees):
+  //   Medium/Long "Nov 16, 2026 at 9:00 AM", "November 16, 2026 at 9:00 AM", UK "16 Nov 2026 at 09:00",
+  //   Full "Monday, November 16, 2026 at 9:00 AM", RFC 2822 "Mon, 16 Nov 2026 09:00:00 +0200"
+  const x = s.replace(/[  ]/g,' ').replace(/\s+/g,' ').replace(/^(?:mon|tue|wed|thu|fri|sat|sun)[a-z]*\.?,? /i,'');
+  m = x.match(/^([a-z]{3,9})\.? (\d{1,2}),? (\d{4})(.*)$/i) || null;
+  let mo, D, Y, tail;
+  if (m){ mo = m[1]; D = +m[2]; Y = +m[3]; tail = m[4]; }
+  else if ((m = x.match(/^(\d{1,2}) ([a-z]{3,9})\.?,? (\d{4})(.*)$/i))){ D = +m[1]; mo = m[2]; Y = +m[3]; tail = m[4]; }
+  if (mo){
+    const M = MONTHS.indexOf(mo.slice(0,3).toLowerCase()); if (M < 0 || D < 1 || D > 31) return null;
+    tail = tail.replace(/^,?\s*(?:at\s*|,\s*)?/i,'').trim();
+    const pd = `${Y}-${p2(M+1)}-${p2(D)}`;
+    if (!tail) return {ms:new Date(Y, M, D).getTime(), date:pd, dateOnly:true, hm:'00:00'};
+    const tm = tail.match(/^(\d{1,2})[:.](\d{2})(?:[:.](\d{2}))?\s*(am|pm|a\.m\.|p\.m\.)?\s*(?:(?:gmt|utc)?\s*([+-]\d{2}):?(\d{2})|z|gmt|utc)?/i);
+    if (!tm) return null;
+    let h = +tm[1]; const mi = +tm[2], se = +(tm[3]||0), ap = (tm[4]||'').replace(/\./g,'').toLowerCase();
+    if (ap === 'pm' && h < 12) h += 12; if (ap === 'am' && h === 12) h = 0;
+    if (h > 23 || mi > 59) return null;
+    let ms;
+    if (tm[5]) ms = Date.UTC(Y, M, D, h, mi, se) - (tm[5][0] === '-' ? -1 : 1) * (Math.abs(+tm[5])*60 + +tm[6]) * MIN;
+    else if (/\b(?:z|gmt|utc)\s*$/i.test(tail)) ms = Date.UTC(Y, M, D, h, mi, se);
+    else ms = new Date(Y, M, D, h, mi, se).getTime();
+    const d = new Date(ms);
+    return {ms, date:`${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`, dateOnly:false, hm:`${p2(d.getHours())}:${p2(d.getMinutes())}`};
   }
   return null;
 }
@@ -194,10 +245,10 @@ function parseCalPayload(payload){
     const title = f.slice(0, i).join('|').replace(/\s+/g,' ').trim() || 'Event';
     const s = parseDate(f[i]);
     let e = f[i+1] != null ? parseDate(f[i+1]) : null;
-    let rest = f.slice(e ? i+2 : i+1);
+    let rest = f.slice(e || (f[i+1] != null && !f[i+1].trim()) ? i+2 : i+1); // an empty End Date still takes its place
     let flag = null;
     if (rest.length && FLAG_RE.test(rest[rest.length-1].trim())){ flag = /^(yes|true|1|y)$/i.test(rest.pop().trim()); }
-    const loc = rest.join('|').split('\n').map(x=>x.trim()).filter(Boolean).join(', ').replace(/^,\s*|,\s*$/g,'').slice(0, 200);
+    const loc = rest.join('|').replace(/^[\s|]+|[\s|]+$/g,'').split('\n').map(x=>x.trim()).filter(Boolean).join(', ').replace(/^,\s*|,\s*$/g,'').slice(0, 200);
     if (!e || e.ms < s.ms) e = null;
     const allDay = flag != null ? flag : (s.dateOnly || (s.hm === '00:00' && (!e || e.hm === '00:00' || /^23:5\d$/.test(e.hm)) && (!e || e.ms - s.ms >= 23*HOUR)));
     let start, end;
@@ -309,7 +360,7 @@ function silence(){
   if (ring.master){ try { const c = ctx(); ring.master.gain.cancelScheduledValues(c.currentTime); ring.master.gain.setTargetAtTime(0.0001, c.currentTime, 0.05); const m = ring.master; setTimeout(()=>{ try { m.disconnect(); } catch(e){} }, 400); } catch(e){} }
   ring.master = null;
 }
-function stopSound(){ silence(); setSession('auto'); }
+function stopSound(){ silence(); if (!night.on) setSession('auto'); }
 
 let ovEl = null;
 function overlay(){
@@ -389,7 +440,7 @@ function checkSnoozes(){
   due.forEach(s=>{ if (now - s.at < 30*MIN) showAlarm({id:s.rid, text:s.text, kind:s.kind, repeat:'none', snoozeOf:s.rid}); });
 }
 setInterval(checkSnoozes, 5000);
-document.addEventListener('visibilitychange', ()=>{ if (!document.hidden){ checkSnoozes(); if (night.on) keepAwake(); } });
+document.addEventListener('visibilitychange', ()=>{ if (!document.hidden){ checkSnoozes(); if (night.on){ keepAwake(); keepAudio(true); } if (ring.active){ try { const c = ctx(); c && c.state !== 'running' && c.resume().then(()=>paintOverlay()).catch(()=>{}); } catch(e){} if (!ring.master) startSound(ring.active.kind); paintOverlay(); } } });
 
 window.addEventListener('jarvis:reminder-due', e=>{
   try {
@@ -401,15 +452,30 @@ window.addEventListener('jarvis:reminder-due', e=>{
 });
 
 /* Nightstand mode: keeps the screen on so Jarvis itself can ring */
-const night = {on:false, lock:null, timer:null};
-async function keepAwake(){ try { if ('wakeLock' in navigator){ night.lock = await navigator.wakeLock.request('screen'); } } catch(e){ night.lock = null; } }
+const night = {on:false, lock:null, timer:null, keep:null, lockFailed:false};
+/* Screen Wake Lock: Safari 16.4+, and in Home Screen apps only from iOS 18.4. If it fails we say so (turn off Auto-Lock). */
+async function keepAwake(){
+  try { if ('wakeLock' in navigator){ night.lock = await navigator.wakeLock.request('screen'); night.lockFailed = false; night.lock.addEventListener && night.lock.addEventListener('release', ()=>{ night.lock = null; }); return; } } catch(e){}
+  night.lock = null; night.lockFailed = true;
+}
+/* a near-silent tone keeps the audio running all night, so iPhone doesn't put it to sleep and the alarm can still play */
+function keepAudio(on){
+  try {
+    if (night.keep){ night.keep.stop(); night.keep.disconnect(); night.keep = null; }
+    if (!on) return;
+    const c = ctx(); if (!c) return;
+    const o = c.createOscillator(), g = c.createGain(); o.frequency.value = 40; g.gain.value = 0.0005; o.connect(g); g.connect(c.destination); o.start(); night.keep = o;
+  } catch(e){}
+}
 let nsEl = null;
 function nightstand(on){
   night.on = on;
   if (!nsEl){ nsEl = document.createElement('div'); nsEl.className = 'cal-night'; document.body.appendChild(nsEl); nsEl.addEventListener('click', e=>{ if (e.target.closest('[data-cal-night-exit]')) nightstand(false); }); }
   clearInterval(night.timer);
-  if (!on){ nsEl.classList.remove('open'); try { night.lock && night.lock.release(); } catch(e){} night.lock = null; document.documentElement.classList.remove('cal-lock'); return; }
-  unlock(); keepAwake();
+  if (!on){ nsEl.classList.remove('open'); try { night.lock && night.lock.release(); } catch(e){} night.lock = null; keepAudio(false); if (!ring.active) setSession('auto'); document.documentElement.classList.remove('cal-lock'); return; }
+  unlock(); try { const c = ctx(); c && c.state !== 'running' && c.resume(); } catch(e){}
+  setSession('playback'); keepAudio(true); // this tap is what lets the alarm make sound later, even on silent
+  keepAwake().then(()=>{ if (night.on) paint(); });
   const paint = ()=>{
     const nx = (J.db.reminders||[]).filter(r=>!r.done && r.at > Date.now()).sort((a,b)=>a.at-b.at)[0];
     const d = new Date();
@@ -417,7 +483,7 @@ function nightstand(on){
       <div class="cal-ns-time">${esc(d.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}).replace(/\s?[AP]M/i,''))}<small>${d.getHours()<12?'AM':'PM'}</small></div>
       <div class="cal-ns-date">${esc(d.toLocaleDateString([], {weekday:'long', month:'long', day:'numeric'}))}</div>
       <div class="cal-ns-next">${nx ? `${nx.kind==='alarm'?'⏰':'🔔'} ${esc(nx.text)} · ${esc(J.whenText(nx.at))}` : 'No alarms set'}</div>
-      <p>Jarvis will ring here. Keep the phone plugged in, sound up, and this screen open.${'wakeLock' in navigator ? '' : ' Turn off Auto-Lock in Settings so the screen stays on.'}</p>
+      <p>Jarvis will ring here. Keep the phone plugged in, the volume up, and this screen open. Don't lock the phone: when the screen turns off, Jarvis can't ring.${night.lock ? '' : ' Turn off Auto-Lock first: <b>Settings → Display &amp; Brightness → Auto-Lock → Never</b>.'}</p>
       <button class="cal-ns-exit" data-cal-night-exit>Exit nightstand</button></div>`;
   };
   paint(); night.timer = setInterval(paint, 15000);
@@ -461,14 +527,18 @@ function sheetHTML(o){
     else if (st.alarmReady && !alarmOK(r)) alarmBtn = `<div class="cal-note">⏰ iPhone alarms can only be set for the next 24 hours. Use the calendar alert for this one.</div>`;
     else if (isWake(r)) alarmBtn = `<button class="cal-big cal-big-ghost" data-cal-go-setup="alarm">⏰<span><b>Set up iPhone alarms</b><small>One time, about 2 minutes · rings even on silent</small></span></button>`;
   }
-  const h = icsHref(ics);
-  const calBtn = `<a class="cal-big cal-big-cal" href="${esc(h.href)}"${h.dl ? ` download="${esc(h.dl)}"` : ''} data-cal-pick="calendar">📅<span><b>Add to Calendar${o.type === 'event' ? '' : ' (rings)'}</b><small>${o.type === 'event' ? 'With an alert 15 minutes before' : 'Calendar alert at that time · no setup'}</small></span></a>`;
+  const fname = o.type === 'event' ? 'jarvis-event.ics' : 'jarvis-reminder.ics';
+  const h = icsHref(ics, fname);
+  const calSub = o.type === 'event' ? 'With an alert 15 minutes before' : 'Calendar alert at that time · no setup';
+  const calBtn = h.share
+    ? `<button class="cal-big cal-big-cal" data-cal-share data-cal-pick="calendar">📅<span><b>Add to Calendar${o.type === 'event' ? '' : ' (rings)'}</b><small>In the menu, pick Calendar. Not there? Save to Files, then open the file.</small></span></button>`
+    : `<a class="cal-big cal-big-cal" href="${esc(h.href)}"${h.dl ? ` download="${esc(h.dl)}"` : ''} target="_self" data-cal-pick="calendar">📅<span><b>Add to Calendar${o.type === 'event' ? '' : ' (rings)'}</b><small>${calSub}</small></span></a>`;
   const alarmFirst = o.type === 'reminder' && /cal-big-alarm/.test(alarmBtn) && (isWake(o.r) || st.pref === 'alarm');
   primary = alarmFirst ? alarmBtn + calBtn : calBtn + alarmBtn;
   sheetFor = Object.assign({}, o, {ics});
   return `<div class="cal-sh-head"><div class="cal-sh-ic">${icon}</div><div class="cal-sh-t"><h4>${title}</h4><div class="cal-sh-sub">${sub}</div></div></div>
     <div class="cal-sh-btns">${primary}</div>
-    <button class="cal-link" data-cal-share>Calendar didn't open? Share the file instead</button>
+    ${h.share ? '' : `<button class="cal-link" data-cal-share>Calendar didn't open? Share the file instead</button>`}
     <p class="cal-sh-honest">iPhone asks for one tap, so Jarvis can't do this silently. Your choice goes first next time.${o.type === 'event' ? '' : ' If Jarvis is open at that time, it will ring here too.'}</p>
     <div class="cal-sh-foot"><button class="btn ghost" data-cal-close>Not now</button><button class="cal-link" data-cal-go-setup="1">How this works</button></div>`;
 }
@@ -483,7 +553,7 @@ function closeSheet(){ if (sheetEl){ sheetEl.classList.remove('open'); } if (!(r
 function onSheetClick(e){
   if (e.target.closest('[data-cal-close]')){ closeSheet(); return; }
   const g = e.target.closest('[data-cal-go-setup]'); if (g){ closeSheet(); st.tab = 'connect'; J.save(); J.go('calendar'); try { document.getElementById('sheet').classList.remove('open'); document.getElementById('sheetBg').classList.remove('open'); } catch(_){} setTimeout(()=>{ const x = document.getElementById(g.dataset.calGoSetup === 'alarm' ? 'cal-step-alarm' : 'cal-step-cal'); x && x.scrollIntoView({behavior:'smooth', block:'start'}); }, 120); return; }
-  if (e.target.closest('[data-cal-share]')){ const o = sheetFor; if (o) shareICS(o.ics, o.type === 'event' ? 'jarvis-event.ics' : 'jarvis-reminder.ics').then(()=>{ markDone(o, 'calendar'); }); return; }
+  if (e.target.closest('[data-cal-share]')){ const o = sheetFor; if (o){ st.pref = 'calendar'; shareICS(o.ics, o.type === 'event' ? 'jarvis-event.ics' : 'jarvis-reminder.ics').then(ok=>{ if (ok){ markDone(o, 'calendar'); setTimeout(closeSheet, 350); } }); } return; }
   const p = e.target.closest('[data-cal-pick]');
   if (p){ const o = sheetFor; st.pref = p.dataset.calPick; markDone(o, p.dataset.calPick); J.save(); setTimeout(closeSheet, 350); /* the link itself opens Calendar / Shortcuts */ }
 }
@@ -532,6 +602,12 @@ function parseAlarm(text, wake){
   let repeat = 'none';
   if ((m = s.match(/\b(every ?day|daily|every morning|each morning|every night|each day)\b/))){ repeat = 'daily'; cut.push(m[0]); }
   else if ((m = s.match(/\bevery (sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/))){ repeat = 'weekly'; cut.push('every'); }
+  // timers said the other way round: "a 10 minute timer", "timer 15 minutes", "timer for 1 hour"
+  if ((m = s.match(/\b(\d+(?:\.\d+)?|an?|half an) ?-?(seconds?|secs?|minutes?|mins?|hours?|hrs?) timer\b/)) || (m = s.match(/\btimer (?:for |of )?(\d+(?:\.\d+)?|an?|half an) (seconds?|secs?|minutes?|mins?|hours?|hrs?)\b/))){
+    const n = /^\d/.test(m[1]) ? parseFloat(m[1]) : /half/.test(m[1]) ? 0.5 : 1;
+    const u = /^s/.test(m[2]) ? 1e3 : /^m/.test(m[2]) ? MIN : HOUR;
+    cut.push(m[0]); return {at: Date.now() + n*u, repeat:'none', rest: strip(s, cut).replace(/\btimer\b/,' ').replace(/\s+/g,' ').trim(), relative:true};
+  }
   // relative: "in 20 minutes", "for 10 minutes" (timers), "for an hour"
   if ((m = s.match(/\b(?:in|for|after) (\d+(?:\.\d+)?|an?|half an|a half) (seconds?|secs?|minutes?|mins?|hours?|hrs?)\b(?: from now)?/))){
     const n = /^\d/.test(m[1]) ? parseFloat(m[1]) : /half/.test(m[1]) ? 0.5 : 1;
@@ -575,11 +651,13 @@ function parseAlarm(text, wake){
 }
 function strip(s, cut){ cut.forEach(c=>{ s = s.replace(c, ' '); }); return s.replace(/\s+/g,' ').trim(); }
 
-const ALARM_CMD = /^(?:(?:please |can you |could you |will you |i need you to |i want you to )?(?:set|create|make|add|put|start|schedule)(?: me| up)?(?: an?| my| the| one)? (?:alarm|wake[- ]?up(?: call| alarm)?|timer)\b|(?:please |can you |could you )?(?:wake me(?: up)?|get me up)\b|alarm (?:at|for|in|tomorrow|tonight)\b|(?:i need|i want) (?:an alarm|to (?:wake|get) up)\b)/;
+const ALARM_CMD = /^(?:(?:please |can you |could you |will you |i need you to |i want you to )?(?:set|create|make|add|put|start|schedule)(?: me| up)?(?: an?| my| the| one)? (?:(?:\d+(?:\.\d+)?|half an) ?-?(?:seconds?|secs?|minutes?|mins?|hours?|hrs?) )?(?:alarm|wake[- ]?up(?: call| alarm)?|timer)\b|(?:\d+(?:\.\d+)?|an?) ?-?(?:seconds?|secs?|minutes?|mins?|hours?|hrs?) timer\b|timer (?:for |of )?(?:\d|an? |half an )|(?:please |can you |could you )?(?:wake me(?: up)?|get me up)\b|alarm (?:at|for|in|tomorrow|tonight)\b|(?:i need|i want) (?:an alarm|to (?:wake|get) up)\b)/;
 function alarmIntent(said, t){
   const s0 = t.replace(/^(?:hey |ok |okay )?jarvis /,'');
   if (!ALARM_CMD.test(s0)) return null;
   if (/\bremind me\b/.test(s0)) return null;
+  if (/\b(?:week ?days?|work ?days?|weekends?|mondays? (?:to|through|till|until) fridays?)\b/.test(s0))
+    return 'I can repeat an alarm every day or every week, but not on weekdays only yet. Say: wake me up at 7 every day. Or say: wake me up at 7 every Monday.';
   const isTimer = /\btimer\b/.test(s0) && !/\balarm\b/.test(s0);
   const wake = /\b(wake|get me up|get up)\b/.test(s0);
   const p = parseAlarm(said.replace(/^(?:hey |ok |okay )?jarvis[\s,]+/i,''), wake);
@@ -590,16 +668,25 @@ function alarmIntent(said, t){
     .replace(/\b(?:please|for me|thanks|thank you|from now)\b/g,' ')
     .replace(/\s+/g,' ').trim().replace(/\s+(?:on|at|in|for|to)$/,'').trim();
   const lead = (label.match(/^(for|to)\s+/) || [])[1];
+  label = label.replace(/^(?:please |can you |could you )?(?:set|create|make|add|put|start|schedule)(?: me| up)?(?: an?| my| the| one)?(?=\s|$)/,'').trim();
   label = label.replace(/^(?:for|to|so (?:that )?i can|called|named|labell?ed|and|up)\s+/,'').replace(/^(?:for|to|on|at|in|up|alarm|timer|me|a|an)$/,'').trim();
   const text = isTimer ? (label ? cap(label) : 'Timer') : wake ? (label ? `Wake up ${lead || 'for'} ${label}` : 'Wake up') : (label ? cap(label) : 'Alarm');
   const r = J.addReminder({text, at:p.at, repeat:p.repeat, kind:'alarm'});
   try { J.go('reminders'); } catch(e){}
+  if (isTimer && p.relative) return `Timer set: ${untilSay(p.at).replace(/^in /,'')}, until ${tsay(p.at)}. Keep Jarvis open and I'll ring. Tap Add to Calendar so your iPhone rings too.`;
   const when = p.relative ? `${tsay(p.at)}, ${untilSay(p.at)}` : `${tsay(p.at)} ${daySay(p.at)}${p.repeat !== 'none' ? ', every ' + (p.repeat === 'daily' ? 'day' : 'week') : ''}`;
   const ready = st.alarmReady && alarmOK(r);
   return `${isTimer ? 'Timer' : 'Alarm'} set for ${when}. ` + (ready ? 'Tap Set iPhone alarm so it rings even if Jarvis is closed.' : 'Tap Add to Calendar so your iPhone rings even when Jarvis is closed.');
 }
 
 function alarmMgmt(t){
+  // "my alarm didn't ring", "why didn't my reminder make a sound", "the reminder didn't wake me up"
+  if (/\b(?:alarms?|reminders?|timers?)\b/.test(t) && /\b(?:didn'?t|did not|doesn'?t|does not|don'?t|do not|won'?t|will not|never|isn'?t|wasn'?t|no)\b/.test(t) && /\b(?:ring|rang|go off|went off|work|worked|working|sound|beep|alert|wake|woke|alarm)\b/.test(t)
+    && /\b(?:didn'?t|did not|doesn'?t|does not|don'?t|do not|won'?t|will not|never|isn'?t|wasn'?t|no)\b.*\b(?:ring|rang|go off|went off|work|worked|working|sound|beep|alert|wake|woke)\b|\bno (?:sound|alarm)\b/.test(t)
+    && t.split(' ').length <= 14 && !/^(?:remind|note|take a note|make a note|set|wake|add|save|write|remember|cancel|delete|turn|stop)\b/.test(t)){
+    st.tab = 'connect'; J.save(); J.go('calendar');
+    return "Sorry about that. A web app can only ring while it's open on screen. So when you set a reminder, tap Add to Calendar and your iPhone's Calendar will ring for it. For wake-up alarms, set up the Jarvis Alarm shortcut once, and I'll put a real alarm in your Clock app. The steps are on screen now.";
+  }
   if (/^(?:what|which) alarms? (?:do i have|are set|have i got)|^(?:what time is|when is) my (?:next )?alarm|^(?:do i have|is there|have i set) an? alarm|^(?:show|list|read)(?: me)? my alarms?$|^my alarms$/.test(t)){
     const list = (J.db.reminders||[]).filter(r=>r.kind==='alarm' && !r.done && r.at > Date.now()).sort((a,b)=>a.at-b.at);
     st.tab = 'alarms'; J.save(); J.go('calendar');
@@ -624,7 +711,7 @@ function addEventIntent(said, t){
   const raw = said.replace(/^(?:hey |ok |okay )?jarvis[\s,]+/i,'').replace(/[.!?]+$/,'');
   if ((m = raw.match(/^(?:please |can you |could you )?(?:add|put|schedule|save|create|make|book)\s+(?:an? )?(?:event |appointment |meeting )?(?:called |for |named )?(.+?)\s+(?:to|on|in|into)\s+(?:my|the)\s+(?:iphone )?calendar\b\s*(.*)$/i))) body = (m[1] + ' ' + m[2]).trim();
   else if ((m = raw.match(/^(?:please )?(?:add|put|create|make)\s+(?:to|on|in|into)\s+(?:my|the)\s+calendar[:,]?\s+(.+)$/i))) body = m[1];
-  else if ((m = raw.match(/^(?:please )?(?:add|create|make|schedule|book)\s+(?:a|an)\s+(?:new )?(?:calendar )?(event|appointment|meeting)\b\s*(?:for |called |named |with |about )?(.*)$/i))) body = (m[1].toLowerCase() === 'meeting' && /^with\b/i.test(raw.split(/meeting/i)[1].trim()) ? 'Meeting ' : '') + m[2];
+  else if ((m = raw.match(/^(?:please )?(?:add|create|make|schedule|book)\s+(?:a|an)\s+(?:new )?(?:calendar )?(event|appointment|meeting)\b\s*(for |called |named |with |about )?(.*)$/i))) body = (/^with/i.test(m[2]||'') ? cap(m[1].toLowerCase()) + ' with ' : /^about/i.test(m[2]||'') ? cap(m[1].toLowerCase()) + ' about ' : '') + m[3];
   if (body === null) return null;
   if (/^(the|my)?\s*(economic|market)/i.test(body)) return null;
   const {date, rest} = J.parseTime(J.wordsToNumbers(spokenTimes(body)));
@@ -645,6 +732,8 @@ function periodOf(t){
   if (/\btomorrow\b/.test(t)){ base = addDays(t0,1); label = 'tomorrow'; }
   else if (/\b(today|tonight|this (?:morning|afternoon|evening))\b/.test(t)){ base = t0; label = 'today'; }
   else if ((m = t.match(/\b(?:on |this |next )?(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/))){ let diff = (DAYS.indexOf(m[1]) - new Date().getDay() + 7) % 7; if (/next/.test(m[0]) && diff === 0) diff = 7; base = addDays(t0, diff); label = diff === 0 ? 'today' : diff === 1 ? 'tomorrow' : 'on ' + cap(m[1]); }
+  if (/\bweekend\b/.test(t) && base === null){ const wd = new Date(t0).getDay(); const sat = wd === 6 ? t0 : wd === 0 ? addDays(t0,-1) : addDays(t0, 6 - wd); const nx = /\bnext weekend\b/.test(t) && (wd === 6 || wd === 0) ? 7 : 0; /* on a weekday, "next weekend" means the coming one */ const from = addDays(sat, nx); return {from:Math.max(Date.now(), from), to:addDays(from, 2), label: nx ? 'next weekend' : 'this weekend', week:true}; }
+  if (/\bnext week\b/.test(t) && base === null){ const wd = new Date(t0).getDay(); const mon = addDays(t0, ((8 - wd) % 7) || 7); return {from:mon, to:addDays(mon, 7), label:'next week', week:true}; }
   if (/\b(this|the|next) week\b|\bthis weekend\b|\bweek\b/.test(t) && base === null){ return {from:Date.now(), to:addDays(t0, 7), label:'this week', week:true}; }
   if (base === null){ base = t0; label = null; }
   from = base; to = addDays(base, 1);
@@ -664,13 +753,13 @@ function scheduleAnswer(p){
   const parts = [];
   if (!st.syncedAt){
     const r = rems.length ? `Reminders ${p.label}: ${listSay(rems.map(x=>`${x.text} at ${tsay(x.at)}`))}.` : `No reminders ${p.label}.`;
-    return `I can't see your iPhone calendar yet. ${r} To connect it, open Calendar, then Connect.`;
+    return `Your iPhone calendar isn't connected yet. ${r} To connect it, open Calendar, then Connect.`;
   }
   if (p.week){
-    if (!evs.length) parts.push('Nothing on your calendar for the rest of the week.');
+    if (!evs.length) parts.push(p.label === 'this week' ? 'Nothing on your calendar for the rest of the week.' : `Nothing on your calendar ${p.label}.`);
     else {
       const byDay = {}; evs.forEach(e=>{ const k = dayLabel(Math.max(e.start, startOfDay(now))); (byDay[k] = byDay[k] || []).push(e); });
-      parts.push(`You have ${plural(evs.length,'event')} this week. ` + Object.entries(byDay).slice(0,4).map(([d, l])=>`${d}: ${listSay(l.map(evSay), 3)}`).join('. ') + '.');
+      parts.push(`You have ${plural(evs.length,'event')} ${p.label}. ` + Object.entries(byDay).slice(0,4).map(([d, l])=>`${d}: ${listSay(l.map(evSay), 3)}`).join('. ') + '.');
     }
   } else if (!evs.length) parts.push(`Your calendar is clear ${p.label}.`);
   else parts.push(`${cap(p.label)} you have ${evs.length === 1 ? 'one event' : plural(evs.length,'event')}: ${listSay(evs.map(evSay))}.`);
@@ -686,7 +775,7 @@ function calendarQuestions(t){
   if (/^(?:connect|link|set up|setup)(?: my| the)? (?:iphone|calendar|alarms?|clock|shortcuts?)\b|^(?:how do i |how can i )?(?:make|get)(?: my)? reminders? (?:to )?(?:ring|make (?:a )?sound|alarm)/.test(t)){ st.tab = 'connect'; J.save(); J.go('calendar'); return 'Here is how to connect Jarvis to your iPhone calendar and alarms. Each step has a copy button.'; }
   // next event
   if (/^(?:when(?:'s| is)|what(?:'s| is)) (?:my )?next (?:meeting|event|appointment|thing on my calendar|calendar event)\b|^(?:what(?:'s| is) next on my calendar|do i have a meeting (?:soon|coming up|next))$/.test(t)){
-    if (!st.syncedAt && !st.local.length) { st.tab = 'connect'; J.save(); J.go('calendar'); return "I can't see your iPhone calendar yet. The Connect tab shows how to link it in about two minutes."; }
+    if (!st.syncedAt && !st.local.length) { st.tab = 'connect'; J.save(); J.go('calendar'); return "Your iPhone calendar isn't connected yet. The Connect tab shows how to link it in about two minutes."; }
     const e = nextTimed(); st.tab = 'agenda'; J.save(); J.go('calendar');
     if (!e) return 'Nothing coming up on your calendar in the next 7 days.' + (stale() ? ` That's from your last sync, ${sinceText(st.syncedAt)}.` : '');
     const now = Date.now();
@@ -696,14 +785,14 @@ function calendarQuestions(t){
   if ((m = t.match(/^am i (?:free|busy|available)\b(.*)$/))){
     const tail = m[1]; const p = periodOf(tail);
     const tm = J.parseTime(spokenTimes(tail)); const timed = /\b\d{1,2}(:\d{2})? ?(am|pm)?\b/.test(spokenTimes(tail)) && tm.date;
-    if (!st.syncedAt) return "I can't see your iPhone calendar yet, so I can't tell. Open Calendar, then Connect, to link it.";
+    if (!st.syncedAt) return "Your iPhone calendar isn't connected yet, so I don't know. Open Calendar, then Connect, to link it.";
     if (timed){ const a = tm.date.getTime(), b = a + 30*MIN; const hit = eventsBetween(a, b).filter(e=>!e.allDay); return hit.length ? `No, you have ${listSay(hit.map(evSay), 2)}.` : `Yes, you're free ${daySay(a)} at ${tsay(a)}.`; }
     const hit = eventsBetween(p.from, p.to).filter(e=>!e.allDay && e.end > Date.now());
     return hit.length ? `${cap(p.label)} you have ${listSay(hit.map(evSay), 3)}.` : `Yes, nothing on your calendar ${p.label}.`;
   }
   // schedule / agenda / calendar questions
   const ask = /^(?:what(?:'s| is| do i have)?|how(?:'s| is| does)|show me|tell me|read(?: me)?|give me|any(?:thing)?|do i have(?: anything| any(?:thing)?| any events| any meetings| meetings| events| plans)?|is there anything|have i got anything|are there any (?:events|meetings))\b/;
-  const about = /\b(?:calendar|schedule|agenda|events?|meetings?|appointments?|plans|my day look|my week look|on for (?:today|tomorrow))\b|^what do i have (?:today|tomorrow|tonight|this (?:morning|afternoon|evening|week)|on (?:\w+day))$|^(?:do i have|have i got|is there|anything|is there anything)(?: anything)?(?: on| planned| scheduled| going on)? (?:today|tomorrow|tonight|this (?:morning|afternoon|evening|week|weekend)|(?:on |this |next )?(?:sun|mon|tues|wednes|thurs|fri|satur)day)(?: (?:morning|afternoon|evening|night))?$/;
+  const about = /\b(?:calendar|schedule|agenda|events?|meetings?|appointments?|plans|my day look|my week look|on for (?:today|tomorrow))\b|^what (?:do i have|have i got)(?: on| planned| going on)? (?:today|tomorrow|tonight|this (?:morning|afternoon|evening|week|weekend)|next (?:week|weekend)|(?:on |this |next )?(?:\w+day))$|^(?:do i have|have i got|is there|anything|is there anything)(?: anything)?(?: on| planned| scheduled| going on)? (?:today|tomorrow|tonight|this (?:morning|afternoon|evening|week|weekend)|next (?:week|weekend)|(?:on |this |next )?(?:sun|mon|tues|wednes|thurs|fri|satur)day)(?: (?:morning|afternoon|evening|night))?$/;
   if (ask.test(t) && about.test(t) && !/\b(?:economic|market|markets|stocks?|fomc|fed)\b/.test(t) && !/\bremind/.test(t) && !/\b(?:habit|workout|food|meal)\b/.test(t)){
     const p = periodOf(t); st.tab = 'agenda'; J.save(); J.go('calendar');
     return scheduleAnswer(p);
@@ -841,6 +930,7 @@ J.css(`
 .cal-night p{color:#6b7280;font-size:13px;margin:0 0 26px}
 .cal-ns-exit{border:1px solid #374151;background:#111827;color:#d1d5db;border-radius:14px;padding:12px 18px;font:inherit;font-weight:700;cursor:pointer}
 .cal-set-btn{white-space:nowrap}
+.cal-where .ic{background:rgba(34,197,94,.15)}.cal-where.warn{border-color:rgba(245,158,11,.45)}.cal-where.warn .ic{background:rgba(245,158,11,.16)}.cal-where p{margin:6px 0 4px}
 @media (prefers-reduced-motion: reduce){.cal-al-ring b,.cal-al-ring span{animation:none}}
 `);
 
@@ -915,7 +1005,13 @@ function copyRow(text, label){ return `<div class="cal-copy"><span>${esc(label |
 function stepHTML(n, html){ return `<div class="cal-step"><div class="n">${n}</div><div class="tx">${html}</div></div>`; }
 function connectHTML(){
   const syncPrefix = (/^https?:/.test(location.protocol) && !/localhost|127\.0\.0\.1/.test(location.host) ? location.origin + location.pathname : APP_URL) + '#cal=';
-  let h = `<div class="card cal-part"><div class="cal-part-h"><div class="ic" style="background:rgba(34,197,94,.15)">✅</div><div><b>What rings when Jarvis is closed</b><small>Honest answers</small></div></div>
+  let h = '';
+  if (isIOS && standalone) h += `<div class="card cal-part cal-where warn"><div class="cal-part-h"><div class="ic">⚠️</div><div><b>You opened Jarvis from its Home Screen icon</b><small>Read this first</small></div></div>
+    <p>On iPhone, the Home Screen icon and Safari keep <b>separate</b> copies of Jarvis. Your Action Button opens Jarvis in <b>Safari</b>, so calendar sync (step 3) arrives there, not here.</p>
+    <p><b>Simplest:</b> open Jarvis with the <b>Action Button</b> every time and don't use this icon. Reminders you set here stay here.</p></div>`;
+  else if (isIOS) h += `<div class="card cal-part cal-where"><div class="cal-part-h"><div class="ic">👍</div><div><b>You're in the right place</b><small>Jarvis in Safari, opened by your Action Button</small></div></div>
+    <p>Keep opening Jarvis with the <b>Action Button</b>. A Jarvis icon on the Home Screen would keep a separate copy of your data.</p></div>`;
+  h += `<div class="card cal-part"><div class="cal-part-h"><div class="ic" style="background:rgba(34,197,94,.15)">✅</div><div><b>What rings when Jarvis is closed</b><small>Honest answers</small></div></div>
     <div class="cal-truth" style="margin-top:10px">
       <i>📅</i><span><b>Calendar alert: yes.</b> Your iPhone shows it and plays the alert sound. It stays quiet if the side switch is on silent or a Focus is on.</span>
       <i>⏰</i><span><b>iPhone alarm: yes, even on silent.</b> A real Clock alarm. Best for waking up. Needs the shortcut below, once.</span>
@@ -923,19 +1019,20 @@ function connectHTML(){
     </div></div>`;
   // Part 1
   h += `<div class="card cal-part" id="cal-step-ics"><div class="cal-part-h"><div class="ic" style="background:rgba(109,93,252,.15)">📅</div><div><b>1 · Calendar alerts</b><small>No setup needed</small></div></div>
-    <p>After every reminder, Jarvis offers <b>Add to Calendar</b>. Tap it, then tap <b>Add</b> (or <b>Add All</b>) on the iPhone screen that appears.</p>
+    <p>After every reminder, Jarvis offers <b>Add to Calendar</b>. ${isIOS && !icsRoute.ok && navigator.canShare ? 'Tap it. In the menu that opens, tap <b>Calendar</b> if you see it. If not, tap <b>Save to Files</b>, open the <b>Files</b> app, tap the file, then tap <b>Add</b>.' : 'Tap it, then tap <b>Add</b> (or <b>Add All</b>) on the iPhone screen that appears.'}</p>
     <div class="cal-acts"><a class="cal-btn" data-cal-test="ics" href="#">Test it: alert in 2 minutes</a></div>
     <p style="margin-top:10px">No alert sound? On your iPhone open <b>Settings → Sounds & Haptics → Calendar Alerts</b> and pick a sound.</p></div>`;
   // Part 2
   h += `<div class="card cal-part" id="cal-step-alarm"><div class="cal-part-h"><div class="ic" style="background:rgba(249,115,22,.15)">⏰</div><div><b>2 · Real iPhone alarms</b><small>Optional · one time · about 2 minutes · iOS 17 or newer</small></div></div>
     <p>This makes a shortcut that Jarvis can ask to set a Clock alarm.</p>
-    ${stepHTML(1, 'Open the <b>Shortcuts</b> app and tap <b>+</b> at the top right.')}
-    ${stepHTML(2, 'Tap the name at the top, tap <b>Rename</b>, and paste this name:' + copyRow(st.alarmName))}
-    ${stepHTML(3, 'Tap <b>Search Actions</b>, paste this, and tap <b>Get Dates from Input</b> in the results:' + copyRow('Get Dates from Input'))}
-    ${stepHTML(4, 'In that action, tap the blue word <b>Input</b> and choose <b>Shortcut Input</b>.')}
-    ${stepHTML(5, 'Search again, paste this, and tap <b>Create Alarm</b> (the Clock one):' + copyRow('Create Alarm'))}
-    ${stepHTML(6, 'In Create Alarm, tap <b>Time</b> and choose <b>Dates</b>. Optional: tap the arrow ▸, then <b>Label</b>, and paste <code>Jarvis</code>.')}
-    ${stepHTML(7, 'Tap <b>Done</b>. Come back here and tap <b>Test it</b>. If iPhone asks for permission, tap <b>Always Allow</b>.')}
+    ${stepHTML(1, 'Open the <b>Shortcuts</b> app. On the <b>Shortcuts</b> tab, tap <b>+</b> at the top right.')}
+    ${stepHTML(2, 'Tap <b>New Shortcut</b> at the top, tap <b>Rename</b>, paste this name, and tap <b>Done</b> on the keyboard:' + copyRow(st.alarmName))}
+    ${stepHTML(3, 'Tap <b>Search Actions</b> at the bottom, paste this, and tap <b>Get Dates from Input</b>:' + copyRow('Get Dates from Input'))}
+    ${stepHTML(4, 'It now says <b>Get dates from Input</b>. Tap the blue word <b>Input</b> and choose <b>Shortcut Input</b>. If a line saying <b>Receive Any input from Nowhere</b> appears at the top, leave it as it is.')}
+    ${stepHTML(5, 'Tap <b>Search Actions</b> again, paste this, and tap <b>Create Alarm</b> (the one with the orange Clock icon):' + copyRow('Create Alarm'))}
+    ${stepHTML(6, 'In Create Alarm, tap the time (it shows something like <b>8:00 AM</b>). In the bar above the keyboard or picker, tap <b>Dates</b>. Don\'t see it? Tap <b>Select Variable</b>, then tap the blue <b>Dates</b> bubble.')}
+    ${stepHTML(7, 'Optional: change the alarm\'s name (it says <b>Alarm</b>) to <code>Jarvis</code>. Then tap <b>Done</b> at the top right.')}
+    ${stepHTML(8, 'Come back to Jarvis and tap <b>Test it</b> below. The Shortcuts app opens for a second. If iPhone asks for permission, tap <b>Allow</b> (or <b>Always Allow</b>). Then open the <b>Clock</b> app: a new alarm 2 minutes from now should be there.' + (standalone ? ' To come back, tap <b>◀ Jarvis</b> at the top left, or open Jarvis again.' : ''))}
     <div class="cal-acts"><a class="cal-btn" data-cal-test="alarm" href="${esc(alarmLink({id:'test', at:Math.ceil((Date.now()+2*MIN)/MIN)*MIN}))}">Test it: alarm in 2 minutes</a></div>
     <div class="set-row" style="padding:14px 0 2px;border:0"><div class="lbl"><b>The test alarm worked</b><small>Turn on to show “Set iPhone alarm”. Delete the test alarm in Clock.</small></div><label class="switch"><input type="checkbox" data-cal-set="alarmReady" ${st.alarmReady?'checked':''}><span></span></label></div></div>`;
   // Part 3
@@ -943,22 +1040,22 @@ function connectHTML(){
   if (!names.includes(st.syncName)) names.push(st.syncName);
   h += `<div class="card cal-part" id="cal-step-cal"><div class="cal-part-h"><div class="ic" style="background:rgba(244,63,94,.15)">🔄</div><div><b>3 · Show your iPhone calendar in Jarvis</b><small>One time · about 3 minutes · then it syncs every time you open Jarvis</small></div></div>
     <p>You will add a few steps to the shortcut your Action Button already runs, so every press brings your next 7 days into Jarvis.</p>
-    ${stepHTML(1, 'Open <b>Shortcuts</b>, touch and hold the shortcut your Action Button runs, and tap <b>Edit</b>.')}
-    ${stepHTML(2, 'Tap <b>Search Actions</b>, paste this, and tap <b>Find Calendar Events</b>:' + copyRow('Find Calendar Events') + 'Drag it to the very top.')}
-    ${stepHTML(3, 'In it, tap <b>Add Filter</b>. Set it to <b>End Date</b> · <b>is in the next</b> · <b>7</b> · <b>days</b>. Set <b>Sort by</b> to <b>Start Date</b>.')}
-    ${stepHTML(4, 'Search, paste, and add <b>Repeat with Each</b> right under it:' + copyRow('Repeat with Each'))}
-    ${stepHTML(5, 'Search, paste, and add a <b>Text</b> action. Drag it <b>inside</b> the repeat (between Repeat and End Repeat).' + copyRow('Text'))}
-    ${stepHTML(6, 'Fill the Text box by tapping, left to right: <b>Repeat Item</b> → <b>Title</b>, paste <code>|</code>, <b>Repeat Item</b> → <b>Start Date</b>, paste <code>|</code>, <b>Repeat Item</b> → <b>End Date</b>, paste <code>|</code>, <b>Repeat Item</b> → <b>Location</b>.' + copyRow('|', '|  (the line character)'))}
-    ${stepHTML(7, 'Tap the <b>Start Date</b> you added, set <b>Date Format</b> to <b>ISO 8601</b>, and turn on <b>Include ISO 8601 Time</b>. Do the same for <b>End Date</b>.')}
-    ${stepHTML(8, 'Under End Repeat, add <b>Combine Text</b>. It should say <b>Combine Repeat Results with New Lines</b>.' + copyRow('Combine Text'))}
-    ${stepHTML(9, 'Then add <b>URL Encode</b> (it should say <b>Encode Combined Text</b>).' + copyRow('URL Encode'))}
-    ${stepHTML(10, 'In the action that opens Jarvis (<b>Open URLs</b>), replace the link with this, then tap <b>URL Encoded Text</b> in the bar above the keyboard to add it at the end:' + copyRow(syncPrefix))}
-    ${stepHTML(11, 'Tap <b>Done</b> and press your Action Button. The first time, tap <b>Allow</b> for calendar access.')}
+    ${stepHTML(1, 'Open <b>Shortcuts</b>. Find the shortcut your Action Button runs and tap the <b>•••</b> on its tile to edit it.')}
+    ${stepHTML(2, 'Tap <b>Search Actions</b>, paste this, and tap <b>Find Calendar Events</b>:' + copyRow('Find Calendar Events') + 'Touch and hold it and drag it to the very top.')}
+    ${stepHTML(3, 'It says <b>Find All Calendar Events</b>. Tap <b>Add Filter</b>, then tap each part of the new filter until it reads <b>End Date</b> · <b>is in the next</b> · <b>7</b> · <b>days</b>. Set <b>Sort by</b> to <b>Start Date</b> and <b>Order</b> to <b>Oldest First</b>. Leave <b>Limit</b> off.')}
+    ${stepHTML(4, 'Search, paste, and add <b>Repeat with Each</b> right under it. It should say <b>Repeat with each item in Calendar Events</b>.' + copyRow('Repeat with Each'))}
+    ${stepHTML(5, 'Search, paste, and add a <b>Text</b> action. Drag it <b>inside</b> the repeat, between <b>Repeat with each</b> and <b>End Repeat</b>.' + copyRow('Text'))}
+    ${stepHTML(6, 'Tap inside the Text box. In the bar above the keyboard tap <b>Repeat Item</b>, then tap that new bubble and choose <b>Title</b>. Paste <code>|</code>. Do the same three more times so the box reads: <b>Title | Start Date | End Date | Location</b> (each one a <b>Repeat Item</b> bubble, with <code>|</code> between them and no spaces).' + copyRow('|', '|  (the line character)'))}
+    ${stepHTML(7, 'Tap the <b>Start Date</b> bubble. Set <b>Date Format</b> to <b>ISO 8601</b> and turn on <b>Include ISO 8601 Time</b>. Do the same for <b>End Date</b>.')}
+    ${stepHTML(8, 'Under <b>End Repeat</b>, add <b>Combine Text</b>. It says <b>Combine Repeat Results with Spaces</b>: tap <b>Spaces</b> and choose <b>New Lines</b>.' + copyRow('Combine Text'))}
+    ${stepHTML(9, 'Then add <b>URL Encode</b>. It should say <b>Encode Combined Text</b>.' + copyRow('URL Encode'))}
+    ${stepHTML(10, 'Drag the action that opens Jarvis (<b>Open URLs</b>) to the very bottom. Tap its link, delete it, and paste this. Then, with the cursor at the end, tap <b>URL Encoded Text</b> in the bar above the keyboard:' + copyRow(syncPrefix))}
+    ${stepHTML(11, 'Tap <b>Done</b> and press your Action Button. The first time, tap <b>Allow</b> so it can read your calendar.')}
     <div class="set-row" style="padding:12px 0 4px;border:0;flex-wrap:wrap"><div class="lbl" style="min-width:100%"><b>Your Action Button shortcut's name</b><small>Used by the “Sync now” button. Tap the one that matches, or paste it.</small>
       <div class="cal-chips">${names.map(n=>`<button class="${n===st.syncName?'on':''}" data-cal-name="${esc(n)}">${esc(n)}</button>`).join('')}</div>
       <input class="cal-field" data-cal-namefield value="${esc(st.syncName)}" placeholder="Shortcut name" autocomplete="off" autocapitalize="words"></div></div>
     <div class="cal-acts"><a class="cal-btn" href="${esc(syncLink())}">Test it: sync now</a><span style="color:var(--muted);font-size:12.5px;align-self:center">${st.syncedAt ? 'Last synced ' + esc(sinceText(st.syncedAt)) : 'Not synced yet'}</span></div>
-    <p style="margin-top:12px">Tip: on iPhone, the Jarvis icon on the Home Screen keeps its own separate data. The shortcut opens Jarvis in Safari, so use Jarvis from the Action Button to see the same reminders and calendar.</p></div>`;
+    <p style="margin-top:12px">Good to know: the shortcut always opens Jarvis in <b>Safari</b>. A Jarvis icon on your Home Screen keeps its own separate notes, reminders and calendar. So open Jarvis with the <b>Action Button</b> every time.</p></div>`;
   // settings
   h += `<div class="section-h"><h3>Preferences</h3></div><div class="set-group">
     <div class="set-row"><div class="set-ic" style="background:rgba(109,93,252,.15)">📲</div><div class="lbl"><b>After a new reminder</b><small>Show “Make it ring on your iPhone”</small></div><label class="switch"><input type="checkbox" data-cal-set="sheetAfter" ${st.sheetAfter?'checked':''}><span></span></label></div>
@@ -995,7 +1092,9 @@ function bind(root){
       if (k === 'sound'){ testSound(); return; }
       if (k === 'ics'){ // build a fresh 2-minute test right at tap time
         const at = Math.ceil((Date.now() + 2*MIN)/MIN)*MIN; const ics = buildICS([{uid:'test-'+at, title:'🔔 Jarvis test alert', start:at, end:at+5*MIN, alert:0, desc:'Delete me after the test'}]);
-        const h = icsHref(ics); ts.setAttribute('href', h.href); if (h.dl) ts.setAttribute('download', h.dl); else ts.removeAttribute('download'); return; // the link opens it
+        const h = icsHref(ics, 'jarvis-test.ics');
+        if (h.share){ e.preventDefault(); shareICS(ics, 'jarvis-test.ics'); return; }
+        ts.setAttribute('href', h.href); if (h.dl) ts.setAttribute('download', h.dl); else ts.removeAttribute('download'); return; // the link opens it
       }
       if (k === 'alarm'){ ts.setAttribute('href', alarmLink({id:'test', at:Math.ceil((Date.now()+2*MIN)/MIN)*MIN})); return; }
     }

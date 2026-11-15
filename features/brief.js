@@ -471,6 +471,55 @@ try {
     return parts.join(' ');
   }
 
+  /* ---------------- tomorrow: weather, calendar and reminders for the next day ---------------- */
+  function calendarBetween(from, to){
+    const C = J.calendar; if (!C) return null;
+    try {
+      if (typeof C.between === 'function') return C.between(from, to) || [];
+      const s = C.store; if (!s || (!s.syncedAt && !(s.local || []).length)) return null;   // calendar not connected: say nothing about it
+      return [].concat(s.events || [], s.local || []).filter(e => e && e.title && +e.start < to && +e.end > from).sort((a,b)=>(b.allDay - a.allDay) || a.start - b.start);
+    } catch(e){ return null; }
+  }
+  function remindersBetween(from, to){
+    const out = [];
+    (J.db.reminders || []).forEach(r=>{
+      if (r.done || !num(+r.at)) return;
+      let at = +r.at;
+      if (r.repeat === 'daily') while (at < from) at += 864e5;          // a daily reminder also happens tomorrow
+      else if (r.repeat === 'weekly') while (at < from) at += 7*864e5;
+      if (at >= from && at < to) out.push({text:r.text, at});
+    });
+    return out.sort((a,b)=>a.at-b.at);
+  }
+  const andList = a => a.length <= 1 ? a.join('') : a.slice(0,-1).join(', ') + ' and ' + a[a.length-1];
+  function composeTomorrow(){
+    const t0 = new Date(); t0.setHours(0,0,0,0); t0.setDate(t0.getDate()+1);
+    const from = t0.getTime(), t1 = new Date(t0); t1.setDate(t1.getDate()+1); const to = t1.getTime();
+    const parts = [`Here's tomorrow, ${t0.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric'})}.`];
+    // weather
+    const wx = cached(), v = now(wx), i = v ? v.di + 1 : -1;
+    if (!st.loc) parts.push('For the weather, tell me your city, for example: set my city to Beirut.');
+    else if (v && wx.d.time[i] && num(wx.d.max[i])){
+      const ro = rainOutlook(wx, v, i);
+      parts.push(`In ${placeName()} it looks ${LOOKS[wmo(wx.d.code[i])[0]] || 'cloudy'}, with a high of ${n(wx.d.max[i])} and a low of ${n(wx.d.min[i])}.` +
+        (ro ? (ro.likely ? ` ${ro.kind === 'snow' ? 'Snow' : 'Rain'} is likely around ${isoTime(ro.at)}, so ${ro.kind === 'snow' ? 'dress warmly' : 'take an umbrella'}.` : ro.max >= 20 ? ` There's about a ${pct10(ro.max)} percent chance of ${ro.kind}.` : ' No rain expected.') : ''));
+    } else parts.push("I'm still getting tomorrow's weather, ask me again in a moment.");
+    // calendar
+    const evs = calendarBetween(from, to);
+    if (evs){
+      if (!evs.length) parts.push('Your calendar is clear.');
+      else { const say = evs.slice(0, 5).map(e => e.allDay ? `${e.title}, all day` : `${e.title} at ${remTime(e.start)}`);
+        parts.push(`On your calendar: ${andList(say)}${evs.length > 5 ? `, plus ${evs.length - 5} more` : ''}.`); }
+    }
+    // reminders
+    const rs = remindersBetween(from, to);
+    if (rs.length === 1) parts.push(`You have one reminder: ${lc(rs[0].text)} at ${remTime(rs[0].at)}.`);
+    else if (rs.length > 1) parts.push(`You have ${rs.length} reminders: ${andList(rs.slice(0, 4).map(r=>`${lc(r.text)} at ${remTime(r.at)}`))}${rs.length > 4 ? `, plus ${rs.length - 4} more` : ''}.`);
+    else parts.push(evs && evs.length ? 'No reminders.' : 'No reminders set for tomorrow.');
+    parts.push(new Date().getHours() >= 17 ? 'Sleep well.' : "That's tomorrow.");
+    return parts.join(' ');
+  }
+
   /* ---------------- speaking ---------------- */
   function sayNow(text){
     const S = J.settings, was = S.speak; S.speak = true;   // the Play button always speaks, even if replies are muted
@@ -583,7 +632,15 @@ try {
     }
     return `<div class="bf-card bf-t-${theme}"><div class="bf-fx">${fxFor(theme)}</div>${headHTML()}${body}${tilesHTML()}${playHTML()}${foot}</div>`;
   }
+  // tell the Home screen's brief pill when playing / ready changes (it reads J.brief.playing and J.brief.ready)
+  let stateSig = '';
+  function notify(){
+    const sig = (playing ? 'p' : '') + (ready ? 'r' : '');
+    if (sig === stateSig) return; stateSig = sig;
+    try { window.dispatchEvent(new CustomEvent('jarvis:brief-state', {detail:{playing, ready}})); } catch(e){}
+  }
   function paint(){
+    notify();
     if (!cardEl) return;
     const html = cardHTML();
     if (html !== lastHTML){ lastHTML = html; cardEl.innerHTML = html; }
@@ -683,7 +740,7 @@ try {
   function clean(t){ return t.replace(/[.]/g,'').replace(/^(hey |ok |okay )?jarvis\s+/,'').replace(/\s+(jarvis|please)$/,'').replace(/\s+(jarvis|please)$/,'').trim(); }
   const BRIEF_RE = /^(good morning|morning|(the |my |today's |a )?(morning |daily )?brief(ing)?( for today| today)?|brief me( on (my |the )?day)?|(play|read|give|start|run|do|get|show|tell) (me )?(my |the |a |today's )?(morning |daily )?brief(ing)?|what('s| is| are) (the |my |today's )(morning |daily )?brief(ing)?( for today| today)?|what('s| is| does) my day look(ing)?( like)?( today)?|what does (today|my day) look like|how('s| is) my day( looking| going| shaping up)?( today)?|what('s| is) my day like|what('s| is) (the|my) plan (for )?(today|the day)|what('s| is) (going on|happening|on|new|up) (for )?today|what('s| is) on my plate( today)?|what do i have (going on |on |planned )?today|what have i got (going on |on )?today|anything (that )?i should know( about)?( today| for today)?|anything (important |new )?(today|for today)|((tell me|talk me through|run me through|walk me through) )?(about )?my day|(give me |read me )?(a |the )?(rundown|summary|overview|recap) (of|for) (my |the )?(day|today)|catch me up|fill me in|update me( on (my |the )?(day|today))?|what('s| is) (new|going on|happening)( with me)?|give me an update|(my )?daily update|today's update|start my day|let's start the day)$/;
   const NOT_MINE = /^(note|take a note|new note|add a note|remind|set (a )?reminder|remember|write|jot|paid|spent|spend|bought|buy|got paid)\b/;
-  function needLocation(){ return "I don't know where you are yet. Tap “Set location” on the Today card at the top of Home, or say “set my city to Beirut”."; }
+  function needLocation(){ return "I don't know where you are yet. Say “set my city to Beirut”, or open Today and tap “Add your city”."; }
   function noWeatherYet(after){
     // nothing cached yet: fetch, then answer in the chat
     refresh(true).then(wx=>{ lateReply(wx ? after(wx) : "Sorry, I couldn't reach the weather service. Check your connection and try again."); });
@@ -747,12 +804,23 @@ try {
     if (NOT_MINE.test(t)) return null;
     let m;
 
+    // tomorrow: "what does my day look like tomorrow", "how does tomorrow look", "brief me on tomorrow"
+    const TOPIC = /\b(weather|rain|raining|snow|temperature|temp|hot|cold|warm|sunny|forecast|umbrella|jacket|market|markets|stocks?|spend|spent|spending|budget|money|calories?|food|eat|ate|eaten|water|habits?|goals?|streak|receipts?|remind|reminders?|notes?|calendar|schedule|agenda|events?|meetings?|appointments?|alarms?|date|time|news|price)\b/;
+    const TMR_RE = /^(what('s| is| does| will) (my day|my day tomorrow|tomorrow|my tomorrow) (look|looks|looking|be looking)( like)?( tomorrow)?|how('s| is| does| will) (my day )?tomorrow (look|looks|looking|shaping up|be)( like)?|how('s| is| does) my day (look|looking|shaping up)( like)? tomorrow|what('s| is) (the plan|my plan|my day|the day|on|happening|going on|in store|ahead|lined up)( like)? (for )?tomorrow|what('s| is) tomorrow like|what have i got (on |going on |lined up )?(for )?tomorrow|what do i have (going on |lined up |planned )(for )?tomorrow|(give me |read me |play |tell me )?(my |the |a )?(brief|briefing|rundown|summary|overview|preview|plan) (for|of|on) tomorrow|brief me (on|for|about) tomorrow|tomorrow's (brief|briefing|plan|plans|rundown|summary|preview|agenda)|(tell me |talk me through |walk me through |run me through )(about )?(my day )?tomorrow|(prep|prepare) me for tomorrow)$/;
+    const tmrLoose = /\btomorrow('s)?\b/.test(t) && t.split(' ').length <= 10
+      && /^(what|what's|whats|how|how's|give me|tell me|read me|run me|walk me|talk me|is there)\b/.test(t)
+      && /\b(my day|the day|day look|tomorrow look|look like|looks like|looking|plan|plans|planned|rundown|run down|brief|briefing|summary|overview|recap|preview|ahead|in store|lined up|need to know|should know)\b/.test(t)
+      && !TOPIC.test(t);
+    if (/\btomorrow\b/.test(t) && (TMR_RE.test(t) || tmrLoose)){
+      if (st.loc && !cached() && navigator.onLine !== false) refresh(true); else maybeRefresh();
+      return composeTomorrow();
+    }
     // the full brief (exact phrases, or a question about today that names no single topic)
-    const briefLoose = t.split(' ').length <= 10
+    const briefLoose = t.split(' ').length <= 10 && !/\btomorrow\b/.test(t)
       && /^(what|what's|whats|how|anything|any|give me|tell me|read me|run me|walk me|talk me|fill me|is there|do i|have i)\b/.test(t)
       && /\b(my day|today|today's|the day|this morning)\b/.test(t)
       && /\b(agenda|rundown|run down|plan|plans|planned|look|looks|looking|need to know|should know|going on|happening|have|got|on my plate|update|brief|briefing|summary|overview|recap|ahead|in store|lined up|up)\b/.test(t)
-      && !/\b(weather|rain|raining|temperature|temp|hot|cold|warm|sunny|forecast|market|markets|stocks?|spend|spent|spending|budget|money|calories?|food|eat|ate|eaten|water|habits?|goals?|streak|receipts?|remind|reminders?|notes?|date|time|day of the week|what day|news|price)\b/.test(t);
+      && !/\b(weather|rain|raining|temperature|temp|hot|cold|warm|sunny|forecast|market|markets|stocks?|spend|spent|spending|budget|money|calories?|kcal|protein|carbs?|fats?|fiber|sugar|macros|nutrition|food|eat|ate|eaten|meals?|water|drink|drank|drunk|habits?|goals?|streak|receipts?|remind|reminders?|notes?|calendar|schedule|agenda|meetings?|events?|appointments?|alarms?|date|time|day of the week|what day|news|price)\b/.test(t);
     if (BRIEF_RE.test(t) || briefLoose){
       ready = false;
       const s = composeBrief(); caption = s;
@@ -810,6 +878,7 @@ try {
 
   // small API for other features
   J.weather = {get location(){ return st.loc; }, get data(){ return cached(); }, now: ()=>now(cached()), describe: desc, refresh: ()=>refresh(true)};
-  J.brief = {compose: composeBrief, play: playBrief};
+  // playing: the brief is being read aloud now; ready: the once-a-morning "your brief is ready" state (Home's pill shows both)
+  J.brief = {compose: composeBrief, composeTomorrow, play: playBrief, get playing(){ return playing; }, get ready(){ return ready && !playing; }};
 } catch(e){ try { console.error('brief', e); } catch(_){} }
 })();
