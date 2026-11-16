@@ -646,13 +646,13 @@ function goalCard(g){
     <div class="hb-gbar"><i style="width:${(from*100).toFixed(2)}%"${anim}></i>${pace.exp!==undefined && pct<1 ? `<em style="left:${pace.exp}%" title="Where you should be"></em>`:''}</div>
     <div class="hb-goal-nums"><b>${gQty(g,p)}</b><span>of ${gQty(g,g.target)}</span><strong>${Math.round(pct*100)}%</strong></div>
     ${np && pct<1 ? `<div class="hb-goal-need">${pace.k==='behind'?'To catch up: ':'Keep pace: '}about <b>${np}</b></div>`:''}
-    <div class="hb-goal-act"><button class="btn" data-hb-gadd="${g.id}" style="background:${g.color}">${PLUS} Add progress</button><button class="mini" data-hb-gmenu="${g.id}" aria-label="Goal options">${DOTS}</button></div>
+    <div class="hb-goal-act"><button class="btn" data-hb-gadd="${g.id}" style="background:color-mix(in srgb,${g.color} 72%,#000)">${PLUS} Add progress</button><button class="mini" data-hb-gmenu="${g.id}" aria-label="Goal options">${DOTS}</button></div>
   </div>`;
 }
 function goalsHTML(){
   const gs = goals();
   const head = gs.length ? (()=>{ const done = gs.filter(g=>gPct(g)>=1).length, on = gs.filter(g=>['track','ahead'].includes(gPace(g).k)).length, beh = gs.filter(g=>gPace(g).k==='behind').length;
-    return `<div class="hb-gsum"><div class="card stat"><div class="label">Goals</div><div class="val">${gs.length}</div></div><div class="card stat"><div class="label">On track</div><div class="val" style="color:var(--good)">${on}</div></div><div class="card stat"><div class="label">${beh?'Behind':'Done'}</div><div class="val" style="color:${beh?'var(--bad)':'var(--good)'}">${beh||done}</div></div></div>`; })() : '';
+    return `<div class="hb-gsum"><div class="card stat"><div class="label">Goals</div><div class="val">${gs.length}</div></div><div class="card stat"><div class="label">On track</div><div class="val" style="color:var(--good-ink)">${on}</div></div><div class="card stat"><div class="label">${beh?'Behind':'Done'}</div><div class="val" style="color:${beh?'var(--bad-ink)':'var(--good-ink)'}">${beh||done}</div></div></div>`; })() : '';
   return `${head}
     ${gs.length ? `<div class="list">${gs.map(goalCard).join('')}</div>` : `<div class="hb-intro card"><div style="font-size:42px">🎯</div><h3>Set a big goal</h3><p>Track something bigger, like savings, books or weight. Say <b>“Add a goal to save 5000 dollars by June”</b>.</p></div>`}
     <button class="btn ${gs.length?'ghost':''} hb-wide" data-hb-gnew="1">${PLUS} New goal</button>
@@ -670,7 +670,7 @@ function goalDetailHTML(g){
       <div class="hb-ring" style="width:150px;height:150px;margin:0 auto">${ringSVG({pct, c1:g.color, c2:c2of(g.color), size:150, sw:13, gid:'hbg-gd-'+g.id, key:'gd:'+g.id})}<span class="hb-emo hb-gpct"><b>${Math.round(pct*100)}%</b><small>${g.emoji}</small></span></div>
       <div class="hb-dtoday">${ofText(g)}</div>
       <div style="text-align:center;margin-top:6px"><span class="tag ${pace.cls}">${pace.label}</span>${pace.exp!==undefined&&pct<1?` <span class="hb-hint">· you'd ideally be at ${pace.exp}%</span>`:''}</div>
-      <div class="hb-steps"><button class="btn" data-hb-gadd="${g.id}" style="background:${g.color}">${PLUS} Add progress</button></div>
+      <div class="hb-steps"><button class="btn" data-hb-gadd="${g.id}" style="background:color-mix(in srgb,${g.color} 72%,#000)">${PLUS} Add progress</button></div>
     </div>
     <div class="hb-stats">
       <div class="card stat"><div class="label">Remaining</div><div class="val">${gQty(g, Math.max(0, g.target-p))}</div></div>
@@ -914,7 +914,7 @@ function openGoalEditor(g, tpl){
     <div class="hb-name-row"><button type="button" class="hb-emo-btn" id="hbEmoBtn">${d.emoji}</button><input id="hbTitle" placeholder="e.g. Save for a car" value="${J.esc(d.title)}" maxlength="50"></div>
     <div class="hb-emojis" id="hbEmojis">${GOAL_EMOJIS.map(e=>`<button type="button" class="${e===d.emoji?'on':''}" data-e="${e}">${e}</button>`).join('')}</div>
     <div class="hb-row2 two"><div><small>Target</small><input id="hbTarget" type="number" inputmode="decimal" value="${d.target}" placeholder="5000"></div><div><small>Unit</small><input id="hbUnit" list="hbGUnits" value="${J.esc(d.unit)}" placeholder="dollars"><datalist id="hbGUnits">${['dollars','books','kg','km','hours','pages','workouts'].map(u=>`<option value="${u}">`).join('')}</datalist></div></div>
-    <div class="hb-lbl">Deadline <span style="font-weight:500;color:var(--faint)">(optional)</span></div><input id="hbDl" type="date" value="${dl}" min="${dkey(today0())}">
+    <div class="hb-lbl">Deadline <span style="font-weight:500;color:var(--faint-ink)">(optional)</span></div><input id="hbDl" type="date" value="${dl}" min="${dkey(today0())}">
     <div class="hb-lbl">Color</div><div class="hb-colors" id="hbColors">${PAL.map(([c,c2])=>`<button type="button" class="${c===d.color?'on':''}" data-c="${c}" style="background:linear-gradient(135deg,${c},${c2})" aria-label="Color"></button>`).join('')}</div>
     <div class="hb-err" id="hbErr"></div>
   </div><div class="row"><button class="btn ghost" id="hbX">Cancel</button><button class="btn" id="hbOk">${isNew?'Create goal':'Save'}</button></div></div>`);
@@ -1310,7 +1310,7 @@ try { if (J.addBriefLine) J.addBriefLine(()=>briefLine()); } catch(e){}
    --------------------------------------------------------- */
 J.css(`
 #v-habits .hb-tabs{margin-bottom:16px}
-.hb-hint{font-size:12px;color:var(--faint);font-weight:600}
+.hb-hint{font-size:12px;color:var(--faint-ink);font-weight:600}
 .hb-wide{width:100%;margin-top:14px;display:flex;align-items:center;justify-content:center;gap:8px}
 .hb-wide svg{width:18px;height:18px}
 .hb-svg{display:block;overflow:visible}
@@ -1348,7 +1348,7 @@ J.css(`
 .hb-hero-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
 .hb-pill{font-size:11.5px;font-weight:700;padding:4px 9px;border-radius:999px;background:var(--card-solid);border:1px solid var(--line);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .hb-week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
-.hb-wd{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--faint)}
+.hb-wd{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--faint-ink)}
 .hb-wd i{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--accent) var(--p),color-mix(in srgb,var(--text) 9%,transparent) 0);position:relative}
 .hb-wd i::after{content:"";position:absolute;inset:4px;border-radius:50%;background:var(--card-solid)}
 .hb-wd i.full{background:linear-gradient(135deg,var(--accent),var(--accent2))}
@@ -1366,9 +1366,9 @@ J.css(`
 .hb-tile.is-dim{opacity:.62}
 .hb-tname{font-weight:700;font-size:13.5px;margin-top:9px;max-width:100%;padding:0 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
 .hb-tsub{font-size:11.5px;color:var(--muted);margin-top:1px;text-align:center;max-width:100%;padding:0 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.hb-tstreak{margin-top:7px;font-size:11.5px;font-weight:800;padding:3px 9px;border-radius:999px;background:rgba(245,158,11,.14);color:var(--warn)}
-.hb-tstreak.is-zero{background:var(--card-solid);color:var(--faint);font-weight:700;border:1px solid var(--line)}
-.hb-more{position:absolute;top:4px;right:4px;width:30px;height:30px;border:0;background:none;color:var(--faint);border-radius:10px;display:grid;place-items:center;cursor:pointer;z-index:2}
+.hb-tstreak{margin-top:7px;font-size:11.5px;font-weight:800;padding:3px 9px;border-radius:999px;background:rgba(245,158,11,.14);color:var(--warn-ink)}
+.hb-tstreak.is-zero{background:var(--card-solid);color:var(--faint-ink);font-weight:700;border:1px solid var(--line)}
+.hb-more{position:absolute;top:4px;right:4px;width:30px;height:30px;border:0;background:none;color:var(--faint-ink);border-radius:10px;display:grid;place-items:center;cursor:pointer;z-index:2}
 .hb-more svg{width:16px;height:16px}
 .hb-more:active{background:var(--line)}
 
@@ -1395,7 +1395,7 @@ J.css(`
 .hb-row-r small{font-size:11.5px;color:var(--muted);font-weight:600}
 .hb-dots{display:flex;gap:5px;margin-top:8px}
 .hb-dots span{display:flex;flex-direction:column;align-items:center;gap:3px}
-.hb-dots em{font-style:normal;font-size:9.5px;font-weight:700;color:var(--faint)}
+.hb-dots em{font-style:normal;font-size:9.5px;font-weight:700;color:var(--faint-ink)}
 .hb-dots i{width:15px;height:15px;border-radius:50%;background:conic-gradient(var(--hc) var(--p),color-mix(in srgb,var(--text) 10%,transparent) 0)}
 .hb-dots .on i{background:var(--hc);box-shadow:0 0 6px color-mix(in srgb,var(--hc) 50%,transparent)}
 .hb-dots .off i{background:transparent;border:1.5px dashed color-mix(in srgb,var(--text) 18%,transparent)}
@@ -1417,17 +1417,17 @@ J.css(`
 .hb-stats .val small{font-size:13px;color:var(--muted);font-weight:600}
 .hb-stats .progress{height:6px;margin-top:8px}
 .hb-calg{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
-.hb-cal-h{text-align:center;font-size:11px;font-weight:700;color:var(--faint);padding-bottom:2px}
+.hb-cal-h{text-align:center;font-size:11px;font-weight:700;color:var(--faint-ink);padding-bottom:2px}
 .hb-cal{aspect-ratio:1;border:0;border-radius:11px;font-size:12.5px;font-weight:700;cursor:pointer;color:var(--text);background:color-mix(in srgb,var(--hc) calc(var(--p)*100%),color-mix(in srgb,var(--text) 6%,transparent));transition:transform .15s}
 .hb-cal:active{transform:scale(.9)}
 .hb-cal.on{background:linear-gradient(135deg,var(--hc),color-mix(in srgb,var(--hc) 70%,#fff));color:#fff;box-shadow:0 4px 12px color-mix(in srgb,var(--hc) 35%,transparent)}
-.hb-cal.off{background:transparent;color:var(--faint);border:1.5px dashed color-mix(in srgb,var(--text) 12%,transparent)}
-.hb-cal.fut{background:transparent;color:var(--faint);opacity:.4;cursor:default}
+.hb-cal.off{background:transparent;color:var(--faint-ink);border:1.5px dashed color-mix(in srgb,var(--text) 12%,transparent)}
+.hb-cal.fut{background:transparent;color:var(--faint-ink);opacity:.4;cursor:default}
 .hb-cal.today{outline:2px solid var(--text);outline-offset:2px}
 .hb-heat{display:grid;grid-template-rows:repeat(7,1fr);grid-auto-flow:column;grid-auto-columns:1fr;gap:3px}
 .hb-heat i,.hb-heat-l i{aspect-ratio:1;border-radius:3px;background:color-mix(in srgb,var(--hc) calc(var(--p)*100%),color-mix(in srgb,var(--text) 7%,transparent))}
 .hb-heat i.fut{opacity:.25}
-.hb-heat-l{display:flex;align-items:center;justify-content:flex-end;gap:4px;margin-top:10px;font-size:11px;color:var(--faint);font-weight:600}
+.hb-heat-l{display:flex;align-items:center;justify-content:flex-end;gap:4px;margin-top:10px;font-size:11px;color:var(--faint-ink);font-weight:600}
 .hb-heat-l i{width:11px}
 .hb-dactions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}
 
@@ -1459,7 +1459,7 @@ J.css(`
 .hb-gpct small{font-size:20px}
 .hb-miles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .hb-miles div{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:11.5px;color:var(--muted);font-weight:700}
-.hb-miles b{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-size:12px;border:2px dashed color-mix(in srgb,var(--text) 18%,transparent);color:var(--faint)}
+.hb-miles b{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-size:12px;border:2px dashed color-mix(in srgb,var(--text) 18%,transparent);color:var(--faint-ink)}
 .hb-miles .on b{border:0;background:linear-gradient(135deg,var(--hc),color-mix(in srgb,var(--hc) 60%,#fff));color:#fff;box-shadow:0 6px 14px color-mix(in srgb,var(--hc) 35%,transparent)}
 .hb-miles b svg{width:20px;height:20px}
 .hb-miles .on span{color:var(--text)}
@@ -1508,7 +1508,7 @@ J.css(`
 .hb-days button{aspect-ratio:1;border-radius:50%;border:1px solid var(--line);background:var(--card);font-weight:700;font-size:12.5px;cursor:pointer;color:var(--muted)}
 .hb-days button.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .hb-stepper{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:6px;margin-bottom:6px}
-.hb-stepper button{width:40px;height:40px;border-radius:11px;border:0;background:var(--accent-soft);color:var(--accent);font-size:22px;font-weight:700;cursor:pointer}
+.hb-stepper button{width:40px;height:40px;border-radius:11px;border:0;background:var(--accent-soft);color:var(--accent-ink);font-size:22px;font-weight:700;cursor:pointer}
 .hb-stepper b{font-size:20px;font-weight:800;min-width:20px;text-align:center}
 .hb-stepper span{flex:1;color:var(--muted);font-weight:600}
 .hb-rem{display:flex;align-items:center;gap:10px;min-height:48px}
@@ -1518,7 +1518,7 @@ J.css(`
 .hb-toggle i{position:absolute;left:3px;top:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:transform .2s var(--ease)}
 .hb-toggle.on{background:var(--good)}
 .hb-toggle.on i{transform:translateX(20px)}
-.hb-err{color:var(--bad);font-size:13px;font-weight:600;min-height:0;margin-top:8px}
+.hb-err{color:var(--bad-ink);font-size:13px;font-weight:600;min-height:0;margin-top:8px}
 .hb-err:empty{display:none}
 .hb-err.show{animation:hbShake .35s}
 @keyframes hbShake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
@@ -1528,7 +1528,7 @@ J.css(`
 .hb-sheet h4{text-align:center;margin-bottom:10px!important}
 .hb-sheet-b{width:100%;display:flex;align-items:center;gap:12px;padding:14px;border:0;border-bottom:1px solid var(--line);background:none;font-weight:600;font-size:15px;cursor:pointer;text-align:left;color:var(--text)}
 .hb-sheet-b span{width:34px;height:34px;border-radius:10px;background:var(--card);display:grid;place-items:center;font-size:17px;flex:none}
-.hb-sheet-b.danger{color:var(--bad);border-bottom:0}
+.hb-sheet-b.danger{color:var(--bad-ink);border-bottom:0}
 .hb-sheet-b:active{background:var(--card)}
 @media (max-width:360px){.hb-grid,.hb-tpls{grid-template-columns:repeat(2,minmax(0,1fr))}.hb-hero-top{flex-direction:column;text-align:center}.hb-hero-chips{justify-content:center}}
 @media (prefers-reduced-motion:reduce){.hb-arc,.hb-gbar i{transition:none}.hb-ring.hb-pop,.hb-ring.hb-pop .hb-emo,.hb-ring.hb-pop .hb-tick{animation:none}}

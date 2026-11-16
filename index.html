@@ -36,13 +36,16 @@
   --fill:rgba(255,255,255,.07); --fill2:rgba(255,255,255,.11); --sep:rgba(255,255,255,.075);
   --text:#f5f5f7; --muted:#9a9aa3; --faint:#5c5c66; --glass:rgba(22,22,28,.72); --shadow:0 24px 60px rgba(0,0,0,.55);
   --card-shadow:none; --card-border:rgba(255,255,255,.065); --press:rgba(255,255,255,.06);
+  /* text-safe versions of the accent and status colors (AA contrast on this theme's surfaces) */
+  --accent-ink:color-mix(in srgb,var(--accent) 70%,#fff); --good-ink:#34d399; --bad-ink:#fb7185; --warn-ink:#fbbf24; --faint-ink:#8a8a94;
 }
 :root[data-theme="light"]{
   color-scheme:light;
   --bg:#f2f2f7; --bg2:#f2f2f7; --card:#ffffff; --card-solid:#ffffff; --line:rgba(60,60,67,.12);
   --fill:rgba(118,118,128,.1); --fill2:rgba(118,118,128,.16); --sep:rgba(60,60,67,.1);
-  --text:#0c0c10; --muted:#6c6c74; --faint:#a9a9b1; --glass:rgba(250,250,252,.8); --shadow:0 18px 44px rgba(20,24,48,.14);
+  --text:#0c0c10; --muted:#606067; --faint:#a9a9b1; --glass:rgba(250,250,252,.8); --shadow:0 18px 44px rgba(20,24,48,.14);
   --card-shadow:0 1px 2px rgba(16,24,40,.04),0 6px 20px rgba(16,24,40,.045); --card-border:rgba(60,60,67,.06); --press:rgba(0,0,0,.04);
+  --accent-ink:color-mix(in srgb,var(--accent) 84%,#000); --good-ink:#15803d; --bad-ink:#d61f45; --warn-ink:#b45309; --faint-ink:#68686f;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%}
@@ -71,7 +74,7 @@ body.at-home .app{padding-top:calc(14px + var(--safe-t))}
 .jv-bar>*{pointer-events:auto}
 body.at-home .jv-bar{display:none}
 body.scrolled .jv-bar{background:var(--glass);backdrop-filter:blur(24px) saturate(1.6);-webkit-backdrop-filter:blur(24px) saturate(1.6);border-bottom-color:var(--line)}
-.jv-back{justify-self:start;display:flex;align-items:center;gap:1px;height:44px;min-width:44px;max-width:100%;padding:0 10px 0 2px;border:0;background:none;color:var(--accent);font-size:17px;font-weight:500;letter-spacing:-.02em;cursor:pointer;border-radius:12px;white-space:nowrap;overflow:hidden;transition:opacity .2s,transform .2s var(--ease)}
+.jv-back{justify-self:start;display:flex;align-items:center;gap:1px;height:44px;min-width:44px;max-width:100%;padding:0 10px 0 2px;border:0;background:none;color:var(--accent-ink);font-size:17px;font-weight:500;letter-spacing:-.02em;cursor:pointer;border-radius:12px;white-space:nowrap;overflow:hidden;transition:opacity .2s,transform .2s var(--ease)}
 .jv-back svg{width:26px;height:26px;flex:none;margin-right:-1px}
 .jv-back span{overflow:hidden;text-overflow:ellipsis}
 .jv-back:active{opacity:.45}
@@ -94,7 +97,7 @@ h2{font-size:32px;line-height:1.12;font-weight:750;letter-spacing:-.032em;margin
 .lede{color:var(--muted);font-size:15px;line-height:1.4;margin:0 0 20px}
 .section-h{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:28px 4px 10px}
 .section-h h3{margin:0;font-size:20px;font-weight:700;letter-spacing:-.025em}
-.link{color:var(--accent);font-weight:600;font-size:15px;background:none;border:0;cursor:pointer;padding:4px 0;letter-spacing:-.01em}
+.link{color:var(--accent-ink);font-weight:600;font-size:15px;background:none;border:0;cursor:pointer;padding:4px 0;letter-spacing:-.01em}
 .link:active{opacity:.5}
 .jv-cap{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:26px 16px 8px}
 
@@ -113,11 +116,13 @@ h2{font-size:32px;line-height:1.12;font-weight:750;letter-spacing:-.032em;margin
 .chips{display:flex;gap:8px;overflow-x:auto;padding:2px 16px 6px;margin:16px -16px 0;scrollbar-width:none}
 .chips::-webkit-scrollbar{display:none}
 .chip{flex:none;border:1px solid var(--card-border);background:var(--card);box-shadow:var(--card-shadow);border-radius:999px;padding:9px 15px 9px 12px;min-height:38px;font-size:14px;font-weight:600;letter-spacing:-.01em;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:7px;transition:transform .15s var(--ease)}
-.chip svg{width:17px;height:17px;color:var(--accent);flex:none}
+.chip svg{width:17px;height:17px;color:var(--accent-ink);flex:none}
 .chip:active{transform:scale(.96)}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .stat .label{color:var(--muted);font-size:13px;font-weight:600}
 .stat .val{font-size:26px;font-weight:750;letter-spacing:-.03em;margin-top:6px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.grid2>*{min-width:0}
+.stat .val.sm{font-size:22px}.stat .val.xs{font-size:19px}.stat .val.xxs{font-size:16.5px;letter-spacing:-.02em}
 .stat .delta{font-size:12.5px;font-weight:600;margin-top:6px}
 
 /* ---------- list items (features use these too) ---------- */
@@ -132,11 +137,11 @@ h2{font-size:32px;line-height:1.12;font-weight:750;letter-spacing:-.032em;margin
 .mini{border:0;background:none;color:var(--muted);width:34px;height:34px;border-radius:50%;display:grid;place-items:center;cursor:pointer;transition:background .15s,transform .15s var(--ease)}
 .mini:active{background:var(--fill);transform:scale(.9)}
 .mini svg{width:18px;height:18px}
-.mini.on{color:var(--warn)}
-.tag{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:650;background:var(--accent-soft);color:var(--accent);line-height:1.5}
+.mini.on{color:var(--warn-ink)}
+.tag{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:650;background:var(--accent-soft);color:var(--accent-ink);line-height:1.5}
 .tag svg{width:11px;height:11px}
-.tag.red{background:rgba(244,63,94,.14);color:var(--bad)}
-.tag.green{background:rgba(34,197,94,.14);color:var(--good)}
+.tag.red{background:rgba(244,63,94,.14);color:var(--bad-ink)}
+.tag.green{background:rgba(34,197,94,.14);color:var(--good-ink)}
 .item.done .title{text-decoration:line-through;opacity:.5}
 .check{flex:none;width:26px;height:26px;border-radius:50%;border:2px solid var(--faint);background:none;cursor:pointer;display:grid;place-items:center;transition:background .2s,border-color .2s,transform .2s var(--spring)}
 .check:active{transform:scale(.85)}
@@ -161,11 +166,12 @@ h2{font-size:32px;line-height:1.12;font-weight:750;letter-spacing:-.032em;margin
 .jv-rt{font-size:16px;font-weight:600;letter-spacing:-.018em;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .jv-rt.wrap{white-space:normal;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
 .jv-rs{font-size:13px;color:var(--muted);line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px}
+.jv-ell{min-width:0;overflow:hidden;text-overflow:ellipsis}
 .jv-rs .tag{flex:none}
 .jv-rr{flex:none;display:flex;align-items:center;gap:6px;color:var(--muted);font-size:15px}
 .jv-amt{font-size:16.5px;font-weight:650;letter-spacing:-.02em;color:var(--text);font-variant-numeric:tabular-nums;white-space:nowrap}
-.jv-amt.in{color:var(--good)}
-.jv-chev{width:18px;height:18px;color:var(--faint);flex:none}
+.jv-amt.in{color:var(--good-ink)}
+.jv-chev{width:18px;height:18px;color:var(--faint-ink);flex:none}
 .jv-day{display:flex;justify-content:space-between;align-items:baseline;margin:22px 6px 8px;font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.01em}
 .jv-day:first-child{margin-top:4px}
 .jv-day b{font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums}
@@ -177,9 +183,9 @@ h2{font-size:32px;line-height:1.12;font-weight:750;letter-spacing:-.032em;margin
 .jv-rowwrap.done .jv-rt{text-decoration:line-through;opacity:.45}
 .jv-note .jv-rt{font-weight:500;font-size:15.5px;line-height:1.38}
 .jv-dot{width:8px;height:8px;border-radius:50%;flex:none;background:var(--c)}
-.jv-pin{width:14px;height:14px;color:var(--warn);flex:none}
-.jv-more{display:block;width:100%;padding:14px;border:0;background:none;color:var(--accent);font-weight:600;font-size:15px;cursor:pointer;border-top:1px solid var(--sep)}
-.jv-add{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:14px;min-height:50px;border-radius:16px;border:1px solid var(--card-border);background:var(--card);box-shadow:var(--card-shadow);color:var(--accent);font-weight:650;font-size:15.5px;cursor:pointer;transition:transform .15s var(--ease)}
+.jv-pin{width:14px;height:14px;color:var(--warn-ink);flex:none}
+.jv-more{display:block;width:100%;padding:14px;border:0;background:none;color:var(--accent-ink);font-weight:600;font-size:15px;cursor:pointer;border-top:1px solid var(--sep)}
+.jv-add{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:14px;min-height:50px;border-radius:16px;border:1px solid var(--card-border);background:var(--card);box-shadow:var(--card-shadow);color:var(--accent-ink);font-weight:650;font-size:15.5px;cursor:pointer;transition:transform .15s var(--ease)}
 .jv-add svg{width:19px;height:19px}
 .jv-add:active{transform:scale(.98)}
 
@@ -220,7 +226,7 @@ h2{font-size:32px;line-height:1.12;font-weight:750;letter-spacing:-.032em;margin
 .bars i.zero{background:var(--fill2);opacity:1}
 .bars i.today{box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 35%,transparent)}
 .month-nav{display:flex;align-items:center;justify-content:space-between;margin:0 0 14px;padding:4px;border-radius:14px;background:var(--fill)}
-.month-nav .icon-btn{width:38px;height:38px;border-radius:10px;background:none}
+.month-nav .icon-btn{width:44px;height:44px;border-radius:12px;background:none}
 .month-nav .icon-btn:active{background:var(--fill2)}
 .month-nav .icon-btn svg{width:20px;height:20px}
 .month-nav b{font-size:15.5px;font-weight:650;letter-spacing:-.015em}
@@ -230,7 +236,7 @@ h2{font-size:32px;line-height:1.12;font-weight:750;letter-spacing:-.032em;margin
 .jv-gt b{font-size:16px;font-weight:650;letter-spacing:-.015em}
 .jv-gt span{color:var(--muted);font-size:13.5px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .jv-gs{margin-top:9px;font-size:13.5px;color:var(--muted);font-weight:500}
-.jv-gs.bad{color:var(--bad);font-weight:600}
+.jv-gs.bad{color:var(--bad-ink);font-weight:600}
 
 /* ---------- apps grid (kept for features that still use it) ---------- */
 .app-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
@@ -245,7 +251,7 @@ h2{font-size:32px;line-height:1.12;font-weight:750;letter-spacing:-.032em;margin
 .nav button.tab{border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);font-size:10.5px;font-weight:600;letter-spacing:.01em;cursor:pointer;padding:8px 0;min-width:0;transition:color .2s}
 .nav button.tab svg{width:24px;height:24px;transition:transform .3s var(--spring)}
 .nav button.tab:active svg{transform:scale(.86)}
-.nav button.tab.active{color:var(--accent)}
+.nav button.tab.active{color:var(--accent-ink)}
 .nav button.tab .fi{fill:currentColor;fill-opacity:0;transition:fill-opacity .2s}
 .nav button.tab.active .fi{fill-opacity:.2}
 .orb{justify-self:center;width:62px;height:62px;margin-top:-30px;border-radius:50%;border:0;cursor:pointer;background:radial-gradient(circle at 30% 28%,color-mix(in srgb,var(--accent) 45%,#fff),var(--accent) 45%,color-mix(in srgb,var(--accent) 62%,#000));box-shadow:0 12px 28px color-mix(in srgb,var(--accent) 50%,transparent),inset 0 2px 6px rgba(255,255,255,.35);display:grid;place-items:center;color:#fff;position:relative;transition:transform .4s var(--ease),opacity .25s}
@@ -298,13 +304,13 @@ body.is-listening .hm-glow{animation-duration:1.8s}
 .hm-type:active,.hm-brief:active,.tile:active{transform:scale(.97)}
 .hm-brief{display:flex;align-items:center;gap:12px;width:100%;min-height:58px;border-radius:20px;border:1px solid var(--card-border);background:var(--card);box-shadow:var(--card-shadow);padding:8px 14px 8px 9px;font-size:14.5px;font-weight:600;text-align:left;cursor:pointer;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);transition:transform .15s var(--ease)}
 .hm-brief[hidden]{display:none}
-.hm-brief .pb{flex:none;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent)}
+.hm-brief .pb{flex:none;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent-ink)}
 .hm-brief .pb svg{width:15px;height:15px}
 .hm-brief .bt{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.25}
 .hm-brief .bt b,.hm-brief .bt small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hm-brief .bt b{font-weight:650;font-size:15px;letter-spacing:-.015em}
 .hm-brief .bt small{color:var(--muted);font-size:12.5px;font-weight:500;margin-top:2px}
-.hm-brief .chev{flex:none;width:18px;height:18px;color:var(--faint)}
+.hm-brief .chev{flex:none;width:18px;height:18px;color:var(--faint-ink)}
 .hm-brief .eq{display:none;align-items:flex-end;gap:2px;height:14px}
 .hm-brief .eq i{width:3px;border-radius:2px;background:currentColor;animation:hmEq .9s ease-in-out infinite}
 .hm-brief .eq i:nth-child(2){animation-delay:.2s}.hm-brief .eq i:nth-child(3){animation-delay:.4s}
@@ -316,7 +322,7 @@ body.is-listening .hm-glow{animation-duration:1.8s}
 .tile.wide{grid-column:1/-1}
 .t-top{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:24px}
 .t-lbl{color:var(--muted);font-size:12.5px;font-weight:600;letter-spacing:-.005em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.t-ic{flex:none;width:24px;height:24px;display:grid;place-items:center;color:var(--accent)}
+.t-ic{flex:none;width:24px;height:24px;display:grid;place-items:center;color:var(--accent-ink)}
 .t-ic svg{width:100%;height:100%}
 .t-ic.sm{width:20px;height:20px;opacity:.9}
 .t-val{padding-top:6px;font-size:26px;font-weight:750;letter-spacing:-.035em;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -324,7 +330,7 @@ body.is-listening .hm-glow{animation-duration:1.8s}
 .t-val small{font-size:13px;font-weight:650;letter-spacing:0;color:var(--muted);margin-left:3px}
 .t-bar+.t-sub{margin-top:5px}
 .t-sub{margin-top:auto;padding-top:3px;color:var(--muted);font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.t-sub.bad{color:var(--bad);font-weight:600}.t-sub.warn{color:var(--warn);font-weight:600}
+.t-sub.bad{color:var(--bad-ink);font-weight:600}.t-sub.warn{color:var(--warn-ink);font-weight:600}
 .t-bar{height:4px;border-radius:9px;background:var(--fill2);overflow:hidden;margin-top:auto}
 .t-bar i{display:block;height:100%;border-radius:9px;background:linear-gradient(90deg,var(--accent),var(--accent2))}
 .t-bar i.bad{background:var(--bad)}.t-bar i.warn{background:linear-gradient(90deg,var(--warn),var(--bad))}
@@ -355,7 +361,7 @@ body.is-listening .hm-glow{animation-duration:1.8s}
 /* ---------- assistant sheet ---------- */
 .sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.42);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);z-index:30;opacity:0;pointer-events:none;transition:opacity .3s}
 .sheet-bg.open{opacity:1;pointer-events:auto}
-.sheet{position:fixed;left:50%;bottom:0;transform:translate(-50%,105%);width:100%;max-width:520px;height:min(88vh,780px);z-index:31;background:var(--bg2);border:1px solid var(--line);border-bottom:0;border-radius:30px 30px 0 0;display:flex;flex-direction:column;transition:transform .48s var(--spring);box-shadow:0 -20px 60px rgba(0,0,0,.35)}
+.sheet{position:fixed;left:50%;bottom:max(0px,calc(100% - var(--vv-h) - var(--vv-top)));transform:translate(-50%,105%);width:100%;max-width:520px;height:min(88vh,780px,calc(var(--vv-h) - 8px));z-index:31;background:var(--bg2);border:1px solid var(--line);border-bottom:0;border-radius:30px 30px 0 0;display:flex;flex-direction:column;transition:transform .48s var(--spring);box-shadow:0 -20px 60px rgba(0,0,0,.35)}
 .sheet.open{transform:translate(-50%,0)}
 .sheet:not(.open){visibility:hidden;transition:transform .36s var(--ease),visibility 0s linear .36s}
 .grab{width:38px;height:5px;border-radius:9px;background:var(--faint);opacity:.55;margin:8px auto 2px;flex:none}
@@ -419,7 +425,7 @@ input[type=range]{width:120px;accent-color:var(--accent)}
 .btn:active{transform:scale(.97)}
 .btn:disabled{opacity:.45;cursor:default}
 .btn.ghost{background:var(--fill);color:var(--text);border:0}
-.btn.danger{background:rgba(244,63,94,.13);color:var(--bad)}
+.btn.danger{background:rgba(244,63,94,.13);color:var(--bad-ink)}
 .set-row .btn{min-height:36px;padding:8px 14px;border-radius:999px;font-size:14px}
 .voice-list{max-height:280px;overflow-y:auto}
 .vrow{position:relative;display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;min-height:52px}
@@ -429,14 +435,14 @@ input[type=range]{width:120px;accent-color:var(--accent)}
 .vrow.on .radio{border:6px solid var(--accent)}
 .vrow .nm{flex:1;min-width:0;font-size:15px}
 .vrow .nm small{display:block;color:var(--muted);font-size:12px}
-.star{font-size:10.5px;font-weight:700;color:var(--good);background:rgba(34,197,94,.14);padding:2px 7px;border-radius:999px;white-space:nowrap}
+.star{font-size:10.5px;font-weight:700;color:var(--good-ink);background:rgba(34,197,94,.14);padding:2px 7px;border-radius:999px;white-space:nowrap}
 .tip{display:flex;gap:10px;font-size:13.5px;line-height:1.45;color:var(--muted);background:var(--accent-soft);border-radius:16px;padding:12px 14px;margin:0 0 12px}
-.tip svg{width:18px;height:18px;flex:none;color:var(--accent);margin-top:1px}
+.tip svg{width:18px;height:18px;flex:none;color:var(--accent-ink);margin-top:1px}
 .tip b{color:var(--text)}
-.jv-foot{text-align:center;color:var(--faint);font-size:12.5px;margin:22px 0 4px;line-height:1.5}
+.jv-foot{text-align:center;color:var(--faint-ink);font-size:12.5px;margin:22px 0 4px;line-height:1.5}
 
 /* ---------- toast ---------- */
-.toast{position:fixed;left:50%;bottom:calc(92px + var(--safe-b));transform:translate(-50%,16px) scale(.96);background:rgba(28,28,32,.94);color:#fff;padding:12px 8px 12px 18px;min-height:48px;border-radius:999px;box-shadow:0 14px 40px rgba(0,0,0,.3);z-index:80;opacity:0;pointer-events:none;transition:opacity .25s,transform .4s var(--spring);display:flex;gap:10px;align-items:center;max-width:calc(100% - 32px);font-weight:550;font-size:14.5px;letter-spacing:-.01em;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.toast{position:fixed;left:50%;bottom:calc(92px + var(--safe-b));transform:translate(-50%,16px) scale(.96);background:rgba(28,28,32,.94);color:#fff;padding:12px 8px 12px 18px;min-height:48px;border-radius:999px;box-shadow:0 14px 40px rgba(0,0,0,.3);z-index:80;opacity:0;pointer-events:none;transition:opacity .25s,transform .4s var(--spring);display:flex;gap:10px;align-items:center;width:max-content;max-width:calc(100% - 32px);font-weight:550;font-size:14.5px;letter-spacing:-.01em;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
 :root[data-theme="dark"] .toast{background:rgba(58,58,66,.92)}
 .toast.show{opacity:1;transform:translate(-50%,0) scale(1);pointer-events:auto}
 .toast #toastText{padding-right:10px}
@@ -450,6 +456,7 @@ body.at-home .toast{bottom:calc(92px + var(--safe-b))}
 @keyframes mFade{from{opacity:0}}
 @keyframes mFadeOut{to{opacity:0}}
 .modal .box{position:relative;width:100%;max-width:520px;max-height:calc(100% - 10px - var(--safe-t));overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:var(--bg2);border:1px solid var(--line);border-bottom:0;border-radius:28px 28px 0 0;padding:26px 18px calc(18px + var(--safe-b));box-shadow:0 -16px 50px rgba(0,0,0,.3);animation:mUp .44s var(--spring)}
+.modal .box:focus{outline:none}
 .modal.closing .box{animation:mDown .24s var(--ease) forwards}
 .modal .box::before{content:"";position:absolute;top:8px;left:50%;width:38px;height:5px;margin-left:-19px;border-radius:9px;background:var(--faint);opacity:.5}
 @keyframes mUp{from{transform:translateY(100%)}to{transform:none}}
@@ -471,17 +478,17 @@ body.at-home .toast{bottom:calc(92px + var(--safe-b))}
 .fs-head{position:sticky;top:0;z-index:2;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;padding:8px 8px 6px;background:var(--bg2);border-radius:28px 28px 0 0}
 .fs-head::before{content:"";position:absolute;top:8px;left:50%;width:38px;height:5px;margin-left:-19px;border-radius:9px;background:var(--faint);opacity:.5}
 .fs-head b{grid-column:2;font-size:17px;font-weight:650;letter-spacing:-.022em;padding-top:12px;white-space:nowrap}
-.fs-hb{border:0;background:none;color:var(--accent);font-size:17px;letter-spacing:-.02em;padding:16px 12px 6px;cursor:pointer;justify-self:start;min-height:44px}
+.fs-hb{border:0;background:none;color:var(--accent-ink);font-size:17px;letter-spacing:-.02em;padding:16px 12px 6px;cursor:pointer;justify-self:start;min-height:44px}
 .fs-hb.save{justify-self:end;font-weight:650}
 .fs-hb:disabled{opacity:.35;cursor:default}
 .fs-hb:active{opacity:.5}
 .fs-body{padding:6px 16px 0}
-.fs-amt{display:flex;align-items:center;justify-content:center;gap:4px;margin:10px 0 4px;font-weight:700;letter-spacing:-.04em}
+.fs-amt{display:flex;align-items:center;justify-content:center;gap:6px;margin:10px 0 4px;font-weight:700;letter-spacing:-.04em}
 .fs-amt span{font-size:34px;color:var(--muted);font-weight:600}
 .modal .fs-amt input{width:auto;min-width:3ch;max-width:100%;border:0;background:none;box-shadow:none;padding:0;margin:0;text-align:center;font-size:52px;font-weight:750;letter-spacing:-.045em;color:var(--text);font-variant-numeric:tabular-nums;field-sizing:content}
 .modal .fs-amt input:focus{box-shadow:none}
-.fs-amt input::placeholder{color:var(--faint)}
-.fs-amt.in input,.fs-amt.in span{color:var(--good)}
+.fs-amt input::placeholder{color:var(--faint-ink)}
+.fs-amt.in input,.fs-amt.in span{color:var(--good-ink)}
 .fs-sub{text-align:center;color:var(--muted);font-size:13px;margin:0 0 14px}
 .fs-group{background:var(--card);border:1px solid var(--card-border);box-shadow:var(--card-shadow);border-radius:16px;overflow:hidden;margin:0 0 14px}
 .fs-field{position:relative;display:flex;align-items:center;gap:12px;min-height:52px;padding:0 14px}
@@ -490,7 +497,7 @@ body.at-home .toast{bottom:calc(92px + var(--safe-b))}
 .fs-field input,.fs-field select,.fs-field textarea{flex:1;min-width:0;width:auto;margin:0;border:0;background:none;box-shadow:none;padding:14px 0;text-align:right;font-size:16px;color:var(--text);border-radius:0}
 .fs-field textarea{text-align:left;min-height:120px;padding:14px 0;resize:none}
 .modal .fs-field.tall{align-items:stretch}
-.fs-field input[type=datetime-local],.fs-field input[type=date],.fs-field input[type=time]{color:var(--accent);font-weight:550;-webkit-appearance:none;appearance:none;min-height:24px}
+.fs-field input[type=datetime-local],.fs-field input[type=date],.fs-field input[type=time]{color:var(--accent-ink);font-weight:550;-webkit-appearance:none;appearance:none;min-height:24px}
 .fs-field input::-webkit-date-and-time-value{text-align:right}
 .fs-lbl{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:18px 14px 8px}
 .fs-cats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:0 0 14px}
@@ -501,16 +508,16 @@ body.at-home .toast{bottom:calc(92px + var(--safe-b))}
 .fs-cat .jv-ico svg{width:19px;height:19px}
 .fs-cat.on{border-color:var(--c);color:var(--text)}
 .fs-seg{margin:0 0 14px}
-.fs-seg.in button.active[data-v="income"]{color:var(--good)}
+.fs-seg.in button.active[data-v="income"]{color:var(--good-ink)}
 .fs-acts{display:flex;flex-direction:column;gap:0}
-.fs-act{display:flex;align-items:center;gap:12px;width:100%;min-height:52px;padding:0 14px;border:0;background:none;color:var(--accent);font-size:16px;letter-spacing:-.015em;cursor:pointer;text-align:left;position:relative}
+.fs-act{display:flex;align-items:center;gap:12px;width:100%;min-height:52px;padding:0 14px;border:0;background:none;color:var(--accent-ink);font-size:16px;letter-spacing:-.015em;cursor:pointer;text-align:left;position:relative}
 .fs-act+.fs-act::before{content:"";position:absolute;top:0;left:14px;right:0;border-top:1px solid var(--sep)}
 .fs-act svg{width:20px;height:20px;flex:none}
-.fs-act.danger{color:var(--bad)}
+.fs-act.danger{color:var(--bad-ink)}
 .fs-act:active{background:var(--press)}
 .fs-note{font-size:12.5px;color:var(--muted);margin:-6px 14px 14px;line-height:1.4}
 .fs-chips{display:flex;gap:8px;flex-wrap:wrap;margin:-4px 0 14px}
-.fs-chips button{border:0;background:var(--fill);color:var(--text);border-radius:999px;padding:8px 13px;font-size:13.5px;font-weight:600;cursor:pointer}
+.fs-chips button{border:0;background:var(--fill);color:var(--text);border-radius:999px;padding:8px 13px;min-height:40px;font-size:13.5px;font-weight:600;cursor:pointer;position:relative}.fs-chips button::after{content:"";position:absolute;inset:-3px -2px}
 .fs-chips button:active{transform:scale(.96)}
 
 .banner{display:none;margin-bottom:14px}
@@ -523,6 +530,14 @@ body.at-home .toast{bottom:calc(92px + var(--safe-b))}
 .link::after{content:"";position:absolute;inset:-8px -6px}
 .swatches button::after{content:"";position:absolute;inset:-7px}
 .fin-range button::after{content:"";position:absolute;inset:-9px -2px}
+/* every control gets a 44 px touch area (Apple's minimum) without making it look bigger */
+.seg button,.hm-type,.sheet-head .icon-btn,.set-row .btn,.bf-loc,.bf-unit button,.cal-btn.sm,.jv-gt{position:relative}
+.seg button::after{content:"";position:absolute;inset:-5px 0}
+.hm-type::after{content:"";position:absolute;inset:-4px 0}
+.sheet-head .icon-btn::after{content:"";position:absolute;inset:-5px}
+.set-row .btn::after,.cal-btn.sm::after{content:"";position:absolute;inset:-5px -2px}
+.bf-loc::after{content:"";position:absolute;inset:-6px -2px}
+.bf-unit button::after{content:"";position:absolute;inset:-9px -1px}
 @media (hover:hover){.jv-row:hover,.vrow:hover{background:var(--press)}.chip:hover,.tile:hover,.jv-me:hover{filter:brightness(1.03)}}
 @media (prefers-reduced-motion:reduce){
   .hm-glow,.hm-ring,.hm-core::before,.orb::before,.hm-wave i,.hm-brief .eq i,.t-skel{animation:none!important}
@@ -627,8 +642,8 @@ body.at-home .toast{bottom:calc(92px + var(--safe-b))}
 
     <div class="section-h"><h3>Personal</h3></div>
     <div class="set-group">
-      <div class="set-row"><div class="set-ic" style="background:#8e8e93"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/></svg></div><div class="lbl"><b>Your name</b></div><input type="text" id="sName" autocomplete="given-name" aria-label="Your name"></div>
-      <div class="set-row"><div class="set-ic" style="background:#34c759"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><circle cx="12" cy="12" r="2.6"/><path d="M6 9.5h.01M18 14.5h.01"/></svg></div><div class="lbl"><b>Currency</b></div><select id="sCur" aria-label="Currency"><option>$</option><option>€</option><option>£</option><option>L£</option><option>AED</option><option>SAR</option></select></div>
+      <div class="set-row"><div class="set-ic" style="background:#8e8e93"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/></svg></div><div class="lbl"><b>Your name</b></div><input type="text" id="sName" autocomplete="given-name" aria-label="Your name" placeholder="Your first name"></div>
+      <div class="set-row"><div class="set-ic" style="background:#34c759"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><circle cx="12" cy="12" r="2.6"/><path d="M6 9.5h.01M18 14.5h.01"/></svg></div><div class="lbl"><b>Currency</b></div><select id="sCur" aria-label="Currency"><option>$</option><option>€</option><option>£</option><option>L£</option><option>LBP</option><option>AED</option><option>SAR</option></select></div>
       <div class="set-row"><div class="set-ic" style="background:#ff3b30"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg></div><div class="lbl"><b>Monthly budget</b><small>Or say “Set my budget to 1500”</small></div><input type="number" id="sBudget" inputmode="decimal" placeholder="None" aria-label="Monthly budget"></div>
     </div>
 
@@ -667,21 +682,21 @@ body.at-home .toast{bottom:calc(92px + var(--safe-b))}
   <div class="voice-stage" id="stage"><div class="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="live" id="live">Tap the mic and talk, or type below.</div></div>
   <div class="suggest" id="suggest"></div>
   <div class="composer">
-    <input id="textIn" placeholder="Type or paste a message…" autocomplete="off" enterkeyhint="send">
+    <input id="textIn" placeholder="Ask Jarvis anything…" autocomplete="off" enterkeyhint="send">
     <button class="round" id="sendBtn" aria-label="Send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
     <button class="round primary" id="micBtn" aria-label="Talk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="2.5" width="6" height="12" rx="3"/><path d="M5 10.5a7 7 0 0 0 14 0M12 17.5V21"/></svg></button>
   </div>
 </div>
 
-<div class="toast" id="toast"><span id="toastText"></span><button id="toastUndo">Undo</button></div>
-<div class="modal" id="modal"><div class="box" id="modalBox"></div></div>
+<div class="toast" id="toast" role="status" aria-live="polite"><span id="toastText"></span><button id="toastUndo">Undo</button></div>
+<div class="modal" id="modal"><div class="box" id="modalBox" role="dialog" aria-modal="true" tabindex="-1"></div></div>
 
 <script>
 /* =========================================================
    DATA (saved only on this device)
    ========================================================= */
 const KEY = 'jarvis2';
-const DEFAULT_SETTINGS = {name:'Bilal', currency:'$', budget:0, speak:true, rate:1, pitch:1, voice:'', theme:'dark', accent:'#6d5dfc'};
+const DEFAULT_SETTINGS = {name:'there', currency:'$', budget:0, speak:true, rate:1, pitch:1, voice:'', theme:'dark', accent:'#6d5dfc'};
 let db = {notes:[], reminders:[], expenses:[], settings:{...DEFAULT_SETTINGS}};
 try {
   const saved = JSON.parse(localStorage.getItem(KEY) || '{}');
@@ -802,7 +817,7 @@ function parseTime(text){
 }
 
 const CATS = {
-  Groceries:{ic:'🛒',c:'#22c55e',k:['grocer','supermarket','market','vegetable','fruit','milk','bread']},
+  Groceries:{ic:'🛒',c:'#14b8a6',k:['grocer','supermarket','market','vegetable','fruit','milk','bread']},
   'Food & drink':{ic:'🍔',c:'#f59e0b',k:['restaurant','lunch','dinner','breakfast','coffee','cafe','pizza','burger','snack','takeout','delivery','food','shawarma','manakish','drink']},
   Transport:{ic:'🚗',c:'#0ea5e9',k:['gas','fuel','petrol','taxi','uber','bolt','bus','train','parking','car','transport','service']},
   Bills:{ic:'🧾',c:'#a855f7',k:['rent','electric','generator','water','internet','phone','bill','subscription','netflix','spotify','insurance']},
@@ -1006,6 +1021,8 @@ function think(said, depth){
   if (/(delete|remove|undo|cancel|scratch) (the |my )?last (reminder)/.test(t)){ db.reminders.sort((a,b)=>b.created-a.created); const x = db.reminders.shift(); save(); return x?'Removed your last reminder.':'No reminders to remove.'; }
 
   // reminders
+  if (!depth && (m = t.match(/^remind me (?:how much|what) (?:money )?i (?:have )?(spent|made|earned|spend)\b(.*)$/))){ const v = m[1]==='spend'?'spent':m[1]; const r = think(m[2].trim() ? `how much did i ${v==='spent'?'spend':v==='made'?'make':'earn'}${m[2]}` : `how much have i ${v}`, 1) || brainHook('late', `how much did i ${v==='spent'?'spend':'make'}${m[2]}`, `how much did i ${v==='spent'?'spend':'make'}${m[2]}`); if (r) return r; }
+  if (!depth && (m = t.match(/^remind me (what|when|where|how much|how many) (my |the |i )(.+?) (is|are|was|were|do|did|have|spent|had)$/)) && !/\b(we|talked|said|asked|told)\b/.test(t)){ const q = m[4] === 'spent' || m[4] === 'had' || m[4] === 'do' || m[4] === 'did' || m[4] === 'have' ? `${m[1]} ${m[4] === 'spent' || m[4] === 'had' ? 'have' : m[4]} ${m[2]}${m[3]} ${m[4] === 'spent' ? 'spent' : m[4] === 'had' ? 'had' : ''}`.trim() : `${m[1]} ${m[4]} ${m[2]}${m[3]}`; const r = think(q, 1) || brainHook('late', q, q); if (r) return r; }
   if (/^remind me (what|who|where|which|how|why|if|whether)\b/.test(t)) { turnKind = 'chat'; const rc = /^remind me what (we talked about|i (asked|said)( you)?)( before| earlier| today)?$/.test(t) && brainHook('recap'); return rc || `I only remember what we said since you opened Jarvis. To keep something for good, say note, then what you want saved.`; }
   if ((m = said.match(/^(?:hey jarvis,?\s*)?(?:please\s+)?(?:can you\s+)?(?:remind me|set (?:a )?reminder|reminder|don'?t let me forget)\s*(?:to|that|about|for)?\s*(.*)$/i))){
     const {date, rest, repeat} = parseTime(wordsToNumbers(m[1]));
@@ -1021,8 +1038,9 @@ function think(said, depth){
     if (/^(take|make|add|write|leave|create|new) a note|^save a note/i.test(m[1])) text = text.replace(/^(?:to|saying|about)\s+/i, '');
     if (text.trim()){ addNote(text.trim()); go('notes'); turnKind = 'note'; return 'Got it, note saved.'; }
   }
-  // income
-  if (/\b(got paid|received|earned|i made|income|salary|got my salary)\b/.test(t) && !/\b(spent|spend|bought|paid for|pay for)\b/.test(t) && (m = t.match(/\$?(\d+(?:\.\d{1,2})?)\s*(?:dollars?|bucks|usd|euros?|pounds?)?\s*(?:from|for|as|in)?\s*(.*)$/))){
+  // income ("I received 3 emails" or "I made 2 mistakes" is not money: a count of things follows the number)
+  if (/\b(got paid|received|earned|i made|income|salary|got my salary)\b/.test(t) && !/\b(spent|spend|bought|paid for|pay for)\b/.test(t) && (m = t.match(/\$?(\d+(?:\.\d{1,2})?)\s*(?:dollars?|bucks|usd|euros?|pounds?)?\s*(?:from|for|as|in)?\s*(.*)$/)) && !COUNTED.test(t.slice(t.indexOf(m[1]) + m[1].length).trim())
+      && (/\b(got paid|earned|income|salary|got my salary)\b/.test(t) || /^(?:$|(?:dollars?|bucks|usd|euros?|pounds?|lira|k|grand|from|for|as|in|on|at|this|today|yesterday|last|salary|bonus|cash|net|gross|commission|profit|extra|back|tips?)\b|\$)/.test(t.slice(t.indexOf(m[1]) + m[1].length).trim()) || /\$\d|\d\s*(?:dollars?|bucks|usd)\b/.test(t))){
     const amount = parseFloat(m[1]); const desc = cap(m[2] || (/salary/.test(t)?'Salary':'Income'));
     db.expenses.unshift({id:uid(), type:'income', amount, desc, cat:'Income', at:Date.now()}); save(); go('budget');
     return `Nice! Added ${fmt(amount)} income. You've earned ${fmt(sum(inMonth(key,'income')))} this month.`;
@@ -1030,6 +1048,15 @@ function think(said, depth){
   // expenses
   m = t.match(/(?:i\s+)?(?:paid|spent|spend|pay|bought|buy|expense|cost|charged)\b.*?\$?\s?(\d+(?:\.\d{1,2})?)\s*(?:dollars?|bucks|usd|euros?|pounds?|lira|\$)?(?:\s*(?:and\s+)?(\d{1,2})\s*cents?)?\s*(?:for|on|at|in|to)?\s*(.*)$/)
     || t.match(/^\$?\s?(\d+(?:\.\d{1,2})?)\s*(?:dollars?|bucks|usd|euros?)(?:\s*(?:and\s+)?(\d{1,2})\s*cents?)?\s*(?:for|on|at)\s+(.*)$/);
+  // "I spent 3 hours in traffic", "I bought 2 tickets": a count, not money. "I bought 2 tickets for 50 dollars" logs $50 for 2 tickets
+  if (m && m[0] !== undefined){
+    const vp = t.search(/\b(?:paid|spent|spend|pay|bought|buy|expense|cost|charged)\b/), at = t.indexOf(m[1], Math.max(0, vp));
+    const rest = at >= 0 ? t.slice(at + m[1].length).trim() : '';
+    if (vp >= 0 && COUNTED.test(rest)){
+      const mm = rest.match(/^(.*?)\s+(?:for|at)\s+\$?(\d+(?:\.\d{1,2})?)\s*(?:dollars?|bucks|usd|euros?|\$)?(?:\s+(?:each|total|in total|altogether))?$/);
+      m = mm ? [mm[0], mm[2], null, m[1] + ' ' + mm[1]] : null;
+    }
+  }
   if (m){
     const amount = parseFloat(m[1]) + (m[2]?parseInt(m[2])/100:0);
     let desc = (m[3]||'').replace(/^(the|some|a|an|my)\s+/,'').trim();
@@ -1054,8 +1081,10 @@ Jarvis.turnInfo = ()=>({kind: turnKind, last: lastTurn, seq: turnSeq});
 /** tell features (e.g. receipts) that an expense was removed or put back */
 function expenseEvent(kind, e){ try { window.dispatchEvent(new CustomEvent('jarvis:expense-'+kind, {detail:{id:e.id, expense:e}})); } catch(err){} }
 /* Conversation: simple answers, never saves anything (except "save that", which you asked for) */
-const HELP_TEXT = "Just talk to me normally. I can brief you on your day, the weather, markets and your calendar, set reminders, alarms and timers, track spending, food, water and habits, and fix entries, like: that was actually 40. I also do maths, conversions, exchange rates, time abroad and quick facts. Try: brief me.";
+const HELP_TEXT = "Just talk to me normally. I can brief you on your day, the weather, markets and your calendar, set reminders, alarms and timers, track spending, food, water and habits, read your steps and sleep from your iPhone, and fix entries, like: that was actually 40. I also do maths, conversions, exchange rates, time abroad and quick facts. Try: brief me.";
 const pick = list => list[Math.floor(Math.random()*list.length)];
+/* words that make a number a count of things, not money: "3 hours", "2 emails", "5 km" */
+const COUNTED = /^(?:hours?|hrs?|minutes?|mins?|seconds?|secs?|days?|nights?|weeks?|months?|years?|times?|tickets?|e-?mails?|messages?|texts?|calls?|people|persons?|kids?|children|friends?|guests?|items?|pieces?|pages?|books?|mistakes?|errors?|meetings?|steps?|glasses?|cups?|bottles?|kg|kilos?|kilograms?|grams?|g|km|kilomet(?:er|re)s?|miles?|laps?|reps?|sets?|points?|goals?|games?|rounds?|percent|%|stars?|likes?|followers?|photos?|pictures?|questions?|answers?|tasks?|things?|visits?|trips?|coffees?|drinks?|slices?|plates?|boxes?|bags?|shots?|bottles?|packs?|pairs?)\b/;
 function spendPeriod(t){
   const d0 = new Date(); d0.setHours(0,0,0,0);
   if (/\btoday\b|\bso far today\b/.test(t)) return {from:+d0, label:'today'};
@@ -1091,6 +1120,9 @@ function smallTalk(t, said){
   if (/^(how old are you|where are you from|where do you live|where are you)$/.test(t)) return chat(`I'm Jarvis, and I live right here on your phone, ${N}.`);
   if (/^(tell me a joke|say something funny|make me laugh|another joke|a joke|joke|tell me another joke)$/.test(t)) return chat(pick(["Why did the stock market go to therapy? Too many emotional swings.","I told my budget a joke. It didn't find it very rich.","Why don't accountants ever get bored? They always find something to count on.","Why did the banana go to the doctor? It wasn't peeling well."]));
   if (/^(tell me a story|sing( me)? a song|sing something)$/.test(t)) return chat(`I'm better with facts than stories, ${N}. Want a joke instead? Just say tell me a joke.`);
+  if (/^(shukran|shukran kteer|merci|merci kteer|yislamo|yislamu|tislam|teslam)( jarvis| habibi)?$/.test(t)) return chat(pick([`Tikram, ${N}. Anytime.`, `Ahla w sahla, ${N}.`]));
+  if (/^(kifak|kifik|kif halak|kifak jarvis|shu akhbarak|shu el akhbar|shu fi ma fi|ahla|marhaba|marhaba jarvis|sabah el kheir|sabah al kheir|masa el kheir|masa al kheir)$/.test(t)) return chat(/^(sabah)/.test(t) ? `Sabah el noor, ${N}. Want your brief?` : /^(masa)/.test(t) ? `Masa el noor, ${N}. What can I do for you?` : `Mnih, thanks ${N}! What can I do for you?`);
+  if (/^(yalla|yallah|yalla let's go|yalla let us go|let's go|let us go|yalla bye|yalla bye bye)$/.test(t)) return chat(/bye/.test(t) ? `Yalla, talk soon ${N}.` : `Yalla! What do you need, ${N}?`);
   if (/^(thanks|thank you|thank you so much|thanks a lot|thanks so much|thx|cheers|much appreciated|appreciate it|(awesome|great|perfect|ok|okay|cool|nice) (thanks|thank you)|thanks (jarvis|man|buddy|bro)|that's great thanks)$/.test(t)) return chat(pick([`Anytime, ${N}.`, `You're welcome, ${N}.`, `Happy to help.`]));
   if (/^(ok|okay|cool|nice|great|awesome|perfect|got it|alright|all right|sure|good|wow|fine|sounds good|sounds great|okay cool|ok cool|i see|makes sense|interesting|lovely|amazing)$/.test(t)) return chat(`Anything else, ${N}?`);
   { const cf = brainHook('confirm', t); if (cf) return cf; }   // "Should I log $18 for lunch?" "Yes."
@@ -1192,7 +1224,15 @@ var IC = {
   chev: svgI('<path d="m9 5.5 6.5 6.5L9 18.5"/>', 2.4),
   pie: svgI('<path d="M12 3.5a8.5 8.5 0 1 0 8.5 8.5H12z"/><path d="M15 3.8A8.5 8.5 0 0 1 20.2 9H15z"/>'),
   target: svgI('<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/>'),
-  trash: svgI('<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>')
+  trash: svgI('<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>'),
+  bell: svgI('<path d="M6 16v-5a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/>'),
+  alarm: svgI('<circle cx="12" cy="13" r="7.5"/><path d="M12 9.5V13l2.3 1.6M4 4.5 6.5 2.5M20 4.5 17.5 2.5"/>'),
+  mapPin: svgI('<path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>'),
+  moon: svgI('<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>'),
+  phone: svgI('<rect x="6.5" y="2.5" width="11" height="19" rx="2.8"/><path d="M10.5 18.5h3"/>'),
+  lock: svgI('<rect x="4.5" y="10.5" width="15" height="10.5" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/>'),
+  info: svgI('<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.8h.01"/>'),
+  close: svgI('<path d="M6 6l12 12M18 6 6 18"/>', 2.2)
 };
 const ICON = {
   pin:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 3a1 1 0 0 1 .7 1.7L15 6.4v4.2l2.7 2.7A1 1 0 0 1 17 15h-4v6l-1 1-1-1v-6H7a1 1 0 0 1-.7-1.7L9 10.6V6.4L7.3 4.7A1 1 0 0 1 8 3z"/></svg>',
@@ -1228,14 +1268,14 @@ function notesGroup(list){ return `<div class="jv-group" style="--inset:14px">${
 function remHTML(r){
   const late = !r.done && r.at < Date.now()-6e4, rep = r.repeat && r.repeat!=='none';
   return `<div class="jv-rowwrap ${r.done?'done':''}"><button class="check ${r.done?'on':''}" data-done="${r.id}" aria-label="${r.done?'Mark as not done':'Mark as done'}">${r.done?ICON.check:''}</button>
-    <button class="jv-row" data-edit-rem="${r.id}"><span class="jv-rb"><span class="jv-rt">${esc(r.text)}</span><span class="jv-rs">${late?'<span class="tag red">Overdue</span>':''}${rep?`<span class="tag">${IC.repeat}${cap(r.repeat)}</span>`:''}<span>${whenText(r.at)}</span></span></span></button>
+    <button class="jv-row" data-edit-rem="${r.id}"><span class="jv-rb"><span class="jv-rt">${esc(r.text)}</span><span class="jv-rs">${late?'<span class="tag red">Overdue</span>':''}${rep?`<span class="tag">${IC.repeat}${cap(r.repeat)}</span>`:''}<span class="jv-ell">${whenText(r.at)}</span></span></span></button>
     ${!r.done?`<button class="mini" data-snooze="${r.id}" aria-label="Snooze 10 minutes">${ICON.snooze}</button>`:''}</div>`;
 }
 function remsGroup(list){ return `<div class="jv-group" style="--inset:54px">${list.map(remHTML).join('')}</div>`; }
 /* a payment: tap it to edit amount, description, category, date or type */
 function txRow(e){
   const inc = e.type==='income';
-  return `<button class="jv-row" data-edit-exp="${e.id}">${catIco(e.cat, e.type)}<span class="jv-rb"><span class="jv-rt">${esc(e.desc)}</span><span class="jv-rs">${inc?'Income':esc(e.cat)} · ${timeOf(e.at)}</span></span><span class="jv-amt ${inc?'in':''}">${inc?'+':'−'}${fmt(e.amount)}</span></button>`;
+  return `<button class="jv-row" data-edit-exp="${e.id}">${catIco(e.cat, e.type)}<span class="jv-rb"><span class="jv-rt">${esc(e.desc)}</span><span class="jv-rs"><span class="jv-ell">${inc?'Income':esc(e.cat)} · ${timeOf(e.at)}</span></span></span><span class="jv-amt ${inc?'in':''}">${inc?'+':'−'}${fmt(e.amount)}</span></button>`;
 }
 function txHTML(e){ return `<div class="jv-group">${txRow(e)}</div>`; }
 function txGrouped(list){
@@ -1254,7 +1294,7 @@ function budgetGoalHTML(spent){
   const pct = Math.min(spent/S.budget*100, 100); const over = spent > S.budget;
   const dLeft = new Date(viewMonth.getFullYear(), viewMonth.getMonth()+1, 0).getDate() - new Date().getDate() + 1;
   const isCur = monthKey(viewMonth)===monthKey(Date.now());
-  return `<button class="jv-gt" data-set-budget style="all:unset;display:flex;justify-content:space-between;align-items:baseline;gap:10px;width:100%;cursor:pointer" aria-label="Change monthly budget"><b style="font-size:16px;font-weight:650;letter-spacing:-.015em">Monthly budget</b><span style="color:var(--muted);font-size:13.5px;font-variant-numeric:tabular-nums">${fmt(spent)} of ${fmt(S.budget)}</span></button>
+  return `<button class="jv-gt" data-set-budget style="all:unset;box-sizing:border-box;display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;min-height:44px;margin:-11px 0 -8px;cursor:pointer" aria-label="Change monthly budget"><b style="font-size:16px;font-weight:650;letter-spacing:-.015em;white-space:nowrap">Monthly budget</b><span style="color:var(--muted);font-size:13.5px;font-variant-numeric:tabular-nums;text-align:right;min-width:0">${fmt(spent)} of ${fmt(S.budget)}</span></button>
     <div class="progress"><i style="width:${pct}%;${over?'background:var(--bad)':pct>80?'background:linear-gradient(90deg,var(--warn),var(--bad))':''}"></i></div>
     <div class="jv-gs ${over?'bad':''}">${over?`Over by ${fmt(spent-S.budget)}`:`${fmt(S.budget-spent)} left`}${isCur&&!over&&dLeft>0?` · about ${fmt(Math.floor((S.budget-spent)/dLeft))} a day for ${dLeft} day${dLeft===1?'':'s'}`:''}</div>`;
 }
@@ -1351,14 +1391,19 @@ function homeTiles(){
     else o.sub = today ? `${fmt(today)} today` : 'Tap to set a budget';
     tiles.push(o);
   } catch(e){}
-  // calories left (food feature), else today's habits
+  // the 4th spot: iPhone Health when it matters most (he picked Steps/Sleep for Home, or last night's sleep
+  // in the morning right after a sync), otherwise calories left, else today's habits, else Health
+  let ht = null, hFirst = false;
+  try { const H = Jarvis.health; ht = H && typeof H.tile==='function' ? H.tile() : null;
+    if (ht){ const pref = (H.store && H.store.tile) || 'auto'; hFirst = pref==='steps' || pref==='sleep' || (pref==='auto' && ht.lbl==='Last night' && Date.now() - (H.syncedAt||0) < 12*36e5); } } catch(e){ ht = null; }
   let food = null; try { if (Jarvis.food && typeof Jarvis.food.today==='function') food = Jarvis.food.today(); } catch(e){}
-  if (food && food.goal > 0){
+  if (hFirst) tiles.push(ht);
+  else if (food && food.goal > 0){
     const left = food.goal - (food.kcal||0), over = left < 0;
     tiles.push({lbl: over?'Calories over':'Calories left', ic:TI.flame, icSm:true, val:N0.format(Math.abs(Math.round(left))), bar:(food.kcal||0)/food.goal*100, barCls:over?'bad':'good', sub:food.kcal?`${N0.format(Math.round(food.kcal))} of ${N0.format(food.goal)} eaten`:'Nothing logged yet', subCls:over?'warn':'', go:'food'});
   } else { try { const h = Jarvis.habits && typeof Jarvis.habits.today==='function' && Jarvis.habits.today(); if (h && h.total) tiles.push({lbl:'Habits today', ic:TI.habit, icSm:true, val:`${h.done}<small>/ ${h.total}</small>`, bar:h.done/h.total*100, barCls:'good', sub:h.done>=h.total?'All done today':`${h.total-h.done} to go`, go:'habits'}); } catch(e){} }
-  // iPhone Health (features/health.js): fills the last spot when there's room
-  if (tiles.length < 4) try { const h = Jarvis.health && typeof Jarvis.health.tile==='function' && Jarvis.health.tile(); if (h) tiles.push(h); } catch(e){}
+  // iPhone Health (features/health.js): otherwise it fills the last spot when there's room
+  if (!hFirst && ht && tiles.length < 4) tiles.push(ht);
   return tiles;
 }
 let lastReply = '';
@@ -1404,6 +1449,8 @@ function renderReminders(){
   $('remList').innerHTML = list.length ? remsGroup(list) : emptyHTML(remFilter==='done'?'done':'clock', remFilter==='upcoming'?'No upcoming reminders.':remFilter==='overdue'?'Nothing overdue. Nice!':'Nothing completed yet.');
   const n = overdue().length; document.querySelector('#remFilter [data-f="overdue"]').textContent = 'Overdue' + (n?` (${n})`:'');
 }
+/* the two Money numbers share one size, stepping down for long amounts (L£ 95,000,000) so nothing is cut off */
+function statSize(...v){ const n = Math.max(...v.map(x=>String(x).length)); return n > 13 ? ' xxs' : n > 10 ? ' xs' : n > 8 ? ' sm' : ''; }
 function renderBudget(){
   const key = monthKey(viewMonth);
   $('monthLabel').textContent = viewMonth.toLocaleDateString([], {month:'long', year:'numeric'});
@@ -1413,8 +1460,8 @@ function renderBudget(){
   const prev = new Date(viewMonth); prev.setMonth(prev.getMonth()-1); const prevSpent = sum(inMonth(monthKey(prev)));
   const delta = prevSpent ? Math.round((spent-prevSpent)/prevSpent*100) : null;
   $('budgetStats').innerHTML = `
-    <div class="card stat"><div class="label">Spent</div><div class="val">${fmt(spent)}</div><div class="delta" style="color:${delta===null?'var(--muted)':delta>0?'var(--bad)':'var(--good)'}">${delta===null?`${exp.length} payment${exp.length===1?'':'s'}`:`${delta>0?'↑':'↓'} ${Math.abs(delta)}% vs last month`}</div></div>
-    <div class="card stat"><div class="label">Income</div><div class="val" style="color:var(--good)">${fmt(earned)}</div><div class="delta" style="color:var(--muted)">Balance ${fmt(earned-spent)}</div></div>`;
+    <div class="card stat"><div class="label">Spent</div><div class="val${statSize(fmt(spent), fmt(earned))}">${fmt(spent)}</div><div class="delta" style="color:${delta===null?'var(--muted)':delta>0?'var(--bad-ink)':'var(--good-ink)'}">${delta===null?`${exp.length} payment${exp.length===1?'':'s'}`:`${delta>0?'↑':'↓'} ${Math.abs(delta)}% vs last month`}</div></div>
+    <div class="card stat"><div class="label">Income</div><div class="val${statSize(fmt(spent), fmt(earned))}" style="color:var(--good-ink)">${fmt(earned)}</div><div class="delta" style="color:var(--muted)">Balance ${fmt(earned-spent)}</div></div>`;
   $('budgetGoal').innerHTML = budgetGoalHTML(spent);
   const byCat = {}; exp.forEach(e=>byCat[e.cat]=(byCat[e.cat]||0)+e.amount);
   const parts = Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
@@ -1425,7 +1472,7 @@ function renderBudget(){
   const avg = spent / (isCur ? new Date().getDate() : days); const td = isCur ? new Date().getDate()-1 : -1;
   $('dailyCard').innerHTML = `<div style="display:flex;justify-content:space-between;align-items:baseline;font-size:14px;color:var(--muted)"><span>Average per day</span><b style="color:var(--text);font-size:17px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums">${fmt(Math.round(avg*100)/100)}</b></div>
     <div class="bars">${perDay.map((v,i)=>`<i class="${v?'':'zero'}${i===td?' today':''}" style="height:${v?Math.max(v/mx*100,6):3}%"></i>`).join('')}</div>
-    <div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--faint);margin-top:6px;font-variant-numeric:tabular-nums"><span>1</span><span>${Math.ceil(days/2)}</span><span>${days}</span></div>`;
+    <div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--faint-ink);margin-top:6px;font-variant-numeric:tabular-nums"><span>1</span><span>${Math.ceil(days/2)}</span><span>${days}</span></div>`;
   const tx = [...exp, ...inc].sort((a,b)=>b.at-a.at); const shown = txAll ? tx : tx.slice(0, 30);
   $('txList').innerHTML = tx.length ? txGrouped(shown) + (tx.length > shown.length ? `<button class="jv-add" id="txMore">Show all ${tx.length} transactions</button>` : '') : emptyHTML('wallet','No transactions. Say “Paid 15 dollars for groceries”, or tap Add.');
   if ($('txMore')) $('txMore').onclick = ()=>{ txAll = true; renderBudget(); };
@@ -1592,17 +1639,22 @@ let toastTimer, undoFn;
 function toast(text, undo){ $('toastText').textContent = text; undoFn = undo; $('toastUndo').style.display = undo?'':'none'; $('toast').classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(()=>$('toast').classList.remove('show'), undo ? 5000 : 3000); }
 $('toastUndo').onclick = ()=>{ if (undoFn) undoFn(); $('toast').classList.remove('show'); };
 /* modal(html): a bottom sheet that slides up (features pass h4 + inputs + .row buttons) */
-let modalT = 0;
+let modalT = 0, modalOpener = null;
 function modal(html, cls){
   clearTimeout(modalT); const m = $('modal'), b = $('modalBox');
   m.classList.remove('closing'); b.oninput = b.onclick = b.onkeydown = null; b.className = 'box' + (cls ? ' '+cls : ''); b.innerHTML = html; b.scrollTop = 0;
+  if (!m.classList.contains('open')) modalOpener = document.activeElement;
   m.classList.add('open'); syncTrap();
+  // screen readers and keyboards start inside the sheet (forms that type right away focus their own field)
+  const h = b.querySelector('.fs-head b, h4'); if (h) b.setAttribute('aria-label', h.textContent.trim()); else b.removeAttribute('aria-label');
+  setTimeout(()=>{ try { if (m.classList.contains('open') && !b.contains(document.activeElement)) b.focus({preventScroll:true}); } catch(e){} }, 120);
 }
 function closeModal(){
   const m = $('modal'); if (!m.classList.contains('open') || m.classList.contains('closing')) return;
   try { const a = document.activeElement; if (a && m.contains(a)) a.blur(); } catch(e){}
   m.classList.add('closing'); clearTimeout(modalT);
-  modalT = setTimeout(()=>{ m.classList.remove('open','closing'); syncTrap(); }, 210);
+  modalT = setTimeout(()=>{ m.classList.remove('open','closing'); syncTrap();
+    try { const o = modalOpener; modalOpener = null; if (o && o.isConnected && o !== document.body && !$('modal').classList.contains('open')) o.focus({preventScroll:true}); } catch(e){} }, 210);
 }
 $('modal').onclick = e=>{ if (e.target.id==='modal') closeModal(); };
 /* formSheet: iPhone-style edit sheet with Cancel · Title · Save */
@@ -1629,7 +1681,7 @@ function openExpModal(e){
   const cur = S.currency, pre = cur.length>1 ? '' : cur, post = cur.length>1 ? cur : '';
   const box = formSheet({title: isNew ? 'New transaction' : 'Edit transaction', save: isNew ? 'Add' : 'Save',
     body: `${seg('fsType', [['expense','Expense'],['income','Income']], type, 'fs-seg')}
-      <div class="fs-amt ${type==='income'?'in':''}" id="fsAmtW"><span>${esc(pre)}</span><input id="fsAmt" type="text" inputmode="decimal" placeholder="0" autocomplete="off" aria-label="Amount" value="${e ? String(e.amount) : ''}"><span>${esc(post)}</span></div>
+      <div class="fs-amt ${type==='income'?'in':''}" id="fsAmtW"><span>${esc(pre)}</span><input id="fsAmt" type="text" inputmode="decimal" placeholder="0" autocomplete="off" aria-label="Amount" value="${e ? esc(e.amount.toLocaleString('en-US', {maximumFractionDigits:2})) : ''}"><span>${esc(post)}</span></div>
       <p class="fs-sub" id="fsAmtSub">${isNew ? 'Type the amount' : 'Tap the amount to change it'}</p>
       <div class="fs-group"><div class="fs-field"><label for="fsDesc">Description</label><input id="fsDesc" type="text" placeholder="${type==='income'?'Salary, freelance…':'Lunch, groceries…'}" autocomplete="off" autocapitalize="sentences" value="${e ? esc(e.desc) : ''}"></div>
         <div class="fs-field"><label for="fsWhen">Date</label><input id="fsWhen" type="datetime-local" value="${toLocalInput(e ? e.at : Date.now())}"></div></div>
@@ -1711,7 +1763,7 @@ function openNoteModal(n){
 }
 function openBudgetModal(){
   const cur = S.currency, pre = cur.length>1 ? '' : cur, post = cur.length>1 ? cur : '';
-  formSheet({title:'Monthly budget', body:`<div class="fs-amt"><span>${esc(pre)}</span><input id="mAmt" type="text" inputmode="decimal" placeholder="1500" autocomplete="off" aria-label="Monthly budget" value="${S.budget||''}"><span>${esc(post)}</span></div><p class="fs-sub">How much you want to spend each month. Leave it empty for no budget.</p>`,
+  formSheet({title:'Monthly budget', body:`<div class="fs-amt"><span>${esc(pre)}</span><input id="mAmt" type="text" inputmode="decimal" placeholder="1500" autocomplete="off" aria-label="Monthly budget" value="${S.budget ? esc(S.budget.toLocaleString('en-US', {maximumFractionDigits:2})) : ''}"><span>${esc(post)}</span></div><p class="fs-sub">How much you want to spend each month. Leave it empty for no budget.</p>`,
     onSave: ()=>{ S.budget = parseAmount($('mAmt').value); save(); syncSettings(); renderAll(); toast(S.budget ? 'Budget saved' : 'Budget removed'); }});
   const a = $('mAmt'), size = ()=>{ a.style.width = Math.max(1, (a.value||a.placeholder).length) * .62 + .25 + 'em'; }; a.addEventListener('input', size); size();
   setTimeout(()=>{ try { a.focus(); a.select(); } catch(x){} }, 80);
@@ -1761,8 +1813,8 @@ function renderMore(){
   groups[3].unshift(`<button class="jv-row" data-cmd="What can you do?">${ico('help', 'var(--accent)')}<span class="jv-rb"><span class="jv-rt">What can I say?</span><span class="jv-rs">Examples of things to ask Jarvis</span></span><span class="jv-rr">${IC.chev.replace('<svg ', '<svg class="jv-chev" ')}</span></button>`);
   if (extra.length) groups.splice(3, 0, extra);
   const names = extra.length ? ['Your day', 'Money', 'Health', 'More', 'Jarvis'] : MENU_GROUPS;
-  const first = String(S.name||'').trim(), init = (first[0]||'J').toUpperCase();
-  const html = `<button class="jv-me" data-go="settings"><span class="jv-av">${esc(init)}</span><span style="flex:1;min-width:0"><b>${esc(first||'You')}</b><small>Name, voice, theme and backup</small></span>${IC.chev.replace('<svg ', '<svg class="jv-chev" ')}</button>`
+  const first = /^there$/i.test(String(S.name||'').trim()) ? '' : String(S.name||'').trim(), init = (first[0]||'J').toUpperCase();
+  const html = `<button class="jv-me" data-go="settings"><span class="jv-av">${esc(init)}</span><span style="flex:1;min-width:0"><b>${esc(first||'You')}</b><small>${first ? 'Name, voice, theme and backup' : 'Tap to add your name, voice and theme'}</small></span>${IC.chev.replace('<svg ', '<svg class="jv-chev" ')}</button>`
     + groups.map((g,i)=>g.length ? `<div class="section-h"><h3>${names[i]}</h3></div><div class="jv-group">${g.join('')}</div>` : '').join('')
     + `<p class="jv-foot">Jarvis 2.0 · your data stays on this device</p>`;
   if (el.dataset.h !== html){ el.innerHTML = html; el.dataset.h = html; }
@@ -1833,7 +1885,7 @@ function finish(r, deliver){
   setAudioSession('playback');   // back to 'auto' when the mic starts again
   finalText = interimText = '';
   if (deliver && text){ $('live').textContent = 'Tap the mic to talk again.'; handle(text); }
-  else if (!deliver && /^(Listening|Finishing)/.test($('live').textContent)) $('live').textContent = 'Tap the mic and talk, or type below.';
+  else if (/^(Listening|Finishing)/.test($('live').textContent)) $('live').textContent = deliver ? "I didn't catch that. Tap the mic and try again." : 'Tap the mic and talk, or type below.';
 }
 function startListening(){
   if (!SR){ $('live').textContent = 'Voice is not supported in this browser. Type below instead.'; return; }
@@ -1844,7 +1896,9 @@ function startListening(){
   let r;
   try { r = new SR(); } catch(e){ $('live').textContent = 'Voice is not available right now. Type below instead.'; return; }
   rec = r; finalText = ''; interimText = '';
-  r.lang = navigator.language || 'en-US'; r.interimResults = true; r.continuous = false; r.maxAlternatives = 1;
+  // Jarvis understands English: use the phone's English variant when it has one Siri dictation knows, else US English
+  const nl = String(navigator.language || '');
+  r.lang = /^en-(US|GB|AU|CA|IN|IE|NZ|ZA|SG|AE|SA|PH|MY)$/i.test(nl) ? nl : 'en-US'; r.interimResults = true; r.continuous = false; r.maxAlternatives = 1;
   const mine = ()=> rec === r && !r._jvDone;  // events from an old recognizer are ignored
   r.onstart = ()=>{ if (!mine()) return; clearTimeout(recTimers.nostart); micUI(true); if (!interimText) $('live').textContent = 'Listening…';
     recTimer('quiet', 8000, ()=>{ if (mine() && !(finalText || interimText)) { $('live').textContent = "I didn't catch that. Tap the mic and try again."; finish(r, false); } }); // nothing heard
@@ -1861,7 +1915,9 @@ function startListening(){
     else if (e === 'no-speech') $('live').textContent = "I didn't catch that. Tap the mic and try again.";
     else if (e === 'audio-capture') $('live').textContent = 'Another app is using the microphone. Close it and tap the mic again.';
     else if (e === 'network') $('live').textContent = 'Voice needs the internet right now. Type below instead.';
-    if (e === 'aborted') return;
+    else if (e && e !== 'aborted' && !(finalText || interimText)) $('live').textContent = "Voice didn't work that time. Tap the mic to try again.";
+    // our own stops never reach here (their handlers are removed first), so "aborted" means iOS cut it (a call, Siri):
+    // end the session and keep whatever was already heard
     finish(r, !/not-allowed|service-not-allowed|audio-capture/.test(e || '')); };
   r.onend = ()=>{ if (!mine()) return; finish(r, true); };
   try { r.start(); } catch(e){ finish(r, false); $('live').textContent = 'Tap the mic again to talk.'; return; }
@@ -1926,7 +1982,7 @@ function applyTheme(){
   document.documentElement.style.setProperty('--accent-soft', S.accent+'29');
 }
 function syncSettings(){
-  $('sSpeak').checked = S.speak; $('sRate').value = S.rate; $('sPitch').value = S.pitch; $('sName').value = S.name; $('sCur').value = S.currency; $('sBudget').value = S.budget||''; $('sTheme').value = S.theme;
+  $('sSpeak').checked = S.speak; $('sRate').value = S.rate; $('sPitch').value = S.pitch; $('sName').value = /^there$/i.test(S.name||'') ? '' : S.name; if (![...$('sCur').options].some(o=>o.value===S.currency)) $('sCur').add(new Option(S.currency, S.currency)); $('sCur').value = S.currency; $('sBudget').value = S.budget||''; $('sTheme').value = S.theme;
   $('swatches').innerHTML = ACCENTS.map(c=>`<button style="background:${c};color:${c}" class="${c===S.accent?'on':''}" data-accent="${c}" aria-label="Accent color ${['purple','blue','green','orange','red','pink'][ACCENTS.indexOf(c)]}"></button>`).join('');
   document.querySelectorAll('[data-accent]').forEach(b=>b.onclick=()=>{ S.accent=b.dataset.accent; save(); applyTheme(); syncSettings(); });
   const p = ('Notification' in window) ? Notification.permission : 'unsupported';
@@ -1954,7 +2010,7 @@ applyTheme(); syncSettings();
 document.addEventListener('DOMContentLoaded', ()=>{ renderAll(true); checkReminders(); try { const m = sessionStorage.getItem('jarvis2-toast'); if (m){ sessionStorage.removeItem('jarvis2-toast'); toast(m); } } catch(e){} });
 setInterval(()=>{ renderHome(); renderToday(); renderPlugins(); }, 60000);
 if ('serviceWorker' in navigator && location.protocol==='https:') navigator.serviceWorker.register('sw.js').catch(()=>{});
-window.jarvisHandle = handle; window.jarvisDB = ()=>db; // for testing
+window.jarvisHandle = handle; window.jarvisDB = ()=>db; window.jarvisNav = ()=>({current, navStack}); // for testing
 </script>
 <!-- FEATURES (each file registers itself with window.Jarvis) -->
 <script src="features/brief.js"></script>

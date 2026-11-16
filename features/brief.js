@@ -215,14 +215,14 @@ try {
 .bf-m p{color:var(--muted);margin:-6px 0 14px;font-size:13.5px}
 .bf-m .bf-gps{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:12px}
 .bf-m .bf-gps svg{width:18px;height:18px}
-.bf-m .bf-or{display:flex;align-items:center;gap:10px;color:var(--faint);font-size:12px;font-weight:600;margin:2px 0 10px}
+.bf-m .bf-or{display:flex;align-items:center;gap:10px;color:var(--faint-ink);font-size:12px;font-weight:600;margin:2px 0 10px}
 .bf-m .bf-or::before,.bf-m .bf-or::after{content:"";flex:1;height:1px;background:var(--line)}
 .bf-m .bf-q{position:relative}
 .bf-m .bf-q svg{position:absolute;left:12px;top:13px;width:18px;height:18px;color:var(--muted)}
 .bf-m .bf-q input{padding-left:38px}
 .bf-m .bf-res{display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto}
 .bf-m .bf-r{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:1px solid var(--line);background:var(--card);border-radius:14px;padding:11px 12px;cursor:pointer;color:var(--text)}
-.bf-m .bf-r svg{width:17px;height:17px;color:var(--accent);flex:none}
+.bf-m .bf-r svg{width:17px;height:17px;color:var(--accent-ink);flex:none}
 .bf-m .bf-r b{display:block;font-size:14.5px}
 .bf-m .bf-r small{color:var(--muted);font-size:12px}
 .bf-m .bf-note{color:var(--muted);font-size:13px;text-align:center;padding:10px}

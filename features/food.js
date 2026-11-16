@@ -367,7 +367,7 @@
   .fd-macro .l b{color:var(--text);font-size:13.5px}
   .fd-macro .bar{height:7px;background:var(--line);border-radius:9px;overflow:hidden;margin-top:6px}
   .fd-macro .bar i{display:block;height:100%;border-radius:9px;transition:width .7s var(--ease)}
-  .fd-macro .t{font-size:11px;color:var(--faint);margin-top:4px;font-weight:600}
+  .fd-macro .t{font-size:11px;color:var(--faint-ink);margin-top:4px;font-weight:600}
   .fd-actions{display:grid;grid-template-columns:1.25fr 1fr;gap:10px;margin-top:14px}
   .fd-scanbtn{border:0;border-radius:18px;padding:15px 14px;font-weight:800;font-size:15px;cursor:pointer;color:#fff;background:linear-gradient(135deg,var(--accent),#0ea5e9);display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 10px 24px rgba(79,70,229,.32);transition:transform .15s var(--ease)}
   .fd-scanbtn:active,.fd-ghost:active{transform:scale(.97)}
@@ -392,7 +392,7 @@
   .fd-row .k{font-weight:800;font-size:15px;white-space:nowrap;text-align:right}
   .fd-row .k small{display:block;font-size:10.5px;color:var(--muted);font-weight:600}
   .fd-ns{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 5px;border-radius:6px;color:#fff;font-weight:800;font-size:11.5px;vertical-align:1px;margin-right:4px}
-  .fd-online{display:flex;align-items:center;gap:10px;width:100%;border:1px dashed var(--line);background:none;color:var(--accent);border-radius:16px;padding:13px 14px;font-weight:700;cursor:pointer;font-size:14px;text-align:left}
+  .fd-online{display:flex;align-items:center;gap:10px;width:100%;border:1px dashed var(--line);background:none;color:var(--accent-ink);border-radius:16px;padding:13px 14px;font-weight:700;cursor:pointer;font-size:14px;text-align:left}
   .fd-online svg{width:18px;height:18px;flex:none}
   .fd-shim{height:66px;border-radius:16px;background:linear-gradient(90deg,var(--card) 0%,var(--line) 50%,var(--card) 100%);background-size:200% 100%;animation:fdShim 1.2s linear infinite;border:1px solid var(--line)}
   @keyframes fdShim{to{background-position:-200% 0}}
@@ -407,7 +407,7 @@
   .fd-mh b{flex:1;font-size:15px}
   .fd-mh b small{display:block;color:var(--muted);font-size:12px;font-weight:600}
   .fd-mh .kc{font-weight:800}
-  .fd-mh .add{width:40px;height:40px;border-radius:11px;border:1px solid var(--line);background:none;display:grid;place-items:center;cursor:pointer;color:var(--accent);flex:none}
+  .fd-mh .add{width:40px;height:40px;border-radius:11px;border:1px solid var(--line);background:none;display:grid;place-items:center;cursor:pointer;color:var(--accent-ink);flex:none}
   .fd-mh .add svg{width:17px;height:17px}
   .fd-it{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line);cursor:pointer;width:100%;background:none;border-left:0;border-right:0;border-bottom:0;color:var(--text);text-align:left}
   .fd-it .fd-th{width:40px;height:40px;font-size:20px}
@@ -415,7 +415,7 @@
   .fd-it .b b{display:block;font-weight:600;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .fd-it .b small{color:var(--muted);font-size:12.5px}
   .fd-it .k{font-weight:700;white-space:nowrap}
-  .fd-mempty{color:var(--faint);font-size:13px;padding:2px 0 8px 44px}
+  .fd-mempty{color:var(--faint-ink);font-size:13px;padding:2px 0 8px 44px}
   .fd-water{display:flex;align-items:center;gap:12px}
   .fd-glasses{display:flex;gap:4px;flex:1;min-width:0;flex-wrap:wrap}
   .fd-glass{flex:1 1 0;min-width:16px;max-width:26px;aspect-ratio:3/4;border:0;padding:0;background:none;cursor:pointer}
@@ -431,12 +431,12 @@
   .fd-col.over i{background:linear-gradient(180deg,#fbbf24,var(--warn));opacity:.7}
   .fd-col.over.sel i{opacity:1}
   .fd-col.zero i{background:var(--line);opacity:1}
-  .fd-col span{position:absolute;bottom:-21px;font-size:11px;color:var(--faint);font-weight:700}
+  .fd-col span{position:absolute;bottom:-21px;font-size:11px;color:var(--faint-ink);font-weight:700}
   .fd-col.sel span{color:var(--text)}
   .fd-col em{font-style:normal;font-size:11px;font-weight:800;margin-bottom:4px;white-space:nowrap}
   .fd-goal-line{position:absolute;left:0;right:0;border-top:1.5px dashed var(--faint);pointer-events:none;z-index:2}
   .fd-goal-line span{position:absolute;left:0;top:-18px;font-size:10.5px;color:var(--muted);font-weight:700;background:var(--card-solid);padding:0 4px;border-radius:4px}
-  .fd-note{font-size:11.5px;color:var(--faint);text-align:center;margin:16px 8px 0}
+  .fd-note{font-size:11.5px;color:var(--faint-ink);text-align:center;margin:16px 8px 0}
   /* home card */
   .fd-home{display:flex;align-items:center;gap:14px;cursor:pointer}
   .fd-home .b{flex:1;min-width:0}
@@ -450,12 +450,12 @@
   /* sheet */
   .fd-bg{position:fixed;inset:0;z-index:62;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .3s}
   .fd-bg.open{opacity:1;pointer-events:auto}
-  .fd-sheet{position:fixed;left:50%;bottom:0;transform:translate(-50%,105%);width:100%;max-width:520px;max-height:92vh;max-height:92dvh;z-index:63;background:var(--bg2);border:1px solid var(--line);border-bottom:0;border-radius:28px 28px 0 0;transition:transform .4s var(--ease);box-shadow:0 -20px 60px rgba(0,0,0,.4);display:flex;flex-direction:column}
+  .fd-sheet{position:fixed;left:50%;bottom:0;bottom:max(0px,calc(100% - var(--vv-h,100%) - var(--vv-top,0px)));transform:translate(-50%,105%);width:100%;max-width:520px;max-height:92vh;max-height:min(92dvh,calc(var(--vv-h,100%) - 8px));z-index:63;background:var(--bg2);border:1px solid var(--line);border-bottom:0;border-radius:28px 28px 0 0;transition:transform .4s var(--ease);box-shadow:0 -20px 60px rgba(0,0,0,.4);display:flex;flex-direction:column}
   .fd-sheet.open{transform:translate(-50%,0)}
   .fd-sheet:not(.open){visibility:hidden;transition:transform .42s var(--ease),visibility 0s linear .42s}
   .fd-sheet .grab{flex:none}
   .fd-sb{overflow-y:auto;padding:4px 18px calc(18px + var(--safe-b));-webkit-overflow-scrolling:touch}
-  .fd-sx{position:absolute;right:12px;top:12px;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;cursor:pointer;color:var(--text);z-index:2}
+  .fd-sx{position:absolute;right:10px;top:10px;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;cursor:pointer;color:var(--text);z-index:2}
   .fd-sx svg{width:18px;height:18px}
   .fd-ph{display:flex;gap:14px;align-items:center;margin:6px 40px 14px 0}
   .fd-ph .fd-th{width:76px;height:76px;border-radius:18px;font-size:38px;background:#fff;border:1px solid var(--line)}
@@ -493,7 +493,7 @@
   .fd-unit{font-size:13px;color:var(--muted);text-align:center;margin-top:6px;font-weight:600}
   .fd-quick{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
   .fd-quick button{flex:1;min-width:52px;border:1px solid var(--line);background:var(--card);border-radius:11px;padding:8px 4px;font-weight:700;font-size:13px;cursor:pointer;color:var(--text)}
-  .fd-quick button.on{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+  .fd-quick button.on{border-color:var(--accent);color:var(--accent-ink);background:var(--accent-soft)}
   .fd-seg{margin-bottom:0}
   .fd-seg button{padding:10px 4px}
   .fd-total{display:flex;align-items:center;gap:12px;margin:16px 0 12px;background:var(--accent-soft);border-radius:16px;padding:12px 14px}
@@ -581,7 +581,7 @@
   function level(k, v, liquid){
     // UK traffic-light thresholds per 100 g (food) or per 100 ml (drinks)
     const L = (liquid ? {sugar:[2.5,11.25], f:[1.5,8.75], satfat:[.75,2.5], salt:[.3,.75]} : {sugar:[5,22.5], f:[3,17.5], satfat:[1.5,5], salt:[.3,1.5]})[k]; if (!L || v==null) return '';
-    const [t, c, bg] = v<=L[0] ? ['Low','var(--good)','rgba(34,197,94,.14)'] : v>L[1] ? ['High','var(--bad)','rgba(244,63,94,.14)'] : ['Medium','var(--warn)','rgba(245,158,11,.16)'];
+    const [t, c, bg] = v<=L[0] ? ['Low','var(--good-ink)','rgba(34,197,94,.14)'] : v>L[1] ? ['High','var(--bad-ink)','rgba(244,63,94,.14)'] : ['Medium','var(--warn-ink)','rgba(245,158,11,.16)'];
     return `<em style="color:${c};background:${bg}">${t}</em>`;
   }
   function nsMini(g){ return g ? `<span class="fd-ns" style="background:${NUTRI[g]}">${g.toUpperCase()}</span>` : ''; }
@@ -791,7 +791,7 @@
   function showTypeCode(){
     openSheet(`<div class="fd-ph"><div class="fd-th em">🔢</div><div><h4>Type the barcode</h4><div class="br">The numbers under the bars, usually 8 or 13 digits</div></div></div>
       <label class="fd-field"><span>Barcode number</span><input id="fdTC" inputmode="numeric" pattern="[0-9]*" placeholder="e.g. 5287000580025" autocomplete="off" style="font-size:20px;letter-spacing:1.5px;font-weight:700"></label>
-      <div id="fdTCw" style="font-size:12.5px;color:var(--warn);min-height:18px;margin:-4px 2px 10px"></div>
+      <div id="fdTCw" style="font-size:12.5px;color:var(--warn-ink);min-height:18px;margin:-4px 2px 10px"></div>
       <button class="fd-cta" id="fdTCgo" disabled>Look it up</button>`);
     const b = sheetBody(); const inp = b.querySelector('#fdTC'), go = b.querySelector('#fdTCgo'), w = b.querySelector('#fdTCw');
     const sync = ()=>{ const v = inp.value.replace(/\D/g,''); go.disabled = v.length<6; w.textContent = (v.length>=8 && [8,12,13,14].includes(v.length) && !checksumOK(v)) ? 'Double-check the digits — that number looks off. You can still try.' : ''; };
@@ -1561,7 +1561,7 @@ Keep names short (at most 4 words) in plain English. portion is a short everyday
     const has = J.ai.hasKey();
     return has
       ? `<div class="fdp-set"><div class="ic on">✨</div><div class="b"><b>AI food photos are on</b><small>Google Gemini, free plan · key ••••${esc(aiKey().slice(-4))} saved on this phone only</small></div></div>
-         <div class="fdp-setb"><button class="btn ghost" data-ai="test">Test key</button><button class="btn ghost" data-ai="change">Change key</button><button class="btn ghost" data-ai="remove" style="color:var(--bad)">Remove key</button></div>
+         <div class="fdp-setb"><button class="btn ghost" data-ai="test">Test key</button><button class="btn ghost" data-ai="change">Change key</button><button class="btn ghost" data-ai="remove" style="color:var(--bad-ink)">Remove key</button></div>
          <div class="fdp-setmsg" id="fdpSetMsg"></div>`
       : `<div class="fdp-set"><div class="ic">✨</div><div class="b"><b>AI food photos are off</b><small>Turn on Google's free AI to count calories from a photo of any plate. No credit card.</small></div></div>
          <button class="fd-cta" data-ai="setup" style="margin-top:12px">Turn on (free)</button>`;
@@ -1596,13 +1596,13 @@ Keep names short (at most 4 words) in plain English. portion is a short everyday
   .fdp-snap .go svg{width:16px;height:16px}
   .fdp-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
   .fdp-row .fd-ghost{padding:12px 6px;font-size:13.5px;flex-direction:column;gap:5px;border-radius:16px;min-height:66px}
-  .fdp-row .fd-ghost svg{width:20px;height:20px;color:var(--accent)}
+  .fdp-row .fd-ghost svg{width:20px;height:20px;color:var(--accent-ink)}
   label.fd-ghost{user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
   .fdp-wide{width:100%;text-decoration:none;box-sizing:border-box}
   .fdp-hd{margin:4px 44px 12px 0}
   .fdp-hd h4{margin:0;font-size:19px;font-weight:800;letter-spacing:-.3px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   .fdp-hd small{display:block;color:var(--muted);font-size:13px;margin-top:3px}
-  .fdp-free{background:rgba(34,197,94,.16);color:var(--good);letter-spacing:.06em}
+  .fdp-free{background:rgba(34,197,94,.16);color:var(--good-ink);letter-spacing:.06em}
   /* capture */
   .fdp-cap{text-align:center;padding:6px 2px 2px}
   .fdp-cap h4{margin:6px 0 6px;font-size:21px;font-weight:800;letter-spacing:-.4px}
@@ -1624,13 +1624,13 @@ Keep names short (at most 4 words) in plain English. portion is a short everyday
   .fdp-big:active{transform:scale(.98)}
   .fdp-two{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
   .fdp-two .fd-ghost{font-size:14px;padding:13px 8px}
-  .fdp-tipline{font-size:12.5px;color:var(--faint);margin:14px 6px 2px}
+  .fdp-tipline{font-size:12.5px;color:var(--faint-ink);margin:14px 6px 2px}
   .fdp-aioff{display:flex;align-items:center;gap:12px;width:100%;margin-top:14px;padding:13px 14px;border-radius:16px;border:1px dashed var(--accent);border:1px dashed color-mix(in srgb,var(--accent) 55%,transparent);background:var(--accent-soft);color:var(--text);cursor:pointer;text-align:left}
   .fdp-aioff .sp{font-size:22px}
   .fdp-aioff span:nth-child(2){flex:1}
   .fdp-aioff b{display:block;font-size:14.5px}
   .fdp-aioff small{display:block;color:var(--muted);font-size:12.5px;margin-top:1px}
-  .fdp-aioff svg{width:18px;height:18px;color:var(--accent)}
+  .fdp-aioff svg{width:18px;height:18px;color:var(--accent-ink)}
   /* analyzing */
   .fdp-frame{position:relative;border-radius:22px;overflow:hidden;aspect-ratio:4/3;max-height:44vh;width:100%;background:#0b0e1a;box-shadow:0 14px 34px rgba(0,0,0,.28)}
   .fdp-frame.empty{background:linear-gradient(135deg,#1b1f3a,#0b0e1a)}
@@ -1673,9 +1673,9 @@ Keep names short (at most 4 words) in plain English. portion is a short everyday
   .fdp-r1 .b b{display:block;font-weight:700;font-size:14.5px;line-height:1.25;overflow-wrap:anywhere}
   .fdp-r1 .b small{display:block;color:var(--muted);font-size:12.5px;margin-top:1px}
   .fdp-chk,.fdp-lbl{font-style:normal;font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:99px;margin-left:6px;vertical-align:1px;letter-spacing:.02em}
-  .fdp-chk{color:var(--warn);background:rgba(245,158,11,.16)}
-  .fdp-lbl{color:var(--good);background:rgba(34,197,94,.14)}
-  .fdp-adj{color:var(--accent);font-weight:700}
+  .fdp-chk{color:var(--warn-ink);background:rgba(245,158,11,.16)}
+  .fdp-lbl{color:var(--good-ink);background:rgba(34,197,94,.14)}
+  .fdp-adj{color:var(--accent-ink);font-weight:700}
   .fdp-k{text-align:right;flex:none}
   .fdp-k b{display:block;font-size:17px;font-weight:800;letter-spacing:-.3px}
   .fdp-k small{color:var(--muted);font-size:10.5px;font-weight:700}
@@ -1689,7 +1689,7 @@ Keep names short (at most 4 words) in plain English. portion is a short everyday
   .fdp-rm{width:38px;height:38px;border-radius:11px;border:1px solid var(--line);background:none;color:var(--muted);display:grid;place-items:center;cursor:pointer;flex:none}
   .fdp-rm svg{width:15px;height:15px}
   @media (max-width:370px){.fdp-r2{gap:8px}.fdp-st button{width:36px}.fdp-st span{min-width:52px;font-size:13.5px}.fdp-mac{font-size:11px}}
-  .fdp-addbtn{margin-top:8px;color:var(--accent)}
+  .fdp-addbtn{margin-top:8px;color:var(--accent-ink)}
   .fdp-addf{margin-top:8px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:10px}
   .fdp-addf .search{margin-bottom:8px}
   .fdp-addf .fd-row{background:var(--bg2)}
@@ -1707,7 +1707,7 @@ Keep names short (at most 4 words) in plain English. portion is a short everyday
   .fdp-steps i{font-style:normal;width:28px;height:28px;border-radius:50%;flex:none;display:grid;place-items:center;font-weight:800;font-size:13.5px;color:#fff;background:linear-gradient(135deg,var(--accent),#0ea5e9)}
   .fdp-steps b{display:block;font-size:14.5px}
   .fdp-steps small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px;line-height:1.4}
-  .fdp-link{display:block;margin:10px auto 0;background:none;border:0;color:var(--accent);font-weight:700;font-size:13.5px;cursor:pointer;padding:8px;text-decoration:underline}
+  .fdp-link{display:block;margin:10px auto 0;background:none;border:0;color:var(--accent-ink);font-weight:700;font-size:13.5px;cursor:pointer;padding:8px;text-decoration:underline}
   .fdp-link[hidden],.fdp-box[hidden]{display:none}
   .fdp-box input{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:15px!important;letter-spacing:.3px}
   .fdp-stat{margin-top:12px;font-size:13.5px;line-height:1.45;border-radius:14px;padding:0 12px;transition:padding .2s}
@@ -1718,7 +1718,7 @@ Keep names short (at most 4 words) in plain English. portion is a short everyday
   .fdp-stat.info{padding:12px;background:var(--accent-soft)}
   .fdp-spin{width:16px;height:16px;border-radius:50%;border:2.5px solid var(--line);border-top-color:var(--accent);animation:fdSpin .8s linear infinite;display:inline-block;flex:none;vertical-align:-3px}
   .fdp-have{margin-top:12px;font-size:13px;color:var(--muted)}
-  .fdp-priv{font-size:12px;color:var(--faint);margin:14px 2px 0;line-height:1.45}
+  .fdp-priv{font-size:12px;color:var(--faint-ink);margin:14px 2px 0;line-height:1.45}
   /* settings card */
   .fdp-set{display:flex;gap:12px;align-items:center}
   .fdp-set .ic{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-size:22px;background:var(--line);flex:none}
@@ -1730,7 +1730,7 @@ Keep names short (at most 4 words) in plain English. portion is a short everyday
   .fdp-setb .btn{flex:1;padding:10px 8px;font-size:13px;white-space:nowrap}
   .fdp-setmsg{font-size:13px;margin-top:10px}
   .fdp-setmsg:empty{display:none}
-  .fdp-setmsg.ok{color:var(--good)}.fdp-setmsg.bad{color:var(--bad)}.fdp-setmsg.busy{color:var(--muted)}
+  .fdp-setmsg.ok{color:var(--good-ink)}.fdp-setmsg.bad{color:var(--bad-ink)}.fdp-setmsg.busy{color:var(--muted)}
   .fd-sbot .r label{flex:1;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.14);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#fff;border-radius:16px;padding:13px 6px;font-weight:700;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
   .fd-sbot .r>*{white-space:nowrap;min-width:0}
   .fd-sbot .r button{gap:6px!important;padding:13px 6px!important}
@@ -1813,11 +1813,11 @@ Keep names short (at most 4 words) in plain English. portion is a short everyday
       const ai = q('#fdAI'), sig = has ? 'on'+aiKey().slice(-4) : 'off'; if (ai.dataset.sig!==sig){ ai.dataset.sig = sig; ai.innerHTML = aiCardHTML(); } }
     const t = dayTotals(viewKey), goal = s.goal, left = goal - t.kcal, over = left < 0;
     q('#fdSum').innerHTML = `<div class="fd-sum">
-        <div class="fd-ring" style="width:150px;height:150px">${ringSVG(t.kcal, goal, 150, 14, 'fdgV')}<div class="fd-rc"><div><b style="${over?'color:var(--warn)':''}">${N(Math.abs(left))}</b><span>${over?'kcal over':'kcal left'}</span></div></div></div>
+        <div class="fd-ring" style="width:150px;height:150px">${ringSVG(t.kcal, goal, 150, 14, 'fdgV')}<div class="fd-rc"><div><b style="${over?'color:var(--warn-ink)':''}">${N(Math.abs(left))}</b><span>${over?'kcal over':'kcal left'}</span></div></div></div>
         <div class="fd-kv">
           <div class="r"><div class="ic" style="background:rgba(245,158,11,.15)">🔥</div><div class="v"><small>Eaten</small><b>${N(t.kcal)}</b><i>kcal</i></div></div>
           <button class="r fd-goalbtn" id="fdGoalBtn" aria-label="Edit calorie goal"><div class="ic" style="background:var(--accent-soft)">🎯</div><div class="v"><small>Goal ${I.edit}</small><b>${N(goal)}</b><i>kcal</i></div></button>
-          <div class="r"><div class="ic" style="background:${over?'rgba(244,63,94,.14)':'rgba(34,197,94,.14)'}">${over?'⚠️':'✅'}</div><div class="v"><small>${over?'Over by':'Left'}</small><b style="color:${over?'var(--bad)':'var(--good)'}">${N(Math.abs(left))}</b><i>kcal</i></div></div>
+          <div class="r"><div class="ic" style="background:${over?'rgba(244,63,94,.14)':'rgba(34,197,94,.14)'}">${over?'⚠️':'✅'}</div><div class="v"><small>${over?'Over by':'Left'}</small><b style="color:${over?'var(--bad-ink)':'var(--good-ink)'}">${N(Math.abs(left))}</b><i>kcal</i></div></div>
         </div></div>
       <div class="fd-macros">${MACROS.map(m=>{ const v = t[m.k], tg = macroTarget(m); return `<div class="fd-macro"><div class="l">${m.label}<b>${N(v)}g</b></div><div class="bar"><i style="width:${Math.min(v/tg*100,100)}%;background:${m.color}"></i></div><div class="t">of ${tg} g</div></div>`; }).join('')}</div>`;
     // meals
@@ -1854,7 +1854,7 @@ Keep names short (at most 4 words) in plain English. portion is a short everyday
     el.innerHTML = `<div class="section-h"><h3>Food today</h3><button class="link" data-fd-open>Open</button></div>
       <div class="card fd-home" data-fd-open>
         <div class="fd-ring sm" style="width:68px;height:68px">${ringSVG(t.kcal, s.goal, 68, 8, 'fdgH')}<div class="fd-rc"><div><b>${Math.round(t.kcal/s.goal*100)||0}%</b></div></div></div>
-        <div class="b"><b style="${over?'color:var(--warn)':''}">${N(Math.abs(left))} kcal ${over?'over':'left'}</b><small>${N(t.kcal)} of ${N(s.goal)} eaten <span style="white-space:nowrap;margin-left:6px">💧 ${w}/${s.waterGoal}</span></small>
+        <div class="b"><b style="${over?'color:var(--warn-ink)':''}">${N(Math.abs(left))} kcal ${over?'over':'left'}</b><small>${N(t.kcal)} of ${N(s.goal)} eaten <span style="white-space:nowrap;margin-left:6px">💧 ${w}/${s.waterGoal}</span></small>
           <div class="mm">${MACROS.map(m=>`<i title="${m.label}"><u style="width:${Math.min(t[m.k]/macroTarget(m)*100,100)}%;background:${m.color}"></u></i>`).join('')}</div></div>
         ${camLbl('fd-hscan', I.cam, 'fdPhCam', 'data-fd-snap aria-label="Snap your food"')}
       </div>`;
@@ -1952,7 +1952,7 @@ Keep names short (at most 4 words) in plain English. portion is a short everyday
     });
     return out;
   }
-  function itemTotals(it){ const f = it.food; if (it.grams) return scaleN(f.n, it.grams/f.g); return scaleN(f.n, it.qty); }
+  function itemTotals(it){ const f = it.food; if (!f || !f.n) return {kcal:0,p:0,c:0,f:0}; if (it.grams) return scaleN(f.n, it.grams/f.g); return scaleN(f.n, it.qty); }
   function itemSay(it){ return it.grams ? sayItem(it.food.name, LIQ.has(it.food.key)?'ml':'g', it.grams) : sayItem(it.food.name, it.food.unit, it.qty); }
   function logItems(items, meal, key){
     let kcal = 0;
@@ -2062,8 +2062,8 @@ Keep names short (at most 4 words) in plain English. portion is a short everyday
       if (!d.items.length) return key===todayKey() ? `You haven't logged any food today. Your goal is ${N(F().goal)} calories. Say something like “I ate 2 eggs and a banana”, or scan a barcode.` : 'Nothing was logged yesterday.';
       if (/\bwhat (?:did|have) i\b/.test(t)){
         const mw = t.match(/\bfor (breakfast|brunch|lunch|dinner|supper|snacks?)\b/);
-        if (mw){ const id = {brunch:'breakfast', supper:'dinner', snacks:'snack'}[mw[1]] || mw[1]; const it = d.items.filter(x=>x.meal===id); if (!it.length) return `Nothing logged for ${MEAL_WORD[id] || id} ${key===todayKey()?'today':'yesterday'}.`; return `For ${MEAL_WORD[id] || id} you had ${listJoin(it.map(x=>x.name.toLowerCase().replace(/\s*\(.*?\)/g,'')))}, about ${N(it.reduce((a,x)=>a+itemTotals(x).kcal,0))} calories.`; }
-        const byMeal = MEALS.map(mm=>{ const it = d.items.filter(x=>x.meal===mm.id); if (!it.length) return null; const cnt = {}; it.forEach(x=>{ const n = x.name.toLowerCase().replace(/\s*\(.*?\)/g,''); cnt[n] = (cnt[n]||0) + 1; }); return `${mm.id==='snack'?'Snacks':mm.label}: ${listJoin(Object.entries(cnt).map(([n,c])=>c>1?`${n} ${c===2?"twice":c+" times"}`:n))}`; }).filter(Boolean);
+        if (mw){ const id = {brunch:'breakfast', supper:'dinner', snacks:'snack'}[mw[1]] || mw[1]; const it = d.items.filter(x=>x.meal===id); if (!it.length) return `Nothing logged for ${MEAL_WORD[id] || id} ${key===todayKey()?'today':'yesterday'}.`; return `For ${MEAL_WORD[id] || id} you had ${listJoin(it.map(x=>String(x.name||'food').toLowerCase().replace(/\s*\(.*?\)/g,'')))}, about ${N(it.reduce((a,x)=>{ try { return a + (x.food ? itemTotals(x).kcal : ntot(x).kcal) || a; } catch(e){ return a; } },0))} calories.`; }
+        const byMeal = MEALS.map(mm=>{ const it = d.items.filter(x=>x.meal===mm.id); if (!it.length) return null; const cnt = {}; it.forEach(x=>{ const n = String(x.name||'food').toLowerCase().replace(/\s*\(.*?\)/g,''); cnt[n] = (cnt[n]||0) + 1; }); return `${mm.id==='snack'?'Snacks':mm.label}: ${listJoin(Object.entries(cnt).map(([n,c])=>c>1?`${n} ${c===2?"twice":c+" times"}`:n))}`; }).filter(Boolean);
         return `${byMeal.join('. ')}. ${summarySay(key)}`;
       }
       const mq = t.match(/\bhow much (protein|carbs?|fat)\b/);

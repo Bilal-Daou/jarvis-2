@@ -293,13 +293,14 @@ J.css(`
 .fin-dot.open{background:var(--fin-up);box-shadow:0 0 0 0 rgba(34,197,94,.6);animation:finPulse 2s infinite}
 .fin-dot.pre,.fin-dot.post{background:var(--warn)}
 @keyframes finPulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,.55)}70%{box-shadow:0 0 0 8px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
-.fin-upd{font-size:12px;color:var(--faint);margin:6px 0 14px;font-weight:500}
+.fin-upd{font-size:12px;color:var(--faint-ink);margin:6px 0 14px;font-weight:500}
 .fin-refresh svg{transition:transform .3s}
 .fin-refresh.spin svg{animation:finSpin .9s linear infinite}
 @keyframes finSpin{to{transform:rotate(360deg)}}
 .fin-note{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--muted);background:var(--accent-soft);border-radius:14px;padding:11px 13px;margin:0 0 14px}
 .fin-note b{color:var(--text)}
 .fin-note.warn{background:rgba(245,158,11,.13)}
+.fin-ni{flex:none;color:var(--warn-ink);display:flex}.fin-ni svg{width:18px;height:18px}.fin-btns .btn svg{width:18px;height:18px;margin-right:6px;vertical-align:-3px}
 .fin-seg{position:sticky;top:calc(6px + var(--safe-t));z-index:5;background:var(--glass);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
 .fin-hero{padding:18px 18px 14px;position:relative;overflow:hidden}
 .fin-hero .nm{display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:700;color:var(--muted)}
@@ -313,7 +314,7 @@ J.css(`
 .fin-cursor{position:absolute;top:0;bottom:0;width:1px;background:var(--muted);opacity:0;pointer-events:none}
 .fin-tip{position:absolute;top:-6px;transform:translateX(-50%);background:var(--card-solid);border:1px solid var(--line);border-radius:8px;padding:3px 7px;font-size:11.5px;font-weight:700;opacity:0;pointer-events:none;white-space:nowrap;box-shadow:var(--shadow);font-variant-numeric:tabular-nums}
 .fin-chart.scrub .fin-cursor,.fin-chart.scrub .fin-tip{opacity:1}
-.fin-foot{display:flex;justify-content:space-between;font-size:11.5px;color:var(--faint);margin-top:8px;font-weight:600}
+.fin-foot{display:flex;justify-content:space-between;font-size:11.5px;color:var(--faint-ink);margin-top:8px;font-weight:600}
 .fin-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
 .fin-grid > .fin-tile:last-child:nth-child(odd){grid-column:1/-1}
 .fin-tile{border:1px solid var(--line);background:var(--card);border-radius:18px;padding:12px 13px 11px;cursor:pointer;text-align:left;min-width:0;transition:transform .15s var(--ease)}
@@ -334,7 +335,7 @@ J.css(`
 .fin-row .rt b{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
 .fin-pill{display:inline-block;min-width:72px;text-align:center;padding:4px 8px;border-radius:8px;font-weight:700;font-size:12.5px;color:#fff;background:var(--faint);font-variant-numeric:tabular-nums}
 .fin-pill.up{background:var(--fin-pill-up)}.fin-pill.dn{background:var(--fin-pill-dn)}
-.fin-x{flex:none;width:30px;height:30px;border-radius:50%;border:0;background:rgba(244,63,94,.14);color:var(--bad);display:grid;place-items:center;cursor:pointer;font-size:16px;font-weight:800}
+.fin-x{flex:none;width:30px;height:30px;border-radius:50%;border:0;background:rgba(244,63,94,.14);color:var(--bad-ink);display:grid;place-items:center;cursor:pointer;font-size:16px;font-weight:800}
 .fin-wait{font-size:12px;color:var(--muted);font-weight:600}
 .fin-tools{display:flex;align-items:center;gap:8px;margin-bottom:12px}
 .fin-tools .chip{padding:7px 12px;font-size:12.5px}
@@ -346,27 +347,27 @@ J.css(`
 .fin-ev:last-child{border-bottom:0}
 .fin-ev.past{opacity:.55}
 .fin-ev .tm{flex:none;width:62px;font-weight:700;font-size:13px;font-variant-numeric:tabular-nums;padding-top:1px}
-.fin-ev .tm .wd{display:block;color:var(--accent);font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.3px}
-.fin-ev .tm small{display:block;color:var(--faint);font-weight:600;font-size:11px;margin-top:2px}
+.fin-ev .tm .wd{display:block;color:var(--accent-ink);font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.3px}
+.fin-ev .tm small{display:block;color:var(--faint-ink);font-weight:600;font-size:11px;margin-top:2px}
 .fin-ev .bd{flex:1;min-width:0}
 .fin-ev .ti{font-weight:700;font-size:14.5px;display:flex;gap:6px;align-items:flex-start}
 .fin-ev .ti span{flex:1}
 .fin-ev .mn{color:var(--muted);font-size:12.5px;margin-top:3px;line-height:1.4}
-.fin-ev .raw{color:var(--faint);font-size:11.5px;margin-top:2px}
+.fin-ev .raw{color:var(--faint-ink);font-size:11.5px;margin-top:2px}
 .fin-nums{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
 .fin-nums span{font-size:11.5px;color:var(--muted);background:var(--line);border-radius:7px;padding:3px 7px;font-weight:600}
 .fin-nums span b{color:var(--text)}
 .fin-imp{flex:none;font-size:10.5px;font-weight:800;padding:3px 7px;border-radius:999px;text-transform:uppercase;letter-spacing:.4px}
-.fin-imp.High{background:rgba(244,63,94,.15);color:var(--bad)}
-.fin-imp.Medium{background:rgba(245,158,11,.16);color:var(--warn)}
-.fin-imp.Holiday{background:var(--accent-soft);color:var(--accent)}
+.fin-imp.High{background:rgba(244,63,94,.15);color:var(--bad-ink)}
+.fin-imp.Medium{background:rgba(245,158,11,.16);color:var(--warn-ink)}
+.fin-imp.Holiday{background:var(--accent-soft);color:var(--accent-ink)}
 .fin-news{display:block;padding:13px 14px;border-bottom:1px solid var(--line);color:inherit;text-decoration:none}
 .fin-news:last-child{border-bottom:0}
 .fin-news .ti{font-weight:600;font-size:14.5px;line-height:1.35}
 .fin-news .mt{display:flex;gap:6px;align-items:center;color:var(--muted);font-size:12px;margin-top:5px;font-weight:500}
 .fin-news .mt .src{font-weight:700;color:var(--text);opacity:.8}
-.fin-sample{background:rgba(245,158,11,.16);color:var(--warn);letter-spacing:.4px}
-.fin-tag{font-size:10.5px;font-weight:800;padding:2px 6px;border-radius:6px;background:var(--accent-soft);color:var(--accent)}
+.fin-sample{background:rgba(245,158,11,.16);color:var(--warn-ink);letter-spacing:.4px}
+.fin-tag{font-size:10.5px;font-weight:800;padding:2px 6px;border-radius:6px;background:var(--accent-soft);color:var(--accent-ink)}
 .fin-sk{background:linear-gradient(90deg,var(--line) 0%,rgba(255,255,255,.12) 50%,var(--line) 100%);background-size:200% 100%;animation:finSh 1.3s infinite;border-radius:12px}
 :root[data-theme="light"] .fin-sk{background:linear-gradient(90deg,var(--line) 0%,rgba(255,255,255,.9) 50%,var(--line) 100%);background-size:200% 100%}
 @keyframes finSh{to{background-position:-200% 0}}
@@ -416,12 +417,12 @@ function renderView(el){
     <div class="fin-upd">${data ? J.esc(updatedTxt()) : '&nbsp;'}</div>`;
   if (!data){
     h += loading || !failed ? skeleton() :
-      `<div class="empty"><div class="e-ic">📡</div>${failed==='offline' ? "You're offline, and there's no saved market data yet." : "Couldn't load market data right now."}<div style="margin-top:12px"><button class="btn" data-fin-refresh>Try again</button></div></div>`;
+      `<div class="empty"><div class="e-ic">${(J.icons && J.icons.info) || '📡'}</div>${failed==='offline' ? "You're offline, and there's no saved market data yet." : "Couldn't load market data right now."}<div style="margin-top:12px"><button class="btn" data-fin-refresh>Try again</button></div></div>`;
     el.innerHTML = h; return;
   }
-  if (data.sample) h += `<div class="fin-note warn"><span>🧪</span><span><b>Sample data, not real prices.</b> Live prices, news and the calendar appear after the first data update.</span></div>`;
-  else if (data.sample_prices) h += `<div class="fin-note warn"><span>🧪</span><span><b>Prices are sample numbers, not real.</b> Live prices appear after the next successful update. The news and calendar below are live.</span></div>`;
-  else if (failed) h += `<div class="fin-note warn"><span>📡</span><span>${failed==='offline'?"You're offline.":"Couldn't refresh."} Showing prices from ${J.esc(agoTxt(Date.parse(data.updated)).replace(/^on /,''))}.</span></div>`;
+  if (data.sample) h += `<div class="fin-note warn"><span class="fin-ni">${(J.icons && J.icons.info) || '🧪'}</span><span><b>Sample data, not real prices.</b> Live prices, news and the calendar appear after the first data update.</span></div>`;
+  else if (data.sample_prices) h += `<div class="fin-note warn"><span class="fin-ni">${(J.icons && J.icons.info) || '🧪'}</span><span><b>Prices are sample numbers, not real.</b> Live prices appear after the next successful update. The news and calendar below are live.</span></div>`;
+  else if (failed) h += `<div class="fin-note warn"><span class="fin-ni">${(J.icons && J.icons.info) || '📡'}</span><span>${failed==='offline'?"You're offline.":"Couldn't refresh."} Showing prices from ${J.esc(agoTxt(Date.parse(data.updated)).replace(/^on /,''))}.</span></div>`;
   else if (clk.state==='open' && staleHours() > 2) h += `<div class="fin-note warn"><span>⏳</span><span>These prices are about ${Math.round(staleHours())} hours old. The next update is on its way.</span></div>`;
   h += `<div class="seg fin-seg">${SEGS.map(([k,l])=>`<button data-fin-seg="${k}" class="${st.seg===k?'active':''}">${l}</button>`).join('')}</div>`;
   h += st.seg==='watch' ? watchHTML() : st.seg==='cal' ? calHTML() : st.seg==='news' ? newsHTML() : overviewHTML();
@@ -449,7 +450,7 @@ function tileHTML(sym){
   const q = quote(sym); if (!q) return '';
   const d = dir(q);
   return `<button class="fin-tile" data-fin-open-q="${J.esc(sym)}"><div class="t1"><span>${J.esc(q.kind==='index'||q.kind==='rate'||q.kind==='vol'||q.kind==='commodity'||q.kind==='fx'||sym==='BTC-USD' ? nameOf(sym) : tickerLabel(sym))}</span></div>
-    <div class="px">${px(q)}</div><div class="pc fin-${d}">${q.kind==='rate'?chgTxt(q):pctTxt(q)}${q.kind!=='rate'&&q.chg!=null?` <span style="color:var(--faint);font-weight:600">${chgTxt(q)}</span>`:''}</div>
+    <div class="px">${px(q)}</div><div class="pc fin-${d}">${q.kind==='rate'?chgTxt(q):pctTxt(q)}${q.kind!=='rate'&&q.chg!=null?` <span style="color:var(--faint-ink);font-weight:600">${chgTxt(q)}</span>`:''}</div>
     <div class="sp">${spark(q, st.range)}</div></button>`;
 }
 function rowHTML(sym){
@@ -486,13 +487,13 @@ function overviewHTML(){
   h += `<div class="fin-grid">${mk.slice(1).map(tileHTML).join('')}</div>`;
   const movers = st.watchlist.map(s=>quote(s)).filter(q=>q && q.pct!=null).sort((a,b)=>Math.abs(b.pct)-Math.abs(a.pct)).slice(0,3);
   h += sectionH('Biggest movers on your watchlist', 'watch');
-  h += movers.length ? `<div class="fin-list">${movers.map(q=>rowHTML(q.s)).join('')}</div>` : `<div class="empty"><div class="e-ic">⭐</div>Say “Add Apple to my watchlist”.</div>`;
+  h += movers.length ? `<div class="fin-list">${movers.map(q=>rowHTML(q.s)).join('')}</div>` : `<div class="empty"><div class="e-ic">${(J.icons && J.icons.chart) || '⭐'}</div>Say “Add Apple to my watchlist”.</div>`;
   const evs = upcomingEvents(true).slice(0,3);
   h += sectionH('Coming up', 'cal');
-  h += evs.length ? `<div class="fin-list">${evs.map(e=>evHTML(e, true)).join('')}</div>` : `<div class="empty"><div class="e-ic">📅</div>No big economic events scheduled in the next two weeks.</div>`;
+  h += evs.length ? `<div class="fin-list">${evs.map(e=>evHTML(e, true)).join('')}</div>` : `<div class="empty"><div class="e-ic">${(J.icons && J.icons.cal) || '📅'}</div>No big economic events scheduled in the next two weeks.</div>`;
   const news = (data.news||[]).slice(0,4);
   h += sectionH('Top headlines', 'news');
-  h += news.length ? `<div class="fin-list">${news.map(newsItemHTML).join('')}</div>` : `<div class="empty"><div class="e-ic">📰</div>No headlines yet.</div>`;
+  h += news.length ? `<div class="fin-list">${news.map(newsItemHTML).join('')}</div>` : `<div class="empty"><div class="e-ic">${(J.icons && J.icons.notes) || '📰'}</div>No headlines yet.</div>`;
   return h;
 }
 function watchHTML(){
@@ -500,7 +501,7 @@ function watchHTML(){
   if (st.sort !== 'mine') list.sort((a,b)=>{ const pa = (quote(a)||{}).pct, pb = (quote(b)||{}).pct; const va = pa==null?-1e9:pa, vb = pb==null?-1e9:pb; return st.sort==='gain' ? vb-va : (pa==null?1e9:pa)-(pb==null?1e9:pb); });
   let h = `<div class="fin-tools">${[['mine','My order'],['gain','Gainers'],['lose','Losers']].map(([k,l])=>`<button class="chip ${st.sort===k?'on':''}" data-fin-sort="${k}">${l}</button>`).join('')}<span class="grow"></span>
     <button class="link" data-fin-edit>${editing?'Done':'Edit'}</button><button class="link" data-fin-add>+ Add</button></div>`;
-  h += list.length ? `<div class="fin-list">${list.map(rowHTML).join('')}</div>` : `<div class="empty"><div class="e-ic">⭐</div>Your watchlist is empty.<br>Say “Add Nvidia to my watchlist”.</div>`;
+  h += list.length ? `<div class="fin-list">${list.map(rowHTML).join('')}</div>` : `<div class="empty"><div class="e-ic">${(J.icons && J.icons.chart) || '⭐'}</div>Your watchlist is empty.<br>Say “Add Nvidia to my watchlist”.</div>`;
   const pend = list.filter(s=>!quote(s));
   if (pend.length) h += `<p style="color:var(--muted);font-size:12.5px;margin:12px 4px 0">“Waiting for data” means ${J.esc(pend.map(tickerLabel).join(', '))} ${pend.length>1?"aren't":"isn't"} in the market feed yet. Tap ${pend.length>1?'one':'it'} to see how to add it.</p>`;
   const earn = ((data.earnings)||[]).filter(e=>st.watchlist.includes(e.s));
@@ -518,7 +519,7 @@ function calHTML(){
   if (st.cal==='high') evs = evs.filter(e=>e.impact==='High' || e.impact==='Holiday');
   if (st.cal==='us') evs = evs.filter(e=>e.country==='USD');
   let h = `<div class="fin-tools">${[['all','All'],['high','High impact'],['us','US only']].map(([k,l])=>`<button class="chip ${st.cal===k?'on':''}" data-fin-cal="${k}">${l}</button>`).join('')}</div>`;
-  if (!evs.length) h += `<div class="empty"><div class="e-ic">📅</div>Nothing on the calendar for this filter.</div>`;
+  if (!evs.length) h += `<div class="empty"><div class="e-ic">${(J.icons && J.icons.cal) || '📅'}</div>Nothing on the calendar for this filter.</div>`;
   const groups = []; evs.forEach(e=>{ const k = evTime(e).toDateString(); let g = groups.find(x=>x.k===k); if (!g){ g = {k, d:evTime(e), list:[]}; groups.push(g); } g.list.push(e); });
   const tmr = new Date(); tmr.setDate(tmr.getDate()+1);
   groups.forEach(g=>{
@@ -527,14 +528,14 @@ function calHTML(){
   });
   const earn = (data.earnings||[]).slice().sort((a,b)=>(st.watchlist.includes(b.s)-st.watchlist.includes(a.s)) || a.date.localeCompare(b.date)).slice(0,12);
   if (earn.length){ h += sectionH('Earnings'); h += `<div class="fin-list">${earn.map(earnRowHTML).join('')}</div>`; }
-  h += `<p style="color:var(--faint);font-size:12px;text-align:center;margin:16px 0 0">Times are in your local time. Calendar: Forex Factory.</p>`;
+  h += `<p style="color:var(--faint-ink);font-size:12px;text-align:center;margin:16px 0 0">Times are in your local time. Calendar: Forex Factory.</p>`;
   return h;
 }
 function newsHTML(){
   let h = `<div class="fin-tools"><button class="chip ${st.news==='top'&&!newsSym?'on':''}" data-fin-news="top">Top stories</button><button class="chip ${st.news==='mine'&&!newsSym?'on':''}" data-fin-news="mine">My stocks</button>${newsSym?`<button class="chip on" data-fin-news="top">${J.esc(nameOf(newsSym))} ✕</button>`:''}</div>`;
   const list = newsSym ? allSymbolNews([newsSym]) : st.news==='mine' ? allSymbolNews(st.watchlist) : (data.news||[]);
-  h += list.length ? `<div class="fin-list">${list.slice(0,30).map(newsItemHTML).join('')}</div>` : `<div class="empty"><div class="e-ic">📰</div>${newsSym||st.news==='mine'?'No fresh headlines for your stocks right now.':'No headlines yet.'}</div>`;
-  h += `<p style="color:var(--faint);font-size:12px;text-align:center;margin:16px 0 0">Tap a headline to read it. Sources: CNBC, MarketWatch, Reuters, AP, Bloomberg, WSJ and more via Google News; Yahoo Finance for your stocks.</p>`;
+  h += list.length ? `<div class="fin-list">${list.slice(0,30).map(newsItemHTML).join('')}</div>` : `<div class="empty"><div class="e-ic">${(J.icons && J.icons.notes) || '📰'}</div>${newsSym||st.news==='mine'?'No fresh headlines for your stocks right now.':'No headlines yet.'}</div>`;
+  h += `<p style="color:var(--faint-ink);font-size:12px;text-align:center;margin:16px 0 0">Tap a headline to read it. Sources: CNBC, MarketWatch, Reuters, AP, Bloomberg, WSJ and more via Google News; Yahoo Finance for your stocks.</p>`;
   return h;
 }
 
@@ -586,7 +587,7 @@ function repoEditLink(){
 function detailHTML(sym){
   const q = quote(sym); const inList = st.watchlist.includes(sym);
   const close = `<button class="icon-btn" data-fin-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>`;
-  const btns = `<div class="fin-btns">${q?`<button class="btn ghost" data-fin-say>🔊 Hear it</button>`:''}<button class="btn ${inList?'danger':''}" data-fin-toggle>${inList?'Remove':'＋ Add to watchlist'}</button></div>`;
+  const btns = `<div class="fin-btns">${q?`<button class="btn ghost" data-fin-say>${(J.icons && J.icons.play) || ''}Hear it</button>`:''}<button class="btn ${inList?'danger':''}" data-fin-toggle>${inList?'Remove':'＋ Add to watchlist'}</button></div>`;
   if (!q) return `<div class="fin-mbox"><div class="fin-dt-top"><div><h4>${J.esc(tickerLabel(sym))}</h4><small>${J.esc(NAMES[sym]||'Added by you')}</small></div>${close}</div>
     <div class="fin-note" style="margin-top:14px"><span>⏳</span><span><b>No price yet.</b> ${J.esc(tickerLabel(sym))} isn't in Jarvis's market feed. It covers about 90 of the most-traded US stocks, ETFs and crypto. To add more, put the ticker in the feed list on GitHub and it shows up after the next update.</span></div>
     <a class="btn ghost" style="display:block;text-align:center;text-decoration:none" href="${repoEditLink()}" target="_blank" rel="noopener noreferrer">Open the feed list on GitHub</a>${btns}</div>`;

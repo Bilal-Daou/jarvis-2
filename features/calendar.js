@@ -36,6 +36,9 @@ const dayLabel = ms => { const t0 = startOfDay(Date.now()), d = startOfDay(ms); 
 const daySay = ms => { const l = dayLabel(ms); return /^(Today|Tomorrow|Yesterday)$/.test(l) ? l.toLowerCase() : 'on ' + new Date(ms).toLocaleDateString([], {weekday:'long', month:'long', day:'numeric'}); };
 const lc = s => s ? s.charAt(0).toLowerCase() + s.slice(1) : s;
 const plural = (n, w) => `${n} ${w}${n===1?'':'s'}`;
+/* line icons from the core set (index.html), so the calendar matches the rest of the app */
+const hi = n => (J.health && J.health.icons && J.health.icons[n]) || gi(n);
+const gi = (n, cls) => { const s = (J.icons && J.icons[n]) || ''; return cls ? s.replace('<svg ', `<svg class="${cls}" `) : s; };
 function until(ms){
   const s = Math.round((ms - Date.now())/MIN);
   if (s <= 0) return 'now';
@@ -514,25 +517,25 @@ function sheetHTML(o){
   // o: {type:'reminder', r} | {type:'event', e} | {type:'all', list}
   let ics, title, sub, icon, alarmBtn = '', primary;
   if (o.type === 'event'){
-    ics = buildICS([eventItem(o.e)]); icon = '📅'; title = 'Add it to your iPhone calendar';
+    ics = buildICS([eventItem(o.e)]); icon = gi('cal'); title = 'Add it to your iPhone calendar';
     sub = `<b>${esc(o.e.title)}</b><span>${esc(J.whenText(o.e.start))}${o.e.loc ? ' · '+esc(o.e.loc) : ''}</span>`;
   } else if (o.type === 'all'){
-    ics = buildICS(o.list.map(reminderItem)); icon = '🔔'; title = 'Make them ring on your iPhone';
+    ics = buildICS(o.list.map(reminderItem)); icon = gi('bell'); title = 'Make them ring on your iPhone';
     sub = `<b>${plural(o.list.length,'reminder')}</b><span>Each one gets a calendar alert at its time</span>`;
   } else {
-    const r = o.r; ics = buildICS([reminderItem(r)]); icon = isWake(r) ? '⏰' : '🔔';
+    const r = o.r; ics = buildICS([reminderItem(r)]); icon = isWake(r) ? gi('alarm') : gi('bell');
     title = 'Make it ring on your iPhone';
     sub = `<b>${esc(r.text)}</b><span>${esc(J.whenText(r.at))}${r.repeat && r.repeat !== 'none' ? ' · repeats '+esc(r.repeat) : ''}</span>`;
-    if (st.alarmReady && alarmOK(r)) alarmBtn = `<a class="cal-big cal-big-alarm" href="${esc(alarmLink(r))}" data-cal-pick="alarm">⏰<span><b>Set iPhone alarm</b><small>Real Clock alarm · rings even on silent</small></span></a>`;
-    else if (st.alarmReady && !alarmOK(r)) alarmBtn = `<div class="cal-note">⏰ iPhone alarms can only be set for the next 24 hours. Use the calendar alert for this one.</div>`;
-    else if (isWake(r)) alarmBtn = `<button class="cal-big cal-big-ghost" data-cal-go-setup="alarm">⏰<span><b>Set up iPhone alarms</b><small>One time, about 2 minutes · rings even on silent</small></span></button>`;
+    if (st.alarmReady && alarmOK(r)) alarmBtn = `<a class="cal-big cal-big-alarm" href="${esc(alarmLink(r))}" data-cal-pick="alarm">${gi('alarm')}<span><b>Set iPhone alarm</b><small>Real Clock alarm · rings even on silent</small></span></a>`;
+    else if (st.alarmReady && !alarmOK(r)) alarmBtn = `<div class="cal-note">iPhone alarms can only be set for the next 24 hours. Use the calendar alert for this one.</div>`;
+    else if (isWake(r)) alarmBtn = `<button class="cal-big cal-big-ghost" data-cal-go-setup="alarm">${gi('alarm')}<span><b>Set up iPhone alarms</b><small>One time, about 2 minutes · rings even on silent</small></span></button>`;
   }
   const fname = o.type === 'event' ? 'jarvis-event.ics' : 'jarvis-reminder.ics';
   const h = icsHref(ics, fname);
   const calSub = o.type === 'event' ? 'With an alert 15 minutes before' : 'Calendar alert at that time · no setup';
   const calBtn = h.share
-    ? `<button class="cal-big cal-big-cal" data-cal-share data-cal-pick="calendar">📅<span><b>Add to Calendar${o.type === 'event' ? '' : ' (rings)'}</b><small>In the menu, pick Calendar. Not there? Save to Files, then open the file.</small></span></button>`
-    : `<a class="cal-big cal-big-cal" href="${esc(h.href)}"${h.dl ? ` download="${esc(h.dl)}"` : ''} target="_self" data-cal-pick="calendar">📅<span><b>Add to Calendar${o.type === 'event' ? '' : ' (rings)'}</b><small>${calSub}</small></span></a>`;
+    ? `<button class="cal-big cal-big-cal" data-cal-share data-cal-pick="calendar">${gi('cal')}<span><b>Add to Calendar${o.type === 'event' ? '' : ' (rings)'}</b><small>In the menu, pick Calendar. Not there? Save to Files, then open the file.</small></span></button>`
+    : `<a class="cal-big cal-big-cal" href="${esc(h.href)}"${h.dl ? ` download="${esc(h.dl)}"` : ''} target="_self" data-cal-pick="calendar">${gi('cal')}<span><b>Add to Calendar${o.type === 'event' ? '' : ' (rings)'}</b><small>${calSub}</small></span></a>`;
   const alarmFirst = o.type === 'reminder' && /cal-big-alarm/.test(alarmBtn) && (isWake(o.r) || st.pref === 'alarm');
   primary = alarmFirst ? alarmBtn + calBtn : calBtn + alarmBtn;
   sheetFor = Object.assign({}, o, {ics});
@@ -852,14 +855,16 @@ J.css(`
 .cal-ev.past{opacity:.5}
 .cal-ev.now{border-color:rgba(244,63,94,.5);box-shadow:0 0 0 3px rgba(244,63,94,.1)}
 .cal-pill{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:2px 8px;font-size:11px;font-weight:800;vertical-align:1px;margin-left:4px}
-.cal-pill.ok{background:rgba(34,197,94,.14);color:var(--good)}.cal-pill.no{background:rgba(245,158,11,.14);color:var(--warn)}.cal-pill.live{background:rgba(244,63,94,.14);color:var(--bad)}
+.cal-pill.ok{background:rgba(34,197,94,.14);color:var(--good-ink)}.cal-pill.no{background:rgba(245,158,11,.14);color:var(--warn-ink)}.cal-pill.live{background:rgba(244,63,94,.14);color:var(--bad-ink)}
 .cal-acts{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
 .cal-hero-empty{text-align:center;padding:26px 18px}
-.cal-hero-empty .big{font-size:44px;line-height:1;margin-bottom:10px}
+.cal-hero-empty .big{width:68px;height:68px;margin:0 auto 12px;border-radius:22px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,#fb7185,#e11d48);box-shadow:0 14px 30px rgba(225,29,72,.28)}.cal-hero-empty .big svg{width:34px;height:34px}
+.cal-part-h .ic svg{width:23px;height:23px}.cal-home .ic svg{width:22px;height:22px}.cal-home .x{width:44px!important;height:44px!important;display:grid;place-items:center}.cal-home .x svg{width:17px;height:17px}.cal-btn svg{width:17px;height:17px;flex:none}
+.cal-allday span svg{width:14px;height:14px;vertical-align:-2px;margin-right:5px;color:var(--accent-ink)}.cal-loc{display:flex;align-items:center;gap:4px}.cal-loc svg{width:13px;height:13px;flex:none}
 .cal-hero-empty h3{margin:0 0 6px;font-size:18px}.cal-hero-empty p{margin:0 0 14px;color:var(--muted)}
 .cal-step{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
 .cal-step:first-of-type{border-top:0}
-.cal-step .n{flex:none;width:28px;height:28px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:800;font-size:13px}
+.cal-step .n{flex:none;width:28px;height:28px;border-radius:50%;background:var(--accent-soft);color:var(--accent-ink);display:grid;place-items:center;font-weight:800;font-size:13px}
 .cal-step .tx{flex:1;min-width:0;font-size:14.5px;line-height:1.45}
 .cal-step .tx b{font-weight:700}
 .cal-step .tx code{font:600 13px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--bg2);border:1px solid var(--line);border-radius:7px;padding:1px 6px;word-break:break-all}
@@ -873,6 +878,9 @@ J.css(`
 .cal-truth{display:grid;grid-template-columns:auto 1fr;gap:10px 12px;font-size:13.5px;align-items:start}
 .cal-truth i{font-style:normal;font-size:16px;line-height:1.3}
 .cal-truth b{font-weight:700}
+.cal-truth i svg{width:18px;height:18px;display:block;margin-top:1px;color:var(--muted)}.cal-truth i.ok svg{color:var(--good)}
+.cal-diag i svg{width:17px;height:17px;display:block;margin:auto}.cal-diag i.ok{color:var(--good)}.cal-diag i.bad{color:var(--warn)}
+.cal-diag .cal-di{display:inline-grid;vertical-align:-3px;margin-right:6px;color:var(--muted)}.cal-diag .cal-di svg{width:16px;height:16px}
 .cal-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .cal-chips button{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:999px;padding:8px 12px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;min-height:38px}
 .cal-chips button.on{background:var(--accent);border-color:var(--accent);color:#fff}
@@ -881,7 +889,7 @@ J.css(`
 .cal-home .ic{width:44px;height:44px;border-radius:14px;flex:none;display:grid;place-items:center;font-size:21px;background:linear-gradient(135deg,#f43f5e,#7c3aed);color:#fff;box-shadow:0 8px 18px rgba(225,29,72,.25)}
 .cal-home .bd{flex:1;min-width:0}.cal-home .bd small{display:block;color:var(--muted);font-size:12px;font-weight:600}
 .cal-home .bd b{display:block;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.cal-home .cd{flex:none;font-weight:800;font-size:13px;color:var(--accent);background:var(--accent-soft);border-radius:999px;padding:5px 10px}
+.cal-home .cd{flex:none;font-weight:800;font-size:13px;color:var(--accent-ink);background:var(--accent-soft);border-radius:999px;padding:5px 10px}
 .cal-home .x{flex:none;border:0;background:none;color:var(--muted);width:36px;height:36px;border-radius:10px;font-size:16px;cursor:pointer}
 .cal-sheet-wrap{position:fixed;inset:0;z-index:45;pointer-events:none}
 .cal-sheet-bg{position:absolute;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);opacity:0;transition:opacity .3s}
@@ -889,6 +897,7 @@ J.css(`
 .cal-sheet-wrap:not(.open){visibility:hidden;transition:visibility 0s linear .42s}.cal-sheet-wrap.open{pointer-events:auto}.cal-sheet-wrap.open .cal-sheet-bg{opacity:1}.cal-sheet-wrap.open .cal-sheet{transform:translate(-50%,0)}
 .cal-grab{width:42px;height:5px;border-radius:9px;background:var(--faint);opacity:.5;margin:10px auto 12px}
 .cal-sh-head{display:flex;gap:14px;align-items:center;margin-bottom:16px}
+.cal-sh-ic svg{width:28px;height:28px;color:#fff}.cal-big>svg{width:26px;height:26px;flex:none}
 .cal-sh-ic{width:56px;height:56px;border-radius:18px;display:grid;place-items:center;font-size:28px;flex:none;background:linear-gradient(135deg,#f43f5e,#7c3aed);box-shadow:0 10px 24px rgba(225,29,72,.3)}
 .cal-sh-t{min-width:0}.cal-sh-t h4{margin:0 0 4px;font-size:19px;font-weight:800;letter-spacing:-.3px}
 .cal-sh-sub b{display:block;font-weight:650;word-wrap:break-word}.cal-sh-sub span{color:var(--muted);font-size:13px}
@@ -897,9 +906,9 @@ J.css(`
 .cal-big span{display:flex;flex-direction:column;min-width:0}.cal-big b{font-size:16.5px;font-weight:800}.cal-big small{font-size:12.5px;opacity:.88;font-weight:500;margin-top:1px}
 .cal-big-alarm{background:linear-gradient(135deg,#f97316,#e11d48);box-shadow:0 12px 26px rgba(225,29,72,.3)}
 .cal-big-ghost{background:var(--card);color:var(--text);border:1px solid var(--line);box-shadow:none}
-.cal-big-ghost small{color:var(--muted);opacity:1}
+.cal-big-ghost small{color:var(--muted);opacity:1}.cal-big-ghost>svg{color:#f97316}
 .cal-note{font-size:13px;color:var(--muted);background:var(--card);border:1px dashed var(--line);border-radius:14px;padding:10px 12px}
-.cal-link{border:0;background:none;color:var(--accent);font:inherit;font-weight:650;font-size:13.5px;cursor:pointer;padding:12px 4px;min-height:44px}
+.cal-link{border:0;background:none;color:var(--accent-ink);font:inherit;font-weight:650;font-size:13.5px;cursor:pointer;padding:12px 4px;min-height:44px}
 .cal-sh-honest{color:var(--muted);font-size:12.5px;margin:2px 0 12px;line-height:1.45}
 .cal-sh-foot{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .cal-alarm{position:fixed;inset:0;z-index:70;display:none;align-items:center;justify-content:center;padding:24px 20px calc(24px + env(safe-area-inset-bottom,0px));color:#fff;text-align:center;background:radial-gradient(120% 80% at 50% 0%,#4338ca 0%,#1e1b4b 55%,#0b0a1f 100%)}
@@ -948,23 +957,23 @@ function onPhone(r){ return st.added[r.id] || st.alarmed[r.id]; }
 function evRow(e, now){
   const past = e.end <= now, live = e.start <= now && e.end > now;
   const tm = `${esc(tfmt(Math.max(e.start, e.start)))}<small>${esc(tfmt(e.end))}</small>`;
-  return `<div class="cal-ev${past?' past':''}${live?' now':''}"><div class="tm">${tm}</div><div class="bar"></div><div class="bd"><b>${esc(e.title)}${live?'<span class="cal-pill live">Now</span>':''}${e.mine ? (e.added ? '<span class="cal-pill ok">Added</span>' : '<span class="cal-pill no">Not on iPhone yet</span>') : ''}</b>${e.loc ? `<small>📍 ${esc(e.loc)}</small>` : ''}${!past && !live ? `<small>${esc(until(e.start))}</small>` : ''}
-    ${e.mine && !e.added ? `<div class="cal-acts"><button class="cal-btn sm" data-cal-ev="${esc(e.id)}">📅 Add to Calendar</button><button class="cal-btn sm ghost" data-cal-evdel="${esc(e.id)}">Remove</button></div>` : ''}</div></div>`;
+  return `<div class="cal-ev${past?' past':''}${live?' now':''}"><div class="tm">${tm}</div><div class="bar"></div><div class="bd"><b>${esc(e.title)}${live?'<span class="cal-pill live">Now</span>':''}${e.mine ? (e.added ? '<span class="cal-pill ok">Added</span>' : '<span class="cal-pill no">Not on iPhone yet</span>') : ''}</b>${e.loc ? `<small class="cal-loc">${gi('mapPin')}${esc(e.loc)}</small>` : ''}${!past && !live ? `<small>${esc(until(e.start))}</small>` : ''}
+    ${e.mine && !e.added ? `<div class="cal-acts"><button class="cal-btn sm" data-cal-ev="${esc(e.id)}">${gi('cal')}Add to Calendar</button><button class="cal-btn sm ghost" data-cal-evdel="${esc(e.id)}">Remove</button></div>` : ''}</div></div>`;
 }
 function remRow(r){
   const ok = onPhone(r);
-  return `<div class="cal-ev rem"><div class="tm">${esc(tfmt(r.at))}<small>${r.kind==='alarm'?'Alarm':'Reminder'}</small></div><div class="bar"></div><div class="bd"><b>${r.kind==='alarm'?'⏰ ':'🔔 '}${esc(r.text)}${ok ? '<span class="cal-pill ok">On iPhone</span>' : ''}</b><small>${esc(until(r.at))}${r.repeat && r.repeat!=='none' ? ' · repeats ' + esc(r.repeat) : ''}</small></div></div>`;
+  return `<div class="cal-ev rem"><div class="tm">${esc(tfmt(r.at))}<small>${r.kind==='alarm'?'Alarm':'Reminder'}</small></div><div class="bar"></div><div class="bd"><b>${esc(r.text)}${ok ? '<span class="cal-pill ok">On iPhone</span>' : ''}</b><small>${esc(until(r.at))}${r.repeat && r.repeat!=='none' ? ' · repeats ' + esc(r.repeat) : ''}</small></div></div>`;
 }
 function agendaHTML(){
   const now = Date.now(), t0 = startOfDay(now);
   let h = syncBar();
   if (!st.syncedAt && !st.local.length){
-    h += `<div class="card cal-hero-empty"><div class="big">📅</div><h3>See your iPhone calendar here</h3><p>Jarvis reads your calendar each time you open it with the Action Button. Then just ask “What's on my schedule?”</p><button class="cal-btn" data-cal-tab="connect">Show me how</button></div>`;
+    h += `<div class="card cal-hero-empty"><div class="big">${gi('cal')}</div><h3>See your iPhone calendar here</h3><p>Jarvis reads your calendar each time you open it with the Action Button. Then just ask “What's on my schedule?”</p><button class="cal-btn" data-cal-tab="connect">Show me how</button></div>`;
   } else {
     const nx = nextTimed();
     if (nx){
       const live = nx.start <= now;
-      h += `<div class="cal-next"><div class="k">${live ? 'Happening now' : 'Up next'}</div><div class="t">${esc(nx.title)}</div><div class="m">${esc(dayLabel(nx.start))} · ${esc(tfmt(nx.start))} – ${esc(tfmt(nx.end))}${nx.loc ? ' · 📍 ' + esc(nx.loc.split(',')[0]) : ''}</div><div style="height:26px"></div><div class="c">${live ? 'until ' + esc(tfmt(nx.end)) : esc(until(nx.start))}</div></div>`;
+      h += `<div class="cal-next"><div class="k">${live ? 'Happening now' : 'Up next'}</div><div class="t">${esc(nx.title)}</div><div class="m">${esc(dayLabel(nx.start))} · ${esc(tfmt(nx.start))} – ${esc(tfmt(nx.end))}${nx.loc ? ' · ' + esc(nx.loc.split(',')[0]) : ''}</div><div style="height:26px"></div><div class="c">${live ? 'until ' + esc(tfmt(nx.end)) : esc(until(nx.start))}</div></div>`;
     }
   }
   for (let i = 0; i < 7; i++){
@@ -975,7 +984,7 @@ function agendaHTML(){
     const rows = timed.map(e=>({at:e.start, html:evRow(e, now)})).concat(rems.map(r=>({at:r.at, html:remRow(r)}))).sort((a,b)=>a.at-b.at);
     const lbl = i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : new Date(d0).toLocaleDateString([], {weekday:'long'});
     h += `<div class="cal-day"><h3>${esc(lbl)}</h3><span>${esc(new Date(d0).toLocaleDateString([], {month:'short', day:'numeric'}))}${evs.length ? ' · ' + plural(evs.length,'event') : ''}</span></div>`;
-    if (ad.length) h += `<div class="cal-allday">${ad.map(e=>`<span title="${esc(e.title)}">🗓️ ${esc(e.title)}</span>`).join('')}</div>`;
+    if (ad.length) h += `<div class="cal-allday">${ad.map(e=>`<span title="${esc(e.title)}">${gi('cal')}${esc(e.title)}</span>`).join('')}</div>`;
     h += rows.length ? rows.map(x=>x.html).join('') : (!ad.length ? `<div class="empty" style="padding:16px">${i === 0 ? (st.syncedAt ? 'Nothing else today. Enjoy it.' : 'No reminders today.') : 'Nothing planned yet.'}</div>` : '');
   }
   return h;
@@ -984,26 +993,26 @@ function alarmsHTML(){
   const now = Date.now();
   const list = (J.db.reminders||[]).filter(r=>!r.done && r.at > now - MIN).sort((a,b)=>a.at-b.at).slice(0, 40);
   const notOn = list.filter(r=>!onPhone(r));
-  let h = `<div class="card cal-part"><div class="cal-part-h"><div class="ic" style="background:rgba(244,63,94,.15)">🔔</div><div><b>Upcoming reminders & alarms</b><small>${list.length ? `${plural(list.length,'reminder')} · ${notOn.length ? notOn.length + ' not on your iPhone yet' : 'all on your iPhone'}` : 'Nothing set'}</small></div></div>`;
+  let h = `<div class="card cal-part"><div class="cal-part-h"><div class="ic" style="background:rgba(244,63,94,.15);color:#f43f5e">${gi('bell')}</div><div><b>Upcoming reminders & alarms</b><small>${list.length ? `${plural(list.length,'reminder')} · ${notOn.length ? notOn.length + ' not on your iPhone yet' : 'all on your iPhone'}` : 'Nothing set'}</small></div></div>`;
   if (!list.length) h += `<p>Say “Wake me up at 6:30” or “Remind me to call mom at 6 pm”.</p>`;
-  else if (notOn.length > 1) h += `<button class="cal-btn" style="width:100%;margin:6px 0 4px" data-cal-all>📅 Add all ${notOn.length} to Calendar</button>`;
+  else if (notOn.length > 1) h += `<button class="cal-btn" style="width:100%;margin:6px 0 4px" data-cal-all>${gi('cal')}Add all ${notOn.length} to Calendar</button>`;
   h += `</div>`;
   h += list.map(r=>{
     const ok = onPhone(r);
-    return `<div class="cal-ev rem"><div class="tm">${esc(tfmt(r.at))}<small>${esc(dayLabel(r.at).split(',')[0].replace(/^(\w{3})\w*day$/,'$1'))}</small></div><div class="bar"></div><div class="bd"><b>${r.kind==='alarm'?'⏰ ':'🔔 '}${esc(r.text)}</b><small>${ok ? (st.alarmed[r.id] ? '✓ iPhone alarm set' : '✓ Added to iPhone calendar') : 'Only rings while Jarvis is open'}${r.repeat && r.repeat!=='none' ? ' · repeats ' + esc(r.repeat) : ''}</small>
-      <div class="cal-acts"><button class="cal-btn sm${ok?' ghost':''}" data-cal-ring="${esc(r.id)}">${ok ? 'Add again' : '📲 Make it ring'}</button></div></div></div>`;
+    return `<div class="cal-ev rem"><div class="tm">${esc(tfmt(r.at))}<small>${esc(dayLabel(r.at).split(',')[0].replace(/^(\w{3})\w*day$/,'$1'))}</small></div><div class="bar"></div><div class="bd"><b>${esc(r.text)}</b><small>${ok ? (st.alarmed[r.id] ? '✓ iPhone alarm set' : '✓ Added to iPhone calendar') : 'Only rings while Jarvis is open'}${r.repeat && r.repeat!=='none' ? ' · repeats ' + esc(r.repeat) : ''}</small>
+      <div class="cal-acts"><button class="cal-btn sm${ok?' ghost':''}" data-cal-ring="${esc(r.id)}">${ok ? 'Add again' : gi('bell') + 'Make it ring'}</button></div></div></div>`;
   }).join('');
   // alarms in the iPhone Clock app, from the Action Button shortcut (features/health.js)
   try { const ca = J.health && J.health.store.alarms; if (ca){ const cl = J.health.iphoneAlarms();
     h += `<div class="section-h"><h3>In your iPhone Clock</h3><span style="color:var(--muted);font-size:12.5px">synced ${esc(sinceText(ca.at))}</span></div>` + (cl.length ? cl.map(a=>{ const d = new Date(); d.setHours(a.h, a.m, 0, 0);
-      return `<div class="cal-ev rem"><div class="tm">${esc(tfmt(d.getTime()))}<small>${a.on == null ? 'Clock' : a.on ? 'On' : 'Off'}</small></div><div class="bar"></div><div class="bd"><b>⏰ ${esc(a.label || 'Alarm')}</b><small>${a.on === false ? 'Switched off in the Clock app' : 'Rings from your iPhone Clock app'}</small></div></div>`; }).join('') : `<div class="empty" style="padding:16px">No alarms in your Clock app at the last sync.</div>`); } } catch(e){}
+      return `<div class="cal-ev rem"><div class="tm">${esc(tfmt(d.getTime()))}<small>${a.on == null ? 'Clock' : a.on ? 'On' : 'Off'}</small></div><div class="bar"></div><div class="bd"><b>${esc(a.label || 'Alarm')}</b><small>${a.on === false ? 'Switched off in the Clock app' : 'Rings from your iPhone Clock app'}</small></div></div>`; }).join('') : `<div class="empty" style="padding:16px">No alarms in your Clock app at the last sync.</div>`); } } catch(e){}
   const perm = ('Notification' in window) ? Notification.permission : 'unsupported';
   h += `<div class="section-h"><h3>While Jarvis is open</h3></div>
   <div class="set-group">
-    <div class="set-row"><div class="set-ic" style="background:rgba(244,63,94,.15)">🚨</div><div class="lbl"><b>Ring inside Jarvis</b><small>Full-screen alarm with sound when it's open</small></div><label class="switch"><input type="checkbox" data-cal-set="ringInApp" ${st.ringInApp?'checked':''}><span></span></label></div>
-    <div class="set-row"><div class="set-ic" style="background:rgba(109,93,252,.15)">🔊</div><div class="lbl"><b>Test the alarm sound</b><small>Turn your volume up</small></div><button class="cal-btn sm ghost" data-cal-test="sound">Play</button></div>
-    <div class="set-row"><div class="set-ic" style="background:rgba(17,24,39,.5)">🌙</div><div class="lbl"><b>Nightstand mode</b><small>Keeps the screen on so Jarvis can wake you</small></div><button class="cal-btn sm ghost" data-cal-night>Start</button></div>
-    ${perm === 'default' ? `<div class="set-row"><div class="set-ic" style="background:rgba(245,158,11,.15)">💬</div><div class="lbl"><b>Pop-up alerts</b><small>${isIOS && !standalone ? 'Works after you add Jarvis to your Home Screen' : 'Shows a banner while Jarvis is open'}</small></div><button class="cal-btn sm ghost" data-cal-notif>Allow</button></div>` : ''}
+    <div class="set-row"><div class="set-ic" style="background:#ff3b30">${gi('alarm')}</div><div class="lbl"><b>Ring inside Jarvis</b><small>Full-screen alarm with sound when it's open</small></div><label class="switch"><input type="checkbox" data-cal-set="ringInApp" ${st.ringInApp?'checked':''}><span></span></label></div>
+    <div class="set-row"><div class="set-ic" style="background:#5e5ce6">${gi('play')}</div><div class="lbl"><b>Test the alarm sound</b><small>Turn your volume up</small></div><button class="cal-btn sm ghost" data-cal-test="sound">Play</button></div>
+    <div class="set-row"><div class="set-ic" style="background:#3a3a8c">${gi('moon')}</div><div class="lbl"><b>Nightstand mode</b><small>Keeps the screen on so Jarvis can wake you</small></div><button class="cal-btn sm ghost" data-cal-night>Start</button></div>
+    ${perm === 'default' ? `<div class="set-row"><div class="set-ic" style="background:#ff9500">${gi('bell')}</div><div class="lbl"><b>Pop-up alerts</b><small>${isIOS && !standalone ? 'Works after you add Jarvis to your Home Screen' : 'Shows a banner while Jarvis is open'}</small></div><button class="cal-btn sm ghost" data-cal-notif>Allow</button></div>` : ''}
   </div>`;
   return h;
 }
@@ -1014,9 +1023,9 @@ J.css(`
 .cal-blk{border:1px solid var(--card-border,var(--line));border-radius:16px;margin:10px 0;background:var(--fill,var(--bg2));overflow:hidden}
 .cal-blk>summary{list-style:none;display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;font-weight:700;font-size:14.5px;min-height:48px}
 .cal-blk>summary::-webkit-details-marker{display:none}
-.cal-blk>summary .tg{margin-left:auto;font-size:11px;font-weight:800;padding:3px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+.cal-blk>summary .tg{margin-left:auto;font-size:11px;font-weight:800;padding:3px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent-ink);white-space:nowrap}
 .cal-blk>summary .tg.opt{background:var(--line);color:var(--muted)}
-.cal-blk>summary .tg.ok{background:rgba(34,197,94,.14);color:var(--good)}
+.cal-blk>summary .tg.ok{background:rgba(34,197,94,.14);color:var(--good-ink)}
 .cal-blk>summary::after{content:"";width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);margin:-4px 2px 0 4px;transition:transform .2s var(--ease);flex:none}
 .cal-blk[open]>summary::after{transform:rotate(-135deg);margin-top:4px}
 .cal-blk>summary .e{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;flex:none;color:#fff;font-size:16px}
@@ -1047,7 +1056,7 @@ function syncRecipeHTML(){
       ${extra ? stepHTML(2, extra) : ''}
       ${textHdr(extra ? 3 : 2, k, 'Health Samples')}
       ${addVar(extra ? 4 : 3)}</div></details>`;
-  let h = `<div class="card cal-part" id="cal-step-cal"><div class="cal-part-h"><div class="ic" style="background:rgba(244,63,94,.15)">🔄</div><div><b>3 · Connect your iPhone</b><small>Calendar, Health and alarms · one time · 5 to 10 minutes</small></div></div>
+  let h = `<div class="card cal-part" id="cal-step-cal"><div class="cal-part-h"><div class="ic" style="background:rgba(244,63,94,.15);color:#f43f5e">${hi('sync')}</div><div><b>3 · Connect your iPhone</b><small>Calendar, Health and alarms · one time · 5 to 10 minutes</small></div></div>
     <p>You add a few small blocks to the shortcut your <b>Action Button</b> runs. Each block collects one thing (your calendar, steps, sleep…) and adds it to a list called <b>Jarvis</b>. The last block opens Jarvis with that list. Do the blocks you want and skip the others.</p>
     <p><b>Did the calendar steps before?</b> They keep working as they are. To add Health, do the blocks below and swap your last two actions for the <b>Send to Jarvis</b> block.</p>
     <details class="cal-blk" open><summary>${bi('gear','#8e8e93')}Start: open your shortcut</summary><div class="in">
@@ -1087,7 +1096,7 @@ function syncRecipeHTML(){
     <details class="cal-blk" id="cal-blk-alarms"><summary>${bi('clock','#ff9500')}Alarms in your Clock app${tag('alarms') || '<span class="tg opt">Optional</span>'}</summary><div class="in">
       <p>Lets you ask “what alarms are on my iPhone?”. Needs iOS 17 or newer.</p>
       ${stepHTML(1, 'Search and add <b>Get All Alarms</b> (orange Clock icon).' + copyRow('Get All Alarms'))}
-      ${stepHTML(2, 'Add <b>Repeat with Each</b>, and a <b>Text</b> inside it. Tap <b>Repeat Item</b>, tap the bubble, choose <b>Label</b> (or <b>Name</b>). Paste <code>|</code>, add <b>Repeat Item</b> again and choose <b>Time</b>. If the list also shows <b>Is Enabled</b>, add <code>|</code> and that too.' + copyRow('|', '|  (the line character)'))}
+      ${stepHTML(2, 'Add <b>Repeat with Each</b>, and a <b>Text</b> inside it. Tap <b>Repeat Item</b>, tap the bubble, choose <b>Name</b> (the alarm’s label). Paste <code>|</code>, add <b>Repeat Item</b> again and choose <b>Time</b>. If the list also offers <b>Is Enabled</b> (or <b>Enabled</b>), add <code>|</code> and that too; if not, skip it.' + copyRow('|', '|  (the line character)'))}
       ${stepHTML(3, 'If tapping the <b>Time</b> bubble shows <b>Date Format</b>, set it to <b>None</b> and <b>Time Format</b> to <b>Short</b>.')}
       ${stepHTML(4, 'Under <b>End Repeat</b>: <b>Combine Text</b> with <b>New Lines</b>, then <b>Text</b> with this and the <b>Combined Text</b> bubble:' + hdr('alarms'))}
       ${addVar(5)}</div></details>
@@ -1101,47 +1110,47 @@ function syncRecipeHTML(){
     <div class="cal-acts"><a class="cal-btn" href="${esc(syncLink())}">Test it: run my shortcut</a><span style="color:var(--muted);font-size:12.5px;align-self:center">${st.syncedAt || (H && H.syncedAt) ? 'Last synced ' + esc(sinceText(Math.max(st.syncedAt || 0, (H && H.syncedAt) || 0))) : 'Not synced yet'}</span></div>`;
   // what arrived last time
   if (last){
-    const rows = [['calendar','📅','Calendar', g => `${plural(g.n,'event')}`], ['steps','👟','Steps', g => J.health && g.v != null ? Number(g.v).toLocaleString('en-US') : ''], ['energy','🔥','Active energy', g => g.v + ' kcal'], ['heart','❤️','Resting heart rate', g => g.v + ' bpm'], ['weight','⚖️','Weight', g => g.unit === 'lb' ? (g.v/0.45359237).toFixed(1) + ' lb' : g.v + ' kg'], ['sleep','😴','Sleep', g => g.none ? 'nothing for last night' : `${Math.floor(g.v/60)}h ${String(Math.round(g.v)%60).padStart(2,'0')}m`], ['workouts','🏃','Workouts', g => `${g.n} today`], ['alarms','⏰','Clock alarms', g => plural(g.n,'alarm')]];
+    const rows = [['calendar','cal','Calendar', g => `${plural(g.n,'event')}`], ['steps','steps','Steps', g => J.health && g.v != null ? Number(g.v).toLocaleString('en-US') : ''], ['energy','flame','Active energy', g => g.v + ' kcal'], ['heart','heart','Resting heart rate', g => g.v + ' bpm'], ['weight','scale','Weight', g => g.unit === 'lb' ? (g.v/0.45359237).toFixed(1) + ' lb' : g.v + ' kg'], ['sleep','moon','Sleep', g => g.none ? 'nothing for last night' : `${Math.floor(g.v/60)}h ${String(Math.round(g.v)%60).padStart(2,'0')}m`], ['workouts','run','Workouts', g => `${g.n} today`], ['alarms','alarm','Clock alarms', g => plural(g.n,'alarm')]];
     const why = g => g.why === 'unreadable dates' ? 'dates unreadable: use ISO 8601' : g.why === 'empty' ? 'sent, but empty' : g.why === 'unreadable' ? 'could not read it' : g.why || 'could not read it';
     h += `<div class="section-h" style="margin-top:16px"><h3>What arrived last time</h3><span style="color:var(--muted);font-size:12.5px">${esc(sinceText(last.at))}${last.size ? ` · ${(last.size/1024).toFixed(1)} KB` : ''}</span></div><div class="cal-diag">` +
-      rows.map(([k, e, l, f]) => { const g = got[k]; return `<div><i>${g ? (g.ok ? '✅' : '⚠️') : '·'}</i><b>${e} ${l}</b><span>${g ? (g.ok ? esc(f(g)) : esc(why(g))) : 'not sent'}</span></div>`; }).join('') + `</div>`;
+      rows.map(([k, e, l, f]) => { const g = got[k]; return `<div><i class="${g ? (g.ok ? 'ok' : 'bad') : ''}">${g ? (g.ok ? gi('check') : gi('info')) : '·'}</i><b><span class="cal-di">${hi(e)}</span>${l}</b><span>${g ? (g.ok ? esc(f(g)) : esc(why(g))) : 'not sent'}</span></div>`; }).join('') + `</div>`;
     if (last.size > 8000) h += `<p style="margin-top:8px">That link is long. If syncing gets slow, change the calendar filter from 7 days to 3.</p>`;
     if (last.empty) h += `<p style="margin-top:8px">Jarvis opened, but nothing came with it. Check that <b>Open URLs</b> ends with the <b>URL Encoded Text</b> bubble.</p>`;
   }
   h += `</div>`;
   // automatic: when the shortcut runs by itself
-  h += `<div class="card cal-part" id="cal-step-auto"><div class="cal-part-h"><div class="ic" style="background:rgba(34,197,94,.15)">⚡</div><div><b>4 · Make it automatic</b><small>Optional · one minute</small></div></div>
+  h += `<div class="card cal-part" id="cal-step-auto"><div class="cal-part-h"><div class="ic" style="background:rgba(34,197,94,.15);color:#16a34a">${gi('bolt')}</div><div><b>4 · Make it automatic</b><small>Optional · one minute</small></div></div>
     <p>iPhone can run your shortcut for you, so Jarvis is up to date without pressing anything.</p>
     ${stepHTML(1, 'In <b>Shortcuts</b>, open the <b>Automation</b> tab and tap <b>+</b> (or <b>New Automation</b>).')}
     ${stepHTML(2, 'Pick <b>Alarm</b> → <b>Is Stopped</b> → your wake-up alarm (or <b>Any</b>). Choose <b>Run Immediately</b>, tap <b>Next</b>, and pick your shortcut. Now stopping your morning alarm opens Jarvis with last night\'s sleep and today\'s calendar.')}
     ${stepHTML(3, 'Want more? Add another automation with <b>Time of Day</b> (for example 1:00 PM and 7:00 PM, <b>Daily</b>, <b>Run Immediately</b>).')}
     <div class="cal-truth" style="margin-top:10px">
-      <i>✅</i><span><b>Automatic:</b> every time the shortcut runs, from the Action Button or an automation.</span>
-      <i>ℹ️</i><span><b>Not automatic:</b> Jarvis can't read Health, Clock or Calendar in the background. Between runs it shows the last numbers, with the time they came in.</span>
-      <i>🔒</i><span>If your iPhone is locked, it may ask you to unlock first. Don't use <b>App → Safari</b> as the trigger: it would open Jarvis again and again.</span>
+      <i class="ok">${gi('check')}</i><span><b>Automatic:</b> every time the shortcut runs, from the Action Button or an automation.</span>
+      <i>${gi('info')}</i><span><b>Not automatic:</b> Jarvis can't read Health, Clock or Calendar in the background. Between runs it shows the last numbers, with the time they came in.</span>
+      <i>${gi('lock')}</i><span>If your iPhone is locked, it may ask you to unlock first. Don't use <b>App → Safari</b> as the trigger: it would open Jarvis again and again.</span>
     </div></div>`;
   return h;
 }
 function connectHTML(){
   let h = '';
-  if (isIOS && standalone) h += `<div class="card cal-part cal-where warn"><div class="cal-part-h"><div class="ic">⚠️</div><div><b>You opened Jarvis from its Home Screen icon</b><small>Read this first</small></div></div>
+  if (isIOS && standalone) h += `<div class="card cal-part cal-where warn"><div class="cal-part-h"><div class="ic" style="color:#d97706">${gi('info')}</div><div><b>You opened Jarvis from its Home Screen icon</b><small>Read this first</small></div></div>
     <p>On iPhone, the Home Screen icon and Safari keep <b>separate</b> copies of Jarvis. Your Action Button opens Jarvis in <b>Safari</b>, so calendar sync (step 3) arrives there, not here.</p>
     <p><b>Simplest:</b> open Jarvis with the <b>Action Button</b> every time and don't use this icon. Reminders you set here stay here.</p></div>`;
-  else if (isIOS) h += `<div class="card cal-part cal-where"><div class="cal-part-h"><div class="ic">👍</div><div><b>You're in the right place</b><small>Jarvis in Safari, opened by your Action Button</small></div></div>
+  else if (isIOS) h += `<div class="card cal-part cal-where"><div class="cal-part-h"><div class="ic" style="color:#16a34a">${gi('check')}</div><div><b>You're in the right place</b><small>Jarvis in Safari, opened by your Action Button</small></div></div>
     <p>Keep opening Jarvis with the <b>Action Button</b>. A Jarvis icon on the Home Screen would keep a separate copy of your data.</p></div>`;
-  h += `<div class="card cal-part"><div class="cal-part-h"><div class="ic" style="background:rgba(34,197,94,.15)">✅</div><div><b>What rings when Jarvis is closed</b><small>Honest answers</small></div></div>
+  h += `<div class="card cal-part"><div class="cal-part-h"><div class="ic" style="background:rgba(34,197,94,.15);color:#16a34a">${gi('check')}</div><div><b>What rings when Jarvis is closed</b><small>Honest answers</small></div></div>
     <div class="cal-truth" style="margin-top:10px">
-      <i>📅</i><span><b>Calendar alert: yes.</b> Your iPhone shows it and plays the alert sound. It stays quiet if the side switch is on silent or a Focus is on.</span>
-      <i>⏰</i><span><b>iPhone alarm: yes, even on silent.</b> A real Clock alarm. Best for waking up. Needs the shortcut below, once.</span>
-      <i>🚨</i><span><b>Jarvis's own alarm: only while Jarvis is open</b> on screen. Use Nightstand mode at night.</span>
+      <i>${gi('cal')}</i><span><b>Calendar alert: yes.</b> Your iPhone shows it and plays the alert sound. It stays quiet if the side switch is on silent or a Focus is on.</span>
+      <i>${gi('alarm')}</i><span><b>iPhone alarm: yes, even on silent.</b> A real Clock alarm. Best for waking up. Needs the shortcut below, once.</span>
+      <i>${gi('bell')}</i><span><b>Jarvis's own alarm: only while Jarvis is open</b> on screen. Use Nightstand mode at night.</span>
     </div></div>`;
   // Part 1
-  h += `<div class="card cal-part" id="cal-step-ics"><div class="cal-part-h"><div class="ic" style="background:rgba(109,93,252,.15)">📅</div><div><b>1 · Calendar alerts</b><small>No setup needed</small></div></div>
+  h += `<div class="card cal-part" id="cal-step-ics"><div class="cal-part-h"><div class="ic" style="background:rgba(109,93,252,.15);color:#6d5dfc">${gi('cal')}</div><div><b>1 · Calendar alerts</b><small>No setup needed</small></div></div>
     <p>After every reminder, Jarvis offers <b>Add to Calendar</b>. ${isIOS && !icsRoute.ok && navigator.canShare ? 'Tap it. In the menu that opens, tap <b>Calendar</b> if you see it. If not, tap <b>Save to Files</b>, open the <b>Files</b> app, tap the file, then tap <b>Add</b>.' : 'Tap it, then tap <b>Add</b> (or <b>Add All</b>) on the iPhone screen that appears.'}</p>
     <div class="cal-acts"><a class="cal-btn" data-cal-test="ics" href="#">Test it: alert in 2 minutes</a></div>
     <p style="margin-top:10px">No alert sound? On your iPhone open <b>Settings → Sounds & Haptics → Calendar Alerts</b> and pick a sound.</p></div>`;
   // Part 2
-  h += `<div class="card cal-part" id="cal-step-alarm"><div class="cal-part-h"><div class="ic" style="background:rgba(249,115,22,.15)">⏰</div><div><b>2 · Real iPhone alarms</b><small>Optional · one time · about 2 minutes · iOS 17 or newer</small></div></div>
+  h += `<div class="card cal-part" id="cal-step-alarm"><div class="cal-part-h"><div class="ic" style="background:rgba(249,115,22,.15);color:#ea580c">${gi('alarm')}</div><div><b>2 · Real iPhone alarms</b><small>Optional · one time · about 2 minutes · iOS 17 or newer</small></div></div>
     <p>This makes a shortcut that Jarvis can ask to set a Clock alarm.</p>
     ${stepHTML(1, 'Open the <b>Shortcuts</b> app. On the <b>Shortcuts</b> tab, tap <b>+</b> at the top right.')}
     ${stepHTML(2, 'Tap <b>New Shortcut</b> at the top, tap <b>Rename</b>, paste this name, and tap <b>Done</b> on the keyboard:' + copyRow(st.alarmName))}
@@ -1157,8 +1166,8 @@ function connectHTML(){
   h += syncRecipeHTML();
   // settings
   h += `<div class="section-h"><h3>Preferences</h3></div><div class="set-group">
-    <div class="set-row"><div class="set-ic" style="background:rgba(109,93,252,.15)">📲</div><div class="lbl"><b>After a new reminder</b><small>Show “Make it ring on your iPhone”</small></div><label class="switch"><input type="checkbox" data-cal-set="sheetAfter" ${st.sheetAfter?'checked':''}><span></span></label></div>
-    <div class="set-row"><div class="set-ic" style="background:rgba(249,115,22,.15)">⭐</div><div class="lbl"><b>Button shown first</b><small>Wake-up alarms always offer the iPhone alarm first</small></div><select data-cal-pref><option value="calendar" ${st.pref!=='alarm'?'selected':''}>Calendar alert</option><option value="alarm" ${st.pref==='alarm'?'selected':''} ${st.alarmReady?'':'disabled'}>iPhone alarm</option></select></div>
+    <div class="set-row"><div class="set-ic" style="background:rgba(109,93,252,.15);color:#6d5dfc">${gi('phone')}</div><div class="lbl"><b>After a new reminder</b><small>Show “Make it ring on your iPhone”</small></div><label class="switch"><input type="checkbox" data-cal-set="sheetAfter" ${st.sheetAfter?'checked':''}><span></span></label></div>
+    <div class="set-row"><div class="set-ic" style="background:rgba(249,115,22,.15);color:#ea580c">${gi('spark')}</div><div class="lbl"><b>Button shown first</b><small>Wake-up alarms always offer the iPhone alarm first</small></div><select data-cal-pref><option value="calendar" ${st.pref!=='alarm'?'selected':''}>Calendar alert</option><option value="alarm" ${st.pref==='alarm'?'selected':''} ${st.alarmReady?'':'disabled'}>iPhone alarm</option></select></div>
   </div>`;
   return h;
 }
@@ -1228,7 +1237,7 @@ J.addHomeCard({id:'calendar', order:38, render(el){
       const today = eventsBetween(t0, addDays(t0,1)).filter(e=>e.end > now).length;
       html = `<div class="section-h"><h3>Calendar</h3><button class="link" data-go="calendar">Agenda</button></div><div class="card cal-home" role="button" tabindex="0"><div class="ic">📅</div><div class="bd"><small>${nx.start <= now ? 'Now' : 'Next'} · ${esc(dayLabel(nx.start))} ${esc(tfmt(nx.start))}${today > 1 ? ` · ${today} today` : ''}</small><b>${esc(nx.title)}</b></div><div class="cd">${nx.start <= now ? 'now' : esc(until(nx.start))}</div></div>`;
     } else if (!st.syncedAt && st.homeTip){
-      html = `<div class="card cal-home" role="button" tabindex="0" style="margin-top:16px"><div class="ic">🔔</div><div class="bd"><small>Never miss a reminder</small><b>Make reminders ring on your iPhone</b></div><button class="x" data-cal-x aria-label="Hide this tip">✕</button></div>`;
+      html = `<div class="card cal-home" role="button" tabindex="0" style="margin-top:16px"><div class="ic">${gi('bell')}</div><div class="bd"><small>Never miss a reminder</small><b>Make reminders ring on your iPhone</b></div><button class="x" data-cal-x aria-label="Hide this tip">${gi('close')}</button></div>`;
     }
     if (el._calSig !== html){ el._calSig = html; el.innerHTML = html; }
   } catch(e){ console.error('calendar home', e); }

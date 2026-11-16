@@ -354,15 +354,15 @@ function applyPayload(raw){
 }
 function syncMessage(last){
   if (!last) return '';
-  if (last.empty) return "📲 Jarvis opened from your Shortcut, but nothing came with it. Check the setup steps.";
+  if (last.empty) return "Jarvis opened from your Shortcut, but nothing came with it. Check the setup steps.";
   const g = last.got, bits = [];
-  if (g.calendar && g.calendar.ok) bits.push(`📅 ${plural(g.calendar.n, 'event')}`);
-  if (g.steps && g.steps.ok) bits.push(`👟 ${N0.format(g.steps.v)} steps`);
-  if (g.sleep && g.sleep.ok && !g.sleep.none) bits.push(`😴 ${hm(g.sleep.v)} sleep`);
-  if (g.heart && g.heart.ok) bits.push(`❤️ ${g.heart.v} bpm`);
-  if (g.alarms && g.alarms.ok) bits.push(`⏰ ${plural(g.alarms.n, 'alarm')}`);
+  if (g.calendar && g.calendar.ok) bits.push(`${plural(g.calendar.n, 'event')}`);
+  if (g.steps && g.steps.ok) bits.push(`${N0.format(g.steps.v)} steps`);
+  if (g.sleep && g.sleep.ok && !g.sleep.none) bits.push(`${hm(g.sleep.v)} sleep`);
+  if (g.heart && g.heart.ok) bits.push(`${g.heart.v} bpm resting`);
+  if (g.alarms && g.alarms.ok) bits.push(`${plural(g.alarms.n, 'alarm')}`);
   const bad = Object.keys(g).filter(k => !g[k].ok).length;
-  if (!bits.length) return bad ? '📲 Synced, but I could not read it. Open Health → Check the last sync.' : '📲 Synced from your iPhone';
+  if (!bits.length) return bad ? 'Synced, but I could not read it. Open Health → Check the last sync.' : 'Synced from your iPhone';
   return 'Synced · ' + bits.slice(0, 3).join(' · ') + (bad ? ' · one part was unreadable' : '');
 }
 let pendingMsg = '';
@@ -519,12 +519,13 @@ J.addIntent((said, t)=>{
     if (/^(?:connect|link|set ?up|hook up|sync)(?: my| the| to)? (?:apple )?(?:health|iphone health|health app|steps|sleep|apple watch|watch|fitness)\b/.test(s)){ openConnect(); return st.syncedAt ? 'Here are the shortcut steps. To sync now, press your Action Button, or tap Sync now on the Health screen.' : 'Here is how to connect your iPhone Health. It takes about 5 minutes, once. Each step has a copy button.'; }
     if (/^(?:sync|refresh|update)(?: my| the)? (?:iphone|phone|data|everything|health data|stats)$/.test(s)){ J.go('health'); return st.syncedAt ? `Last sync was ${agoSay(st.syncedAt)}. Press your Action Button, or tap Sync now, and I'll update everything.` : notConnected(); }
     // steps
+    if (/^(?:my )?(?:steps|step count)(?: today| so far)?$/.test(s)) return stepsAnswer();
     if (/\bsteps?\b/.test(s) && /\b(?:how many|how much|number of|count|my steps|steps (?:today|so far|did i|have i)|did i (?:do|take|get|make|hit|reach)|have i (?:done|taken|hit|reached|got)|step count|steps? goal|today'?s steps|walked)\b/.test(s) && !/\b(?:goal (?:to|is)|change|habit)\b/.test(s)) return stepsAnswer();
     if (/^(?:how (?:much|far) (?:have|did) i (?:walk|walked|gone|go)|how (?:much|far) i (?:walked|have walked))(?: today| so far)?$/.test(s)) return /far/.test(s) ? distanceAnswer() : stepsAnswer();
     // sleep
     if (/^(?:what time|when) did i (?:go to (?:bed|sleep)|fall asleep|sleep)(?: last night)?$/.test(s)) return sleepAnswer('bed');
     if (/^(?:what time|when) did i (?:wake up|get up|wake)(?: today| this morning)?$/.test(s)) return sleepAnswer('wake');
-    if (/^(?:how (?:did|have) i (?:sleep|slept|been sleeping)|how (?:long|much|many hours)(?: of sleep)? (?:did|have) i (?:sleep|slept|get|got)|how (?:was|is) my sleep|how well did i sleep|did i (?:sleep|get) (?:well|enough|ok|okay|good)(?: sleep)?|(?:what'?s|what is|show|show me|check)? ?my sleep(?: last night| score| data| stats)?|sleep (?:last night|data|stats|report)|how many hours (?:did i|have i) slept|how much sleep did i get)\b/.test(s)) return sleepAnswer();
+    if (/^(?:how (?:did|have) i (?:sleep|slept|been sleeping)|how (?:long|much|many hours)(?: of sleep)? (?:did|have) i (?:sleep|slept|get|got)|how (?:was|is) my sleep|how well did i sleep|did i (?:sleep|get) (?:well|enough|ok|okay|good)(?: sleep)?|(?:what'?s|what is|show|show me|check)? ?my sleep(?: last night| score| data| stats)?|sleep (?:last night|data|stats|report)|how many hours (?:did i|have i) slept|how much sleep did i get|how am i sleeping|how(?:'s| is| has) my sleep(?: been)?)\b/.test(s) && /\b(?:sleep|slept|sleeping|asleep|bed)\b/.test(s)) return sleepAnswer();
     // heart
     if (/\bmy (?:resting |current |latest )?(?:heart ?rate|pulse|bpm|resting heart)\b|^(?:what'?s |what is |how'?s |how is )?(?:the |my )?resting heart ?rate\b|^(?:heart ?rate|pulse|bpm|resting heart rate)(?: today| now| please)?$/.test(s) && !/\b(?:should|normal|healthy|good|average|ideal|for (?:a|an|men|women))\b/.test(s)) return heartAnswer();
     // weight
@@ -588,8 +589,8 @@ J.css(`
 .hl-v{font-size:28px;font-weight:750;letter-spacing:-.035em;line-height:1.1;margin-top:10px;font-variant-numeric:tabular-nums}
 .hl-v small{font-size:14px;font-weight:700;color:var(--muted);letter-spacing:0;margin-left:3px}
 .hl-s{font-size:12.5px;color:var(--muted);margin-top:4px;line-height:1.35}
-.hl-s.good{color:var(--good)}.hl-s.warn{color:var(--warn)}
-.hl-miss{font-size:13px;color:var(--faint);margin-top:12px;line-height:1.35}
+.hl-s.good{color:var(--good-ink)}.hl-s.warn{color:var(--warn-ink)}
+.hl-miss{font-size:13px;color:var(--faint-ink);margin-top:12px;line-height:1.35}
 .hl-steps{display:flex;gap:16px;align-items:center}
 .hl-ring{position:relative;width:96px;height:96px;flex:none}
 .hl-ring svg{width:96px;height:96px;transform:rotate(-90deg)}
@@ -599,7 +600,7 @@ J.css(`
 .hl-bars span{display:block;width:100%;max-width:26px;border-radius:6px 6px 3px 3px;background:var(--line);min-height:4px}
 .hl-bars span.on{background:linear-gradient(180deg,var(--c1),var(--c2))}
 .hl-bars span.goal{box-shadow:0 0 0 2px color-mix(in srgb,var(--good) 45%,transparent)}
-.hl-bars em{font-style:normal;font-size:10.5px;font-weight:700;color:var(--faint)}
+.hl-bars em{font-style:normal;font-size:10.5px;font-weight:700;color:var(--faint-ink)}
 .hl-bars div.today em{color:var(--text)}
 .hl-stage{display:flex;height:10px;border-radius:999px;overflow:hidden;margin-top:12px;background:var(--line)}
 .hl-stage i{display:block;height:100%}
@@ -610,13 +611,13 @@ J.css(`
 .hl-row:first-of-type{border-top:0}
 .hl-row .bd{flex:1;min-width:0}.hl-row .bd b{display:block;font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.hl-row .bd small{color:var(--muted);font-size:12.5px}
 .hl-row .tm{font-weight:800;font-size:17px;font-variant-numeric:tabular-nums;white-space:nowrap}
-.hl-row .tm.off{color:var(--faint);text-decoration:line-through;text-decoration-thickness:1.5px}
+.hl-row .tm.off{color:var(--faint-ink);text-decoration:line-through;text-decoration-thickness:1.5px}
 .hl-empty{text-align:center;padding:26px 18px}
 .hl-empty .big{width:68px;height:68px;margin:0 auto 12px;border-radius:22px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,#fb7185,#e11d48);box-shadow:0 14px 30px rgba(225,29,72,.3)}
 .hl-empty .big svg{width:34px;height:34px}
 .hl-empty h3{margin:0 0 6px;font-size:19px;letter-spacing:-.3px}.hl-empty p{margin:0 0 14px;color:var(--muted);font-size:14px}
 .hl-list{margin:12px 0 0;padding:0;list-style:none;display:grid;gap:8px;text-align:left;font-size:13.5px}
-.hl-list li{display:flex;gap:10px;align-items:flex-start}.hl-list li i{font-style:normal;flex:none}
+.hl-list li{display:flex;gap:10px;align-items:flex-start}.hl-list li i{font-style:normal;flex:none;color:var(--muted);margin-top:1px}.hl-list li i.ok{color:var(--good-ink)}.hl-list li i svg{width:18px;height:18px;display:block}
 .hl-note{font-size:12.5px;color:var(--muted);line-height:1.45;margin:14px 4px 0}
 .hl-set input{width:110px;font-size:16px!important}
 .hl-today{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px;cursor:pointer}
@@ -624,14 +625,14 @@ J.css(`
 .hl-today small{display:flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;color:var(--muted);white-space:nowrap;overflow:hidden}
 .hl-today small svg{width:13px;height:13px;flex:none}
 .hl-today b{display:block;font-size:21px;font-weight:750;letter-spacing:-.03em;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
-.hl-today b.na{color:var(--faint);font-weight:700}
+.hl-today b.na{color:var(--faint-ink);font-weight:700}
 .hl-today b .u{font-style:normal;font-size:12px;font-weight:700;color:var(--muted);margin-left:3px;letter-spacing:0}
 .hl-today span{display:block;font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hl-tip{display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer}
 .hl-tip .ic{width:40px;height:40px;border-radius:13px;display:grid;place-items:center;flex:none;color:#fff;background:linear-gradient(135deg,#fb7185,#e11d48)}
 .hl-tip .ic svg{width:21px;height:21px}
 .hl-tip .bd{flex:1;min-width:0}.hl-tip .bd small{display:block;color:var(--muted);font-size:12.5px}.hl-tip .bd b{display:block;font-size:14.5px}
-.hl-tip .x{border:0;background:none;color:var(--faint);font-size:16px;padding:8px;cursor:pointer;min-width:40px;min-height:40px}
+.hl-tip .x{border:0;background:none;color:var(--faint-ink);font-size:16px;padding:0;cursor:pointer;width:44px;height:44px;display:grid;place-items:center;flex:none}.hl-tip .x svg{width:17px;height:17px}
 @media (max-width:370px){.hl-v{font-size:25px}.hl-ring,.hl-ring svg{width:84px;height:84px}.hl-today b{font-size:17px}}
 `);
 const C = {steps: ['#34d399', '#10b981'], sleep: ['#818cf8', '#6366f1'], heart: ['#fb7185', '#e11d48'], weight: ['#38bdf8', '#0ea5e9'], energy: ['#fb923c', '#f43f5e'], run: ['#a3e635', '#22c55e'], alarm: ['#fbbf24', '#f97316']};
@@ -655,9 +656,9 @@ function viewHTML(){
     return h + `<div class="card hl-empty"><div class="big">${IC.heart}</div><h3>Bring your iPhone Health into Jarvis</h3>
       <p>Steps, sleep, resting heart rate, weight and workouts, plus your Clock alarms and calendar, every time you press your Action Button.</p>
       <button class="hl-btn" data-hl-connect>Show me how · 5 minutes</button>
-      <ul class="hl-list"><li><i>✅</i><span><b>Automatic</b> each time your shortcut runs: the Action Button, or an automation like “when my alarm stops”.</span></li>
-      <li><i>ℹ️</i><span><b>Not in the background.</b> A web app can't read Health by itself, so Jarvis shows what the shortcut last sent, with the time.</span></li>
-      <li><i>🔒</i><span>It stays on this phone. Nothing is uploaded.</span></li></ul></div>`;
+      <ul class="hl-list"><li><i class="ok">${(J.icons && J.icons.done) || ''}</i><span><b>Automatic</b> each time your shortcut runs: the Action Button, or an automation like “when my alarm stops”.</span></li>
+      <li><i>${(J.icons && J.icons.info) || ''}</i><span><b>Not in the background.</b> A web app can't read Health by itself, so Jarvis shows what the shortcut last sent, with the time.</span></li>
+      <li><i>${(J.icons && J.icons.lock) || ''}</i><span>It stays on this phone. Nothing is uploaded.</span></li></ul></div>`;
   }
   const age = Date.now() - st.syncedAt, dot = age < 6*HOUR ? '' : age < 26*HOUR ? 'warn' : 'off';
   h += `<div class="card hl-sync"><span class="hl-dot ${dot}"></span><div class="lbl"><b>Synced ${esc(agoShort(st.syncedAt))}</b><small>${age < 6*HOUR ? 'From your Action Button shortcut' : 'Press your Action Button to update'}</small></div><a class="hl-btn" href="${esc(shortcutLink())}">${IC.sync}Sync now</a></div>`;
@@ -716,7 +717,7 @@ function viewHTML(){
   // settings
   h += `<div class="section-h"><h3>Settings</h3></div><div class="set-group hl-set">
     <div class="set-row"><div class="lbl"><b>Daily step goal</b><small>Used for the ring and your answers</small></div><input type="number" inputmode="numeric" min="1000" max="50000" step="500" value="${st.goal}" data-hl-goal aria-label="Daily step goal"></div>
-    <div class="set-row"><div class="lbl"><b>Health tile on Home</b><small>Auto shows sleep in the morning, then steps</small></div><select data-hl-tile aria-label="Health tile on Home">${[['auto','Auto'],['steps','Steps'],['sleep','Sleep'],['off','Off']].map(([k,l])=>`<option value="${k}" ${st.tile===k?'selected':''}>${l}</option>`).join('')}</select></div>
+    <div class="set-row"><div class="lbl"><b>Health tile on Home</b><small>Auto: last night’s sleep in the morning, steps when there’s room. Steps or Sleep: always.</small></div><select data-hl-tile aria-label="Health tile on Home">${[['auto','Auto'],['steps','Steps'],['sleep','Sleep'],['off','Off']].map(([k,l])=>`<option value="${k}" ${st.tile===k?'selected':''}>${l}</option>`).join('')}</select></div>
     <div class="set-row"><div class="lbl"><b>Shortcut steps</b><small>Add or check parts of the iPhone shortcut</small></div><button class="hl-btn ghost" data-hl-connect>Open</button></div>
   </div>`;
   h += `<p class="hl-note">Jarvis can't read Health in the background. These numbers come from your shortcut each time it runs: your Action Button, or an automation. Everything stays on this phone.</p>`;
@@ -761,7 +762,7 @@ J.addHomeCard({id: 'health', order: 25, render(el){
         ${cell('heart', 'heart', 'Resting', st.heart ? st.heart.v + '<em class="u">bpm</em>' : '', `Synced ${esc(agoShort(st.syncedAt))}`)}
         </div>`;
     } else if (!st.tipHidden){
-      html = `<div class="card hl-tip" data-hl-tipgo role="button" tabindex="0" style="margin-top:16px"><div class="ic">${IC.heart}</div><div class="bd"><small>iPhone Health</small><b>See your steps and sleep here</b></div><button class="x" data-hl-x aria-label="Hide this tip">✕</button></div>`;
+      html = `<div class="card hl-tip" data-hl-tipgo role="button" tabindex="0" style="margin-top:16px"><div class="ic">${IC.heart}</div><div class="bd"><small>iPhone Health</small><b>See your steps and sleep here</b></div><button class="x" data-hl-x aria-label="Hide this tip">${(J.icons && J.icons.close) || '×'}</button></div>`;
     }
     if (el._hlSig !== html){ el._hlSig = html; el.innerHTML = html; }
   } catch(e){ console.error('health card', e); }

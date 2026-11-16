@@ -754,7 +754,7 @@
       <div class="card stat"><div class="label">This month</div><div class="val">${esc(J.fmt(Math.round(mTot*100)/100))}</div><div class="delta" style="color:var(--muted)">${month.length} receipt${month.length === 1 ? '' : 's'}</div></div>
       <div class="card stat"><div class="label">Top store</div><div class="val rcpt-ell" style="font-size:18px;margin-top:7px">${top ? esc(top[0]) : '—'}</div><div class="delta" style="color:var(--muted)">${top ? esc(J.fmt(Math.round(top[1]*100)/100)) + ' this month' : 'No receipts yet'}</div></div></div>`;
     if (!list.length){
-      out += `<div class="section-h"><h3>Your receipts</h3></div><div class="empty rcpt-empty"><div class="e-ic">🧾</div><b style="color:var(--text)">No receipts yet</b><br>Tap <b>Scan a receipt</b> or say “Scan a receipt”.<br><span style="font-size:12.5px">Everything is read on your phone. Nothing is uploaded.</span></div>`;
+      out += `<div class="section-h"><h3>Your receipts</h3></div><div class="empty rcpt-empty"><div class="e-ic">${(J.icons && J.icons.receipt) || '🧾'}</div><b style="color:var(--text)">No receipts yet</b><br>Tap <b>Scan a receipt</b> or say “Scan a receipt”.<br><span style="font-size:12.5px">Everything is read on your phone. Nothing is uploaded.</span></div>`;
       return out;
     }
     const groups = []; const idx = {};
@@ -838,7 +838,7 @@
     const a = draftAmount(d);
     if (out) out.innerHTML = a.amount != null ? (a.conv ? `Saved in your budget as <b>${esc(J.fmt(a.amount))}</b>` : `Saved as <b>${esc(money(a.total, d.currency))}</b> (no conversion)`) : '';
     const isum = viewEl.querySelector('.rcpt-isum');
-    if (isum){ const s = Math.round(d.items.reduce((t,x)=>t + (+x.p || 0), 0)*100)/100; isum.innerHTML = d.items.length ? `Add up to ${esc(money(s, d.currency))}${a.total != null && near(s, a.total) ? ' <span style="color:var(--good)">✓ matches total</span>' : d.subtotal != null && near(s, d.subtotal) ? ' <span style="color:var(--good)">✓ matches subtotal</span>' : ''}` : ''; }
+    if (isum){ const s = Math.round(d.items.reduce((t,x)=>t + (+x.p || 0), 0)*100)/100; isum.innerHTML = d.items.length ? `Add up to ${esc(money(s, d.currency))}${a.total != null && near(s, a.total) ? ' <span style="color:var(--good-ink)">✓ matches total</span>' : d.subtotal != null && near(s, d.subtotal) ? ' <span style="color:var(--good-ink)">✓ matches subtotal</span>' : ''}` : ''; }
   }
 
   function afterPaint(el){
@@ -888,7 +888,7 @@
     if (s === homeSig && el.firstChild) return; homeSig = s;
     el.innerHTML = `<div class="rcpt-home" data-go="receipts" role="button" tabindex="0" aria-label="Open receipts">
       <div class="rcpt-home-ic">${IC.cam}</div>
-      <div class="rcpt-home-b"><b>Scan a receipt</b><span class="rcpt-ell">${last ? `Last: ${esc(last.merchant)} · ${esc(money(last.total, last.currency))} · ${esc(J.ago(last.created))}` : "Snap it and I'll log the expense"}</span></div>
+      <div class="rcpt-home-b"><b>Scan a receipt</b><span class="rcpt-ell">${last ? `Last: ${esc(last.merchant)} · ${esc(money(last.total != null ? last.total : (last.amount || 0), last.total != null ? last.currency : null))} · ${esc(J.ago(last.created))}` : "Snap it and I'll log the expense"}</span></div>
       ${camLabel('rcpt-home-btn', `${IC.cam}<span>Scan</span>`)}
     </div>`;
     const btn = el.querySelector('.rcpt-home-btn'); if (btn) btn.addEventListener('click', e=>e.stopPropagation());
@@ -957,7 +957,7 @@
   @keyframes rcptPop{0%{transform:scale(.9);opacity:0}60%{transform:scale(1.02);opacity:1}100%{transform:none}}
   .rcpt-thumb{position:relative;aspect-ratio:4/3;background:var(--bg2);overflow:hidden}
   .rcpt-thumb img{width:100%;height:100%;object-fit:cover;object-position:top;display:block}
-  .rcpt-ph{display:grid;place-items:center;width:100%;height:100%;color:var(--faint);background:linear-gradient(135deg,var(--accent-soft),transparent)}
+  .rcpt-ph{display:grid;place-items:center;width:100%;height:100%;color:var(--faint-ink);background:linear-gradient(135deg,var(--accent-soft),transparent)}
   .rcpt-ph svg{width:34px;height:34px}
   .rcpt-cat{position:absolute;left:8px;bottom:8px;width:28px;height:28px;border-radius:9px;display:grid;place-items:center;font-size:14px;box-shadow:0 4px 10px rgba(0,0,0,.25)}
   .rcpt-tile-b{padding:10px 12px 12px;min-width:0}
@@ -994,7 +994,7 @@
   .rcpt-prog{padding:16px 4px 4px}
   .rcpt-prog-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
   .rcpt-status{font-weight:700;font-size:16px}
-  .rcpt-pct{font-size:22px;font-weight:800;letter-spacing:-.4px;font-variant-numeric:tabular-nums;color:var(--accent)}
+  .rcpt-pct{font-size:22px;font-weight:800;letter-spacing:-.4px;font-variant-numeric:tabular-nums;color:var(--accent-ink)}
   .rcpt-bar{margin-top:10px} .rcpt-bar i{transition:width .35s var(--ease)}
   .rcpt-wide{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px}
   .rcpt-wide svg{width:19px;height:19px}
@@ -1002,7 +1002,7 @@
   .rcpt-note svg{width:17px;height:17px;flex:none;margin-top:1px}
   .rcpt-note.warn{background:rgba(245,158,11,.14);color:var(--text);box-shadow:inset 3px 0 0 var(--warn)}
   .rcpt-note.bad{background:rgba(244,63,94,.12);color:var(--text);box-shadow:inset 3px 0 0 var(--bad)}
-  .rcpt-note.good{background:rgba(34,197,94,.13);color:var(--text)} .rcpt-note.good svg{color:var(--good)}
+  .rcpt-note.good{background:rgba(34,197,94,.13);color:var(--text)} .rcpt-note.good svg{color:var(--good-ink)}
   .rcpt-note[hidden]{display:none}
   /* review */
   .rcpt-review{padding:16px}
@@ -1013,7 +1013,7 @@
   .rcpt-form{display:flex;flex-direction:column;gap:12px;margin-top:14px}
   .rcpt-field{display:flex;flex-direction:column;gap:6px;min-width:0;border-radius:14px}
   .rcpt-field>span{font-size:12.5px;font-weight:700;color:var(--muted);letter-spacing:.2px}
-  .rcpt-field em{font-style:normal;font-weight:500;color:var(--warn)}
+  .rcpt-field em{font-style:normal;font-weight:500;color:var(--warn-ink)}
   .rcpt-form input,.rcpt-form select,.rcpt-it input{width:100%;max-width:none;background:var(--bg2);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:12px;font:inherit;font-size:16px;outline:none;min-width:0;-webkit-appearance:none;appearance:none}
   .rcpt-form select{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 17px) 50%,calc(100% - 12px) 50%;background-size:5px 5px;background-repeat:no-repeat;padding-right:28px}
   .rcpt-form input:focus,.rcpt-form select:focus,.rcpt-it input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
@@ -1035,7 +1035,7 @@
   .rcpt-conv-out{font-size:13px;color:var(--muted)}
   .rcpt-conv-out b{color:var(--text)}
   .rcpt-row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:10px}
-  .rcpt-hint{font-size:12px;color:var(--warn);font-weight:600;margin-top:-1px}
+  .rcpt-hint{font-size:12px;color:var(--warn-ink);font-weight:600;margin-top:-1px}
   .rcpt-items-h{display:flex;justify-content:space-between;align-items:baseline;margin:18px 2px 8px;gap:8px}
   .rcpt-isum{font-size:12.5px;text-align:right}
   .rcpt-items{display:flex;flex-direction:column;gap:6px}
@@ -1045,7 +1045,7 @@
   .rcpt-it input{padding:9px 10px;font-size:14.5px;border-radius:10px}
   .rcpt-it .rcpt-it-p{text-align:right;font-weight:700}
   .rcpt-tips{margin-top:14px;border:1px dashed var(--line);border-radius:16px;padding:12px 14px}
-  .rcpt-tips-h{display:flex;align-items:center;gap:8px} .rcpt-tips-h svg{width:18px;height:18px;color:var(--warn)}
+  .rcpt-tips-h{display:flex;align-items:center;gap:8px} .rcpt-tips-h svg{width:18px;height:18px;color:var(--warn-ink)}
   .rcpt-tips ul{margin:6px 0 10px;padding-left:20px;color:var(--muted);font-size:13px}
   .rcpt-save{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;min-height:56px;font-size:17px;margin-top:18px;border-radius:16px;box-shadow:0 10px 24px rgba(109,93,252,.32)}
   .rcpt-save svg{width:20px;height:20px}

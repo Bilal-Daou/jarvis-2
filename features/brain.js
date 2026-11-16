@@ -368,7 +368,7 @@ function edits(t, said){
   /* ---------- notes ---------- */
   const noteEdit = () => {
     let mm;
-    if ((mm = T.match(/^(?:change|edit|update|replace|rewrite|fix)\s+(?:my |the )?(?:last |latest )?note\s+(?:to|to say|so it says|with|into)\s+(.+)$/))){
+    if ((mm = T.match(/^(?:change|edit|update|replace|rewrite|fix)\s+(?:my |the |that |this )?(?:last |latest )?note\s+(?:to|to say|so it says|with|into)\s+(.+)$/))){
       const n = lastNote(); if (!n) return "You don't have any notes yet.";
       const old = snapshot(n); n.text = cap(orig(SAID, mm[1].replace(/^(?:say|says|read|that)\s+/, ''))); J.save(); J.renderAll(); lastEntity = {kind:'note', id:n.id, at:now()};
       undoable('Note changed', 'note', n, ()=>{ Object.assign(n, old); J.save(); J.renderAll(); }); try { J.go('notes'); } catch(_){}
@@ -431,9 +431,18 @@ function deleteNote(n){
 const ASK_PRE = /^(?:(?:hey |ok |okay )?(?:what's|whats|what is|what are|what does|what do|what will|what would|how much is|how much are|how much does|how much do|how much will|how many is|how far is|how long is|how heavy is|how big is|how tall is|how much would|calculate|compute|work out|figure out|solve|tell me|quick maths?|maths?|do the math(?: on)?|can you calculate|give me)\s+)+/;
 function calc(t){
   let s = moreNumbers(t).replace(/[?]/g,'').trim();
+  if (S().budget) s = s.replace(/\bmy (?:monthly )?budget\b/g, String(S().budget));
   // tips and splitting a bill
   let m;
-  if ((m = s.match(/^(?:what(?:'s| is) )?(?:(?:a|the) )?(?:(\d+(?:\.\d+)?)\s*(?:%|percent) )?tip (?:on|for) (?:a |an )?\$?(\d+(?:\.\d+)?)(?: dollars?| bucks)?(?: bill| check| dinner| meal)?$|^how much (?:should i |do i )?tip (?:on|for) (?:a |an )?\$?(\d+(?:\.\d+)?)(?: dollars?| bucks)?(?: bill| check)?$/))){
+  // "if I save 300 a month, how much will I have in a year"
+  if ((m = s.match(/^(?:(?:if|when) )?(?:i|we) (?:save|put (?:away|aside)|set aside|invest) \$?(\d+(?:\.\d+)?)(?: dollars?| bucks)? (?:a|an|per|every|each) (day|week|month|year)\b.*?\b(?:in|after|over|for) (a|an|one|\d+) (days?|weeks?|months?|years?)$/))){
+    const per = {day:1, week:7, month:30.4375, year:365.25}, unit = m[4].replace(/s$/,'');
+    const k = /^(?:a|an|one)$/.test(m[3]) ? 1 : +m[3];
+    const times = unit === m[2] ? k : Math.round(k * per[unit] / per[m[2]] * 100) / 100;
+    if (!(times > 0) || times > 1e6) return null;
+    return `Saving ${money(+m[1])} a ${m[2]} gives you ${money(+m[1] * times)} after ${k} ${unit}${k === 1 ? '' : 's'}, before any interest.`;
+  }
+  if ((m = s.match(/^(?:what(?:'s| is) )?(?:(?:a|an|the) )?(?:(\d+(?:\.\d+)?)\s*(?:%|percent) )?tip (?:on|for) (?:a |an )?\$?(\d+(?:\.\d+)?)(?: dollars?| bucks)?(?: bill| check| dinner| meal)?$|^how much (?:should i |do i )?tip (?:on|for) (?:a |an )?\$?(\d+(?:\.\d+)?)(?: dollars?| bucks)?(?: bill| check)?$/))){
     const bill = parseFloat(m[2] || m[3]); const p = m[1] ? parseFloat(m[1]) : null;
     if (p != null) return `A ${num(p)}% tip on ${money(bill)} is ${money(bill*p/100)}, so ${money(bill*(1+p/100))} in total.`;
     return `On ${money(bill)}: a 10% tip is ${money(bill*.1)}, 15% is ${money(bill*.15)}, and 20% is ${money(bill*.2)}.`;
@@ -469,6 +478,18 @@ function calc(t){
   let said = s.replace(/\bpercent\b|\bper cent\b/g, '%').replace(/\s+%/g, '%').replace(/\s+/g,' ').trim();
   said = said.replace(/^\(|\)$/g, '');
   return `${cap(said)} is ${num(+v.toPrecision(12))}.`;
+}
+/** "what time is sunset", "when is sunrise tomorrow": from the weather the brief already fetched */
+function sunTimes(t){
+  const m = t.match(/^(?:what time (?:is|'s)|when (?:is|'s)|when does|what time does|time of|what(?:'s| is))? ?(?:the )?(sunset|sunrise|sun ?set|sun ?rise|sun (?:set|go down|come up|rise))(?: today| tonight| tomorrow| this evening)?$/);
+  if (!m) return null;
+  const rise = /rise|come up/.test(m[1]), tmrw = /tomorrow/.test(t);
+  let d = null; try { d = J.weather && J.weather.data && J.weather.data.d; } catch(e){}
+  const iso = d && (rise ? d.rise : d.set) && (rise ? d.rise : d.set)[tmrw ? 1 : 0];
+  if (!iso) return `I don't have ${rise ? 'sunrise' : 'sunset'} times yet. Ask me for the weather first, and I'll have them.`;
+  const when = new Date(iso); if (!isFinite(when)) return null;
+  const place = (J.weather.location && J.weather.location.name) ? ` in ${J.weather.location.name}` : '';
+  return `${rise ? 'Sunrise' : 'Sunset'}${place} is at ${when.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})} ${tmrw ? 'tomorrow' : 'today'}.`;
 }
 function evalExpr(src){
   const tok = src.match(/sqrt|\d+(?:\.\d+)?|[+\-*/^()%]/g); if (!tok) return null;
@@ -620,6 +641,8 @@ function fxParse(t){
 function fxAnswer(q, r){
   const ra = q.from === 'USD' ? 1 : r.rates[q.from], rb = q.to === 'USD' ? 1 : r.rates[q.to];
   if (!ra || !rb) return `I don't have a rate for ${!ra ? curName(q.from) : curName(q.to)} right now.`;
+  // "what's the lira rate": 1 lira is worth almost nothing, so say it the useful way round (1 dollar = 89,500 lira)
+  if (q.n === 1 && 1 / ra * rb < 0.01) return fxAnswer({n:1, from:q.to, to:q.from}, r);
   const v = q.n / ra * rb;
   const show = q.to === 'LBP' || v >= 1000 ? new Intl.NumberFormat('en-US', {maximumFractionDigits:0}).format(q.to === 'LBP' && v > 1000 ? Math.round(v/100)*100 : Math.round(v)) : num(+v.toFixed(v < 1 ? 4 : 2));
   let s = `${num(q.n)} ${curName(q.from, q.n)} is about ${show} ${curName(q.to, v)}.`;
@@ -864,7 +887,9 @@ function capitalOf(t){
 function lateAsync(turnId, job, failText){
   const id = turnId != null ? turnId : (J.turnInfo ? J.turnInfo().seq : null);
   Promise.resolve().then(job).then(text=>{
+    // nothing usable came back (e.g. the AI only offered a command we won't run): never leave "One moment…" hanging
     if (text) deliver(id, text);
+    else { let f = null; try { f = typeof failText === 'function' ? failText(null) : failText; } catch(_){} deliver(id, f || "Sorry, I couldn't work that one out. Try asking it another way."); }
   }).catch(e=>{
     const off = typeof navigator !== 'undefined' && navigator.onLine === false;
     deliver(id, off ? "You're offline right now. Connect to the internet and ask me again, and I'll look it up." : (typeof failText === 'function' ? failText(e) : failText));
@@ -902,6 +927,7 @@ function early(said, t, depth){
     return 'One moment, checking the rate…';
   }
   if ((r = calc(t))) { setKind('feature'); return r; }
+  if ((r = sunTimes(t))) { setKind('feature'); return r; }
   if ((r = daysUntil(t))) { setKind('feature'); return r; }
   if ((r = games(t, said))) return r;
   if ((r = capitalOf(t))) return r;
@@ -920,7 +946,7 @@ function period(t){
   if (/\b(this|the) month\b|\bmonthly\b|\bso far\b/.test(t)) return 'this month';
   return '';
 }
-const SPEND_VERB = '(?:spent|spend|spending|blown|blew|blow|burned|burnt|burn|dropped|drop|splurged|splurge|wasted|waste|forked out|shelled out|paid out|paid|gone through|went through|go through|dished out|put out|laid out|used|lost|thrown away|threw away|chucked|parted with|let go of|done|did)';
+const SPEND_VERB = '(?:spent|spend|spending|blown|blew|blow|burned|burnt|burn|dropped|drop|splurged|splurge|wasted|waste|forked out|shelled out|paid out|paid|pay|gone through|went through|go through|dished out|put out|laid out|used|lost|thrown away|threw away|chucked|parted with|let go of|done|did)';
 const MONEY_N = '(?:money|cash|dollars|bucks|\\$|budget|funds|dough)';
 function rewrite(t){
   let m;
@@ -940,14 +966,17 @@ function rewrite(t){
   if (/^(?:am i|are we) (?:broke|poor|rich|over ?spending|spending too much|bleeding money|in the red|in the green)\b|^(?:did|have) i (?:go|gone|went) over\b|^(?:did|have) i (?:overspend|overspent|over spend|over spent|blow|blown|bust|busted|break|broken|exceed|exceeded) (?:my |the )?budget\b|^(?:have i|did i) (?:spent|spend) too much\b|^is my budget (?:blown|busted|gone|ok|okay|fine)\b/.test(t)) return 'am I over budget';
   if (/^(?:how much|what)(?: money| cash)? (?:do i have|have i got|is there|can i (?:still )?(?:spend|use|afford))(?: left| remaining| to spend| still)?(?: to spend)?(?: this month| for this month| for the month| for the rest of the month| until the end of the month| till payday| until payday| for the week| this week)?$|^how (?:far|close) am i (?:from|to) (?:my |the )?(?:budget|budget limit|limit|spending limit)$|^how much (?:room|space|wiggle room) (?:do i have|is) (?:left )?in (?:my |the )?budget$|^what(?:'s| is) (?:left|remaining) (?:in|of|on) (?:my |the )?(?:budget|money|month)$|^(?:what(?:'s| is) )?my remaining budget$|^how much (?:of my budget|budget) (?:is |do i have )?left$|^can i (?:still )?afford (?:anything|stuff|more|to spend)\b/.test(t)) return 'how much is left in my budget';
   if (/^can i afford (?:a |an |the |to )?(.+)$/.test(t)) return 'how much is left in my budget';
-  if (/^(?:how much|what) (?:did|have|do) i (?:make|made|earn|earned|bring in|brought in|take home|get paid|receive|received)(?: so far)?(?: this month| this year| in total| lately)?$|^(?:what(?:'s| is| was)|how much is|how much was) my (?:income|salary|pay|paycheck|earnings)(?: this month)?$|^how much (?:came|money came|has come) in\b/.test(t)) return 'how much did I make this month';
+  if (/^(?:how much|what)(?: money| cash)? (?:did|have|do) i (?:make|made|earn|earned|bring in|brought in|take home|get paid|receive|received)(?: so far)?(?: this month| this year| in total| lately)?$|^(?:what(?:'s| is| was)|how much is|how much was) my (?:income|salary|pay|paycheck|earnings)(?: this month)?$|^how much (?:came|money came|has come) in\b/.test(t)) return 'how much did I make this month';
   if (/^(?:what(?:'s| is| was) )?my (?:net|net balance|net income|cash flow|cashflow|savings|balance|bottom line)(?: this month| so far| for the month)?$|^(?:how much )?(?:did|have) i (?:save|saved)(?: anything| any money| money)?(?: this month| so far)?$|^what(?:'s| is) (?:left )?after (?:my )?expenses$|^am i (?:saving|in profit|positive|net positive|cash ?flow positive)\b/.test(t)) return "what's my balance";
   if (/^(?:show|open|pull up|bring up|take me to|go to|let me see|let's see|lemme see|can i see|i want to see|display) (?:me )?(?:my |the )?(?:money|finances|spending|expenses|transactions|payments|wallet|purchases|budget|money page|money screen|money tab|budget page|budget screen)(?: page| screen| tab| list)?$/.test(t)) return 'show me my budget';
-  if (/^(?:what|which) (?:did i buy|have i bought|purchases did i make|payments did i make|were my (?:last|latest|recent) (?:purchases|expenses|payments))\b|^(?:what(?:'s| was| were) )?my (?:last|latest|recent|most recent) (?:expense|purchase|payment|transaction|expenses|purchases|payments|transactions)$|^(?:list|read|tell me|read me|show|show me|give me) (?:my |the )?(?:recent |last |latest |newest )(?:few )?(?:expenses|purchases|payments|transactions|spending)$|^(?:list|read|tell me|read me) my (?:expenses|purchases|payments|transactions)$/.test(t)) return 'recent';
-  if ((m = t.match(/^how much (?:did|has|have) (?:the |my )?([a-z][a-z &']{2,24}?) (?:cost|costed|set) me(?: back)?( today| yesterday| this week| last week| this month| so far)?$/))){ const c = catOf(m[1]); return `how much did I spend on ${c ? lc(c) : m[1]}${m[2] || ''}`; }
+  if (/^(?:what|which) (?:did i buy|have i bought|purchases did i make|payments did i make|were my (?:last|latest|recent) (?:purchases|expenses|payments))\b|^(?:what(?:'s| was| were| are) )?my (?:last|latest|recent|most recent) (?:expense|purchase|payment|transaction|expenses|purchases|payments|transactions)$|^(?:list|read|tell me|read me|show|show me|give me) (?:my |the )?(?:recent |last |latest |newest )(?:few )?(?:expenses|purchases|payments|transactions|spending)$|^(?:list|read|tell me|read me) my (?:expenses|purchases|payments|transactions)$/.test(t)) return 'recent';
+  if ((m = t.match(/^(?:how much (?:was|were|did|is)|what did|what was) (?:the |my )?([a-z][a-z &']{2,24}?)(?: cost| come to| set me back)?(?: me)?( today| yesterday| this week| last week| this month| so far)?$/)) && !/^(?:it|that|this|budget|balance|income|salary|spending|total|bill)$/.test(m[1]) && (catOf(m[1]) || findExpense(m[1]))){ const c = findExpense(m[1]) ? null : catOf(m[1]); return `how much did I spend on ${c ? lc(c) : m[1]}${m[2] || ''}`; }
+  if ((m = t.match(/^how much (?:did|has|have) (the |my )?([a-z][a-z &']{2,24}?) (?:cost|costed|set|come to)( me)?(?: back)?( today| yesterday| this week| last week| this month| so far)?$/)) && (m[3] || m[1] === 'my ' || catOf(m[2]) || findExpense(m[2]))){ m = [m[0], m[2], m[4]]; const c = catOf(m[1]); return `how much did I spend on ${c ? lc(c) : m[1]}${m[2] || ''}`; }
   /* --- logging spending said another way: "I blew 20 bucks on shawarma", "lunch was 18 dollars" --- */
   if ((m = t.match(/^(?:so |and |yeah )?(?:i |we )?(?:just )?(?:blew|blown|dropped|splurged|wasted|forked out|shelled out|dished out|threw down|laid out|put down|burned|burnt|dropped|lost|gave|handed over|tipped)\s+(\$?\d+(?:\.\d{1,2})?\s*(?:dollars?|bucks|usd|\$)?\s+(?:on|for|at)\s+.+)$/))) return `I spent ${m[1]}`;
   if ((m = t.match(/^(?:the |my |a |an |our )?([a-z][a-z' ]{1,30}?) (?:was|cost|cost me|came to|came out to|set me back|ran me|was like|were) (?:about |around |like )?\$?(\d+(?:\.\d{1,2})?)\s*(dollars?|bucks|usd|\$)?$/)) && (m[3] || /\$/.test(t) || (J.categorize && J.categorize(m[1]) !== 'Other')) && !/\b(it|that|this|temperature|weather|score|time|meeting|flight|age|he|she|they)\b/.test(m[1])) return {confirm:`I spent ${m[2]} on ${m[1]}`, ask:`Should I log ${money(parseFloat(m[2]))} for ${m[1]}? Say yes and I'll add it.`};
+  if ((m = t.match(/^(?:what(?:'s| is) )?(?:the )?(?:exchange|conversion|fx) rate (?:for |of |from |between )?(?:the )?([a-z]+(?: [a-z]+)?) (?:to|vs|versus|against|and|in) (?:the )?([a-z]+(?: [a-z]+)?)$/))) return `how much is 1 ${m[1]} in ${m[2]}`;
+  if (/^(?:should i|do i need to|can i|is it ok to) wear (?:a |an |my )?(?:shorts|jacket|coat|sweater|hoodie|t-shirt|tshirt|scarf|boots|sandals|something warm|layers)\b/.test(t)) return /tomorrow/.test(t) ? 'do I need a jacket tomorrow' : 'do I need a jacket';
   /* --- weather --- */
   if (/\b(?:whether|weather|forecast)\b/.test(t) && /^(?:so |and )?(?:what(?:'s| is| will| does)|how(?:'s| is| does| will)|check|any|is|give|tell|get|show|whats|hows|what's)\b/.test(t) && !/\b(?:app|apps|note|notes|market|stock)\b/.test(t)){
     const where = t.match(/\b(?:in|for|at) ([a-z][a-z .'-]{1,30}?)(?: (?:today|tomorrow|now|right now|this week|this weekend|tonight))?$/);
@@ -1039,6 +1068,17 @@ function classify(t){
 }
 /* follow-ups: "what about tomorrow?", "and this week?", "how about Paris?" */
 function followUp(t){
+  // "how much is 100 dollars in lira?" … "and in euros?" / "what about 500?"
+  const lm = mem[mem.length-1];
+  if (lm && now() - lm.at < 4*MIN){
+    const fm = t.match(/^(?:and |but |ok |okay |so )?(?:what about|how about|and|and what about|same for|now)\s+(?:in |to |into )?(.+?)$/);
+    let pq = null; try { pq = fm && fxParse(lc(lm.said)); } catch(e){}
+    if (pq){
+      const x = fm[1].trim();
+      const cands = /^\$?\d/.test(x) ? [`how much is ${x}${/[a-z]/.test(x.replace(/^\$?[\d.,]+\s*/, '')) ? '' : ' ' + pq.from} in ${pq.to}`] : [`how much is ${pq.n} ${pq.from} in ${x}`];
+      for (const c of cands){ try { if (fxParse(lc(c))) return c; } catch(e){} }
+    }
+  }
   if (!fresh(lastDomain, 4*MIN)) return null;
   const m = t.match(/^(?:and |but |ok |okay |so )?(?:what about|how about|and|what of|and for|and what about|same for|and how about|now|ok and|okay and)\s+(.+?)$/) || t.match(/^(tomorrow|today|tonight|this week|last week|yesterday|this weekend|next week|this month)$/);
   if (!m) return null;
@@ -1201,8 +1241,8 @@ const COMMANDS = [
   'change my last expense to <amount>', 'move my reminder to <time>', 'delete the last expense'
 ];
 function aiSystem(){
-  const loc = (J.weather && J.weather.location && J.weather.location.name) || 'Beirut, Lebanon';
-  return `You are Jarvis, a warm, concise voice assistant inside a personal phone app for ${S().name}, who lives in ${loc} and works in finance. Today is ${new Date().toLocaleString([], {weekday:'long', year:'numeric', month:'long', day:'numeric', hour:'numeric', minute:'2-digit'})}. Money is shown in ${S().currency}.
+  const w = J.weather && J.weather.location, loc = w && w.name ? w.name + (w.region ? ', ' + w.region : '') : '';
+  return `You are Jarvis, a warm, concise voice assistant inside a personal phone app for ${S().name}${loc ? `, who lives in ${loc}` : ' (no home city set yet; if a question depends on location, ask which city)'}. Today is ${new Date().toLocaleString([], {weekday:'long', year:'numeric', month:'long', day:'numeric', hour:'numeric', minute:'2-digit'})}. Money is shown in ${S().currency}.
 The app understands these commands (angle brackets are slots to fill):
 ${COMMANDS.map(c=>'- '+c).join('\n')}
 Decide what the user wants.
