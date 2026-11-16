@@ -16,48 +16,91 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
+/* =====================================================================
+   DESIGN SYSTEM · Jarvis 2.0 (round 5)
+   One calm, iOS-like system: system font (SF Pro on iPhone, Inter elsewhere),
+   an 8-pt spacing rhythm, soft depth, hairlines, and the accent used sparingly.
+   ===================================================================== */
 :root{
   --accent:#6d5dfc; --accent2:#22d3ee; --accent-soft:rgba(109,93,252,.16);
   --good:#22c55e; --warn:#f59e0b; --bad:#f43f5e;
-  --radius:22px; --ease:cubic-bezier(.2,.8,.2,1);
+  --radius:20px; --r-lg:24px; --r-md:16px; --r-sm:12px;
+  --ease:cubic-bezier(.2,.8,.2,1); --spring:cubic-bezier(.32,1.28,.54,1);
   --safe-b:env(safe-area-inset-bottom,0px); --safe-t:env(safe-area-inset-top,0px);
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display",Inter,"Segoe UI",Roboto,system-ui,sans-serif;
+  --vv-h:100%; --vv-top:0px;
 }
 :root[data-theme="dark"]{
-  --bg:#07090f; --bg2:#0d1120; --card:rgba(255,255,255,.045); --card-solid:#121729; --line:rgba(255,255,255,.08);
-  --text:#f3f5fb; --muted:#8b93aa; --faint:#5b637a; --glass:rgba(13,17,32,.72); --shadow:0 20px 50px rgba(0,0,0,.45);
+  color-scheme:dark;
+  --bg:#050507; --bg2:#141418; --card:rgba(255,255,255,.068); --card-solid:#18181c; --line:rgba(255,255,255,.085);
+  --fill:rgba(255,255,255,.07); --fill2:rgba(255,255,255,.11); --sep:rgba(255,255,255,.075);
+  --text:#f5f5f7; --muted:#9a9aa3; --faint:#5c5c66; --glass:rgba(22,22,28,.72); --shadow:0 24px 60px rgba(0,0,0,.55);
+  --card-shadow:none; --card-border:rgba(255,255,255,.065); --press:rgba(255,255,255,.06);
 }
 :root[data-theme="light"]{
-  --bg:#f3f4f9; --bg2:#e9ebf5; --card:#ffffff; --card-solid:#ffffff; --line:rgba(20,24,40,.08);
-  --text:#121626; --muted:#626a80; --faint:#9aa1b4; --glass:rgba(255,255,255,.78); --shadow:0 16px 40px rgba(30,40,80,.12);
+  color-scheme:light;
+  --bg:#f2f2f7; --bg2:#f2f2f7; --card:#ffffff; --card-solid:#ffffff; --line:rgba(60,60,67,.12);
+  --fill:rgba(118,118,128,.1); --fill2:rgba(118,118,128,.16); --sep:rgba(60,60,67,.1);
+  --text:#0c0c10; --muted:#6c6c74; --faint:#a9a9b1; --glass:rgba(250,250,252,.8); --shadow:0 18px 44px rgba(20,24,48,.14);
+  --card-shadow:0 1px 2px rgba(16,24,40,.04),0 6px 20px rgba(16,24,40,.045); --card-border:rgba(60,60,67,.06); --press:rgba(0,0,0,.04);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%}
-body{background:var(--bg);color:var(--text);font:15px/1.45 Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
-body::before{content:"";position:fixed;inset:-20% -20% auto -20%;height:70vh;background:radial-gradient(600px 300px at 20% 10%,rgba(109,93,252,.28),transparent 60%),radial-gradient(500px 280px at 90% 0%,rgba(34,211,238,.18),transparent 60%);background:radial-gradient(600px 300px at 20% 10%,color-mix(in srgb,var(--accent) 28%,transparent),transparent 60%),radial-gradient(500px 280px at 90% 0%,color-mix(in srgb,var(--accent2) 18%,transparent),transparent 60%);pointer-events:none;z-index:0;filter:blur(10px)}
-button{font:inherit;color:inherit}
-.app{position:relative;z-index:1;max-width:520px;margin:0 auto;padding:calc(14px + var(--safe-t)) 16px calc(120px + var(--safe-b))}
-.view{display:none;animation:fadeUp .35s var(--ease)}
-.view.active{display:block}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--text);font:15px/1.45 var(--font);letter-spacing:-.006em;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;overflow-x:hidden;font-feature-settings:"cv11","ss01"}
+body::before{content:"";position:fixed;inset:-25% -20% auto -20%;height:62vh;background:radial-gradient(560px 300px at 18% 8%,color-mix(in srgb,var(--accent) 22%,transparent),transparent 62%),radial-gradient(480px 260px at 92% 0%,color-mix(in srgb,var(--accent2) 12%,transparent),transparent 62%);pointer-events:none;z-index:0;filter:blur(12px);transition:opacity .5s}
+:root[data-theme="light"] body::before{opacity:.55}
+body:not(.at-home)::before{opacity:.45}
+:root[data-theme="light"] body:not(.at-home)::before{opacity:.3}
+button{font:inherit;color:inherit;letter-spacing:inherit}
+input,select,textarea{font-family:inherit;letter-spacing:inherit}
+.app{position:relative;z-index:1;max-width:520px;margin:0 auto;padding:calc(56px + var(--safe-t)) 16px calc(124px + var(--safe-b))}
+body.at-home .app{padding-top:calc(14px + var(--safe-t))}
+.view{display:none}
+.view.active{display:block;animation:vTab .34s var(--ease)}
+.view.active.v-push{animation:vPush .42s var(--ease)}
+.view.active.v-back{animation:vBack .42s var(--ease)}
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes vTab{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes vPush{from{opacity:0;transform:translateX(34px)}to{opacity:1;transform:none}}
+@keyframes vBack{from{opacity:0;transform:translateX(-34px)}to{opacity:1;transform:none}}
+.num,.amt,.val,.t-val{font-variant-numeric:tabular-nums}
 
-/* top bar */
+/* ---------- top bar: back chevron + title (every screen except Home) ---------- */
+.jv-bar{position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;z-index:25;height:calc(50px + var(--safe-t));padding:var(--safe-t) 8px 0;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;pointer-events:none;transition:background .25s,box-shadow .25s,border-color .25s;border-bottom:.5px solid transparent}
+.jv-bar>*{pointer-events:auto}
+body.at-home .jv-bar{display:none}
+body.scrolled .jv-bar{background:var(--glass);backdrop-filter:blur(24px) saturate(1.6);-webkit-backdrop-filter:blur(24px) saturate(1.6);border-bottom-color:var(--line)}
+.jv-back{justify-self:start;display:flex;align-items:center;gap:1px;height:44px;min-width:44px;max-width:100%;padding:0 10px 0 2px;border:0;background:none;color:var(--accent);font-size:17px;font-weight:500;letter-spacing:-.02em;cursor:pointer;border-radius:12px;white-space:nowrap;overflow:hidden;transition:opacity .2s,transform .2s var(--ease)}
+.jv-back svg{width:26px;height:26px;flex:none;margin-right:-1px}
+.jv-back span{overflow:hidden;text-overflow:ellipsis}
+.jv-back:active{opacity:.45}
+.jv-back[hidden]{display:none}
+.jv-title{grid-column:2;font-size:17px;font-weight:650;letter-spacing:-.022em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:min(56vw,280px);opacity:0;transform:translateY(4px);transition:opacity .2s,transform .25s var(--ease)}
+body.scrolled .jv-title{opacity:1;transform:none}
+.jv-bar-r{justify-self:end;display:flex;gap:6px;padding-right:4px}
+
+/* ---------- type scale ---------- */
 .top{display:flex;align-items:center;justify-content:space-between;margin:4px 0 18px}
 .brand{display:flex;align-items:center;gap:10px}
-.logo{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-items:center;box-shadow:0 8px 20px rgba(109,93,252,.4)}
+.logo{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-items:center}
 .logo svg{width:20px;height:20px}
 .brand b{font-size:18px;font-weight:800;letter-spacing:-.3px}
 .brand small{display:block;color:var(--muted);font-size:12px;font-weight:500;margin-top:-2px}
-.icon-btn{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;cursor:pointer}
+.icon-btn{width:40px;height:40px;border-radius:50%;border:0;background:var(--fill);color:var(--text);display:grid;place-items:center;cursor:pointer;transition:transform .15s var(--ease),background .2s}
+.icon-btn:active{transform:scale(.92)}
 .icon-btn svg{width:20px;height:20px}
-h2{font-size:26px;font-weight:800;letter-spacing:-.6px;margin:0 0 4px}
-.lede{color:var(--muted);margin:0 0 18px}
-.section-h{display:flex;align-items:center;justify-content:space-between;margin:22px 2px 10px}
-.section-h h3{margin:0;font-size:16px;font-weight:700}
-.link{color:var(--accent);font-weight:600;font-size:13px;background:none;border:0;cursor:pointer;padding:4px}
+h2{font-size:32px;line-height:1.12;font-weight:750;letter-spacing:-.032em;margin:2px 0 4px}
+.lede{color:var(--muted);font-size:15px;line-height:1.4;margin:0 0 20px}
+.section-h{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:28px 4px 10px}
+.section-h h3{margin:0;font-size:20px;font-weight:700;letter-spacing:-.025em}
+.link{color:var(--accent);font-weight:600;font-size:15px;background:none;border:0;cursor:pointer;padding:4px 0;letter-spacing:-.01em}
+.link:active{opacity:.5}
+.jv-cap{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:26px 16px 8px}
 
-/* cards */
-.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
-.hero{position:relative;overflow:hidden;border-radius:26px;padding:20px;background:linear-gradient(135deg,#6d5dfc 0%,#4f46e5 45%,#0ea5e9 100%);color:#fff;box-shadow:0 20px 45px rgba(79,70,229,.35)}
+/* ---------- cards ---------- */
+.card{background:var(--card);border:1px solid var(--card-border);box-shadow:var(--card-shadow);border-radius:var(--radius);padding:16px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.hero{position:relative;overflow:hidden;border-radius:26px;padding:20px;background:linear-gradient(135deg,#6d5dfc 0%,#4f46e5 45%,#0ea5e9 100%);color:#fff;box-shadow:0 20px 45px rgba(79,70,229,.3)}
 .hero::after{content:"";position:absolute;right:-60px;top:-60px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,.12)}
 .hero .hi{font-size:14px;opacity:.85;font-weight:500}
 .hero .big{font-size:24px;font-weight:800;letter-spacing:-.5px;margin:2px 0 14px;line-height:1.2}
@@ -67,84 +110,148 @@ h2{font-size:26px;font-weight:800;letter-spacing:-.6px;margin:0 0 4px}
 .hero-stats span{font-size:11.5px;opacity:.85}
 .home-flow{display:flex;flex-direction:column}
 .home-flow>.home-card:empty{display:none}
-.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 6px;margin:16px -16px 0;padding-left:16px;padding-right:16px;scrollbar-width:none}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 16px 6px;margin:16px -16px 0;scrollbar-width:none}
 .chips::-webkit-scrollbar{display:none}
-.chip{flex:none;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:9px 14px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:6px}
-.chip:active{transform:scale(.97)}
+.chip{flex:none;border:1px solid var(--card-border);background:var(--card);box-shadow:var(--card-shadow);border-radius:999px;padding:9px 15px 9px 12px;min-height:38px;font-size:14px;font-weight:600;letter-spacing:-.01em;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:7px;transition:transform .15s var(--ease)}
+.chip svg{width:17px;height:17px;color:var(--accent);flex:none}
+.chip:active{transform:scale(.96)}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.stat .label{color:var(--muted);font-size:12.5px;font-weight:600}
-.stat .val{font-size:22px;font-weight:800;letter-spacing:-.4px;margin-top:4px}
-.stat .delta{font-size:12px;font-weight:600;margin-top:2px}
+.stat .label{color:var(--muted);font-size:13px;font-weight:600}
+.stat .val{font-size:26px;font-weight:750;letter-spacing:-.03em;margin-top:6px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat .delta{font-size:12.5px;font-weight:600;margin-top:6px}
 
-/* list items */
+/* ---------- list items (features use these too) ---------- */
 .list{display:flex;flex-direction:column;gap:10px}
-.item{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;position:relative;transition:transform .2s var(--ease),opacity .2s}
+.item{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:1px solid var(--card-border);box-shadow:var(--card-shadow);border-radius:18px;padding:14px;position:relative;transition:transform .2s var(--ease),opacity .2s,background .2s}
 .item .ic{flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:19px}
 .item .body{flex:1;min-width:0}
-.item .title{font-weight:600;word-wrap:break-word}
-.item .meta{color:var(--muted);font-size:12.5px;margin-top:3px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-.item .amt{font-weight:800;font-size:16px;white-space:nowrap}
+.item .title{font-weight:600;letter-spacing:-.012em;word-wrap:break-word}
+.item .meta{color:var(--muted);font-size:13px;margin-top:3px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.item .amt{font-weight:700;font-size:16px;white-space:nowrap;letter-spacing:-.02em}
 .item .actions{display:flex;gap:2px}
-.mini{border:0;background:none;color:var(--muted);width:32px;height:32px;border-radius:10px;display:grid;place-items:center;cursor:pointer}
-.mini:hover{background:var(--card)}
-.mini svg{width:17px;height:17px}
+.mini{border:0;background:none;color:var(--muted);width:34px;height:34px;border-radius:50%;display:grid;place-items:center;cursor:pointer;transition:background .15s,transform .15s var(--ease)}
+.mini:active{background:var(--fill);transform:scale(.9)}
+.mini svg{width:18px;height:18px}
 .mini.on{color:var(--warn)}
-.tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;background:var(--accent-soft);color:var(--accent)}
+.tag{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:650;background:var(--accent-soft);color:var(--accent);line-height:1.5}
+.tag svg{width:11px;height:11px}
 .tag.red{background:rgba(244,63,94,.14);color:var(--bad)}
 .tag.green{background:rgba(34,197,94,.14);color:var(--good)}
 .item.done .title{text-decoration:line-through;opacity:.5}
-.check{flex:none;width:26px;height:26px;border-radius:50%;border:2px solid var(--faint);background:none;cursor:pointer;display:grid;place-items:center;margin-top:7px}
+.check{flex:none;width:26px;height:26px;border-radius:50%;border:2px solid var(--faint);background:none;cursor:pointer;display:grid;place-items:center;transition:background .2s,border-color .2s,transform .2s var(--spring)}
+.check:active{transform:scale(.85)}
 .check.on{background:var(--good);border-color:var(--good)}
 .check svg{width:14px;height:14px;color:#fff}
 .note-card{border-left:4px solid var(--accent)}
-.empty{text-align:center;color:var(--muted);padding:28px 16px;border:1px dashed var(--line);border-radius:18px}
-.empty .e-ic{font-size:30px;margin-bottom:6px}
+.empty{text-align:center;color:var(--muted);font-size:14.5px;padding:30px 20px;border:1.5px dashed var(--line);border-radius:var(--radius)}
+.empty .e-ic{width:48px;height:48px;margin:0 auto 10px;border-radius:50%;display:grid;place-items:center;font-size:24px;background:var(--fill);color:var(--muted)}
+.empty .e-ic svg{width:24px;height:24px}
 
-/* search + segmented */
-.search{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:0 12px;margin-bottom:12px}
-.search input{flex:1;border:0;background:none;color:var(--text);padding:12px 0;font-size:15px;outline:none;min-width:0}
-.search svg{width:18px;height:18px;color:var(--muted)}
-.seg{display:flex;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:4px;margin-bottom:14px}
-.seg button{flex:1;border:0;background:none;padding:9px 6px;border-radius:10px;font-weight:600;font-size:13px;color:var(--muted);cursor:pointer}
-.seg button.active{background:var(--accent);color:#fff;box-shadow:0 6px 16px rgba(109,93,252,.35);box-shadow:0 6px 16px color-mix(in srgb,var(--accent) 35%,transparent)}
+/* ---------- grouped lists (iOS inset-grouped style) ---------- */
+.jv-group{background:var(--card);border:1px solid var(--card-border);box-shadow:var(--card-shadow);border-radius:var(--radius);overflow:hidden}
+.jv-group+.jv-group{margin-top:12px}
+.jv-row{position:relative;display:flex;align-items:center;gap:13px;width:100%;min-height:60px;padding:11px 14px 11px 14px;border:0;background:none;text-align:left;cursor:pointer;color:var(--text);transition:background .15s}
+.jv-row:active,.jv-row.pressed{background:var(--press)}
+.jv-row+.jv-row::before,.jv-row+.jv-rowwrap::before,.jv-rowwrap+.jv-row::before,.jv-rowwrap+.jv-rowwrap::before{content:"";position:absolute;top:0;right:0;left:var(--inset,67px);border-top:.5px solid var(--sep);border-top-width:1px;transform:scaleY(.6);transform-origin:top}
+.jv-ico{flex:none;width:38px;height:38px;border-radius:11px;display:grid;place-items:center;color:#fff;background:var(--c,#8e8e93);box-shadow:inset 0 1px 0 rgba(255,255,255,.18)}
+.jv-ico svg{width:21px;height:21px}
+.jv-ico.sm{width:32px;height:32px;border-radius:9px}.jv-ico.sm svg{width:18px;height:18px}
+.jv-ico.soft{background:color-mix(in srgb,var(--c,#8e8e93) 16%,transparent);color:var(--c,#8e8e93);box-shadow:none}
+.jv-rb{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.jv-rt{font-size:16px;font-weight:600;letter-spacing:-.018em;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.jv-rt.wrap{white-space:normal;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
+.jv-rs{font-size:13px;color:var(--muted);line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px}
+.jv-rs .tag{flex:none}
+.jv-rr{flex:none;display:flex;align-items:center;gap:6px;color:var(--muted);font-size:15px}
+.jv-amt{font-size:16.5px;font-weight:650;letter-spacing:-.02em;color:var(--text);font-variant-numeric:tabular-nums;white-space:nowrap}
+.jv-amt.in{color:var(--good)}
+.jv-chev{width:18px;height:18px;color:var(--faint);flex:none}
+.jv-day{display:flex;justify-content:space-between;align-items:baseline;margin:22px 6px 8px;font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.01em}
+.jv-day:first-child{margin-top:4px}
+.jv-day b{font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums}
+.jv-rowwrap{position:relative;display:flex;align-items:center}
+.jv-rowwrap>.jv-row{flex:1;min-width:0}
+.jv-rowwrap .check{margin-left:14px}
+.jv-rowwrap .check+.jv-row{padding-left:12px}
+.jv-rowwrap .mini{margin-right:8px}
+.jv-rowwrap.done .jv-rt{text-decoration:line-through;opacity:.45}
+.jv-note .jv-rt{font-weight:500;font-size:15.5px;line-height:1.38}
+.jv-dot{width:8px;height:8px;border-radius:50%;flex:none;background:var(--c)}
+.jv-pin{width:14px;height:14px;color:var(--warn);flex:none}
+.jv-more{display:block;width:100%;padding:14px;border:0;background:none;color:var(--accent);font-weight:600;font-size:15px;cursor:pointer;border-top:1px solid var(--sep)}
+.jv-add{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:14px;min-height:50px;border-radius:16px;border:1px solid var(--card-border);background:var(--card);box-shadow:var(--card-shadow);color:var(--accent);font-weight:650;font-size:15.5px;cursor:pointer;transition:transform .15s var(--ease)}
+.jv-add svg{width:19px;height:19px}
+.jv-add:active{transform:scale(.98)}
 
-/* budget */
+/* ---------- More: profile card + grouped menu ---------- */
+.jv-me{display:flex;align-items:center;gap:14px;width:100%;padding:16px;border-radius:var(--radius);border:1px solid var(--card-border);background:var(--card);box-shadow:var(--card-shadow);cursor:pointer;text-align:left;transition:transform .15s var(--ease)}
+.jv-me:active{transform:scale(.985)}
+.jv-av{flex:none;width:56px;height:56px;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:23px;font-weight:700;letter-spacing:-.02em;background:linear-gradient(140deg,color-mix(in srgb,var(--accent) 80%,#fff),var(--accent) 50%,color-mix(in srgb,var(--accent2) 70%,var(--accent)));box-shadow:0 8px 20px -6px color-mix(in srgb,var(--accent) 60%,transparent)}
+.jv-me b{display:block;font-size:19px;font-weight:700;letter-spacing:-.025em}
+.jv-me small{display:block;color:var(--muted);font-size:13.5px;margin-top:2px}
+
+/* ---------- search + segmented ---------- */
+.search{display:flex;align-items:center;gap:8px;background:var(--fill);border:0;border-radius:12px;padding:0 12px;margin-bottom:12px;min-height:42px}
+.search input{flex:1;border:0;background:none;color:var(--text);padding:10px 0;font-size:16px;outline:none;min-width:0}
+.search input::placeholder{color:var(--muted)}
+.search svg{width:18px;height:18px;color:var(--muted);flex:none}
+.seg{display:flex;background:var(--fill);border:0;border-radius:12px;padding:3px;margin-bottom:16px;gap:2px}
+.seg button{flex:1;border:0;background:none;padding:8px 6px;min-height:34px;border-radius:9px;font-weight:600;font-size:13.5px;letter-spacing:-.01em;color:var(--text);opacity:.75;cursor:pointer;transition:background .2s,box-shadow .2s,opacity .2s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.seg button.active{opacity:1;background:var(--card-solid);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.08),0 3px 8px rgba(0,0,0,.08)}
+@media (max-width:400px){.seg button{font-size:13px;padding:8px 3px}}
+:root[data-theme="dark"] .seg button.active{background:#3a3a42;box-shadow:0 2px 8px rgba(0,0,0,.35)}
+
+/* ---------- budget ---------- */
 .donut-wrap{display:flex;align-items:center;gap:18px}
 .donut{position:relative;width:132px;height:132px;flex:none}
 .donut svg{width:100%;height:100%;transform:rotate(-90deg)}
 .donut .center{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
-.donut .center b{font-size:20px;font-weight:800;letter-spacing:-.4px;display:block}
-.donut .center span{font-size:11px;color:var(--muted);font-weight:600}
-.legend{flex:1;display:flex;flex-direction:column;gap:8px;min-width:0}
-.legend div{display:flex;align-items:center;gap:8px;font-size:13px}
-.legend i{width:10px;height:10px;border-radius:3px;flex:none}
+.donut .center b{font-size:20px;font-weight:750;letter-spacing:-.03em;display:block;font-variant-numeric:tabular-nums}
+.donut .center span{font-size:11.5px;color:var(--muted);font-weight:600}
+.legend{flex:1;display:flex;flex-direction:column;gap:9px;min-width:0}
+.legend div{display:flex;align-items:center;gap:9px;font-size:14px}
+.legend i{width:10px;height:10px;border-radius:50%;flex:none}
 .legend span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.legend b{font-weight:700}
-.progress{height:10px;background:var(--line);border-radius:999px;overflow:hidden;margin-top:10px}
-.progress i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .6s var(--ease)}
-.bars{display:flex;align-items:flex-end;gap:3px;height:90px;margin-top:12px}
-.bars i{flex:1;background:linear-gradient(180deg,var(--accent2),var(--accent));border-radius:4px 4px 2px 2px;min-height:3px;opacity:.9}
-.bars i.zero{background:var(--line);opacity:1}
-.month-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-.month-nav b{font-size:15px}
+.legend b{font-weight:650;font-variant-numeric:tabular-nums;color:var(--muted)}
+.progress{height:8px;background:var(--fill2);border-radius:999px;overflow:hidden;margin-top:12px}
+.progress i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .8s var(--ease)}
+.bars{display:flex;align-items:flex-end;gap:3px;height:96px;margin-top:14px}
+.bars i{flex:1;background:linear-gradient(180deg,var(--accent2),var(--accent));border-radius:4px 4px 2px 2px;min-height:3px;opacity:.92}
+.bars i.zero{background:var(--fill2);opacity:1}
+.bars i.today{box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 35%,transparent)}
+.month-nav{display:flex;align-items:center;justify-content:space-between;margin:0 0 14px;padding:4px;border-radius:14px;background:var(--fill)}
+.month-nav .icon-btn{width:38px;height:38px;border-radius:10px;background:none}
+.month-nav .icon-btn:active{background:var(--fill2)}
+.month-nav .icon-btn svg{width:20px;height:20px}
+.month-nav b{font-size:15.5px;font-weight:650;letter-spacing:-.015em}
+.jv-goal{display:flex;align-items:center;gap:14px}
+.jv-goal .jv-ico{width:44px;height:44px;border-radius:13px}
+.jv-gt{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.jv-gt b{font-size:16px;font-weight:650;letter-spacing:-.015em}
+.jv-gt span{color:var(--muted);font-size:13.5px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.jv-gs{margin-top:9px;font-size:13.5px;color:var(--muted);font-weight:500}
+.jv-gs.bad{color:var(--bad);font-weight:600}
 
-/* apps grid */
+/* ---------- apps grid (kept for features that still use it) ---------- */
 .app-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.app-tile{border:1px solid var(--line);background:var(--card);border-radius:22px;padding:16px 8px 14px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;font-weight:600;font-size:13px;text-align:center;transition:transform .15s var(--ease)}
+.app-tile{border:1px solid var(--card-border);background:var(--card);border-radius:22px;padding:16px 8px 14px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;font-weight:600;font-size:13px;text-align:center;transition:transform .15s var(--ease)}
 .app-tile:active{transform:scale(.96)}
-.app-tile .a-ic{width:54px;height:54px;border-radius:17px;display:grid;place-items:center;font-size:26px;box-shadow:0 8px 18px rgba(0,0,0,.18)}
+.app-tile .a-ic{width:54px;height:54px;border-radius:17px;display:grid;place-items:center;font-size:26px}
 
-/* bottom nav: Home · Today · [mic] · Money · More. On Home the big mic is on the page, so the nav mic tucks away */
-.nav{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(12px + var(--safe-b));width:calc(100% - 24px);max-width:496px;z-index:20;background:var(--glass);border:1px solid var(--line);border-radius:26px;backdrop-filter:blur(22px) saturate(1.4);-webkit-backdrop-filter:blur(22px) saturate(1.4);box-shadow:var(--shadow);display:grid;grid-template-columns:1fr 1fr var(--orb-w,84px) 1fr 1fr;align-items:center;height:68px;padding:0 6px;transition:grid-template-columns .45s var(--ease)}
+/* ---------- bottom nav: Home · Today · [mic] · Money · More ---------- */
+.nav{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(10px + var(--safe-b));width:calc(100% - 24px);max-width:496px;z-index:20;background:var(--glass);border:1px solid var(--line);border-radius:28px;backdrop-filter:blur(26px) saturate(1.7);-webkit-backdrop-filter:blur(26px) saturate(1.7);box-shadow:0 12px 40px rgba(0,0,0,.28),0 1px 0 rgba(255,255,255,.05) inset;display:grid;grid-template-columns:1fr 1fr var(--orb-w,84px) 1fr 1fr;align-items:center;height:66px;padding:0 6px;transition:grid-template-columns .45s var(--ease)}
+:root[data-theme="light"] .nav{box-shadow:0 10px 34px rgba(20,24,48,.13),0 1px 2px rgba(20,24,48,.05)}
 .nav.on-home{--orb-w:0px}
-.nav button.tab{border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--faint);font-size:11px;font-weight:600;letter-spacing:.1px;cursor:pointer;padding:8px 0;min-width:0;transition:color .2s}
-.nav button.tab svg{width:23px;height:23px;transition:transform .25s var(--ease)}
-.nav button.tab.active{color:var(--text)}
-.nav button.tab.active svg{color:var(--accent);transform:translateY(-1px)}
-.orb{justify-self:center;width:64px;height:64px;margin-top:-32px;border-radius:50%;border:0;cursor:pointer;background:radial-gradient(circle at 30% 30%,#a99dff,var(--accent) 45%,#3b2fd6);background:radial-gradient(circle at 30% 28%,color-mix(in srgb,var(--accent) 45%,#fff),var(--accent) 45%,color-mix(in srgb,var(--accent) 62%,#000));box-shadow:0 12px 30px color-mix(in srgb,var(--accent) 55%,transparent),inset 0 2px 6px rgba(255,255,255,.35);display:grid;place-items:center;color:#fff;position:relative;transition:transform .4s var(--ease),opacity .25s}
-.orb:active{transform:scale(.94)}
-.orb svg{width:27px;height:27px}
-.orb::before{content:"";position:absolute;inset:-6px;border-radius:50%;border:2px solid color-mix(in srgb,var(--accent) 35%,transparent);animation:breathe 3s ease-in-out infinite}
+.nav button.tab{border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);font-size:10.5px;font-weight:600;letter-spacing:.01em;cursor:pointer;padding:8px 0;min-width:0;transition:color .2s}
+.nav button.tab svg{width:24px;height:24px;transition:transform .3s var(--spring)}
+.nav button.tab:active svg{transform:scale(.86)}
+.nav button.tab.active{color:var(--accent)}
+.nav button.tab .fi{fill:currentColor;fill-opacity:0;transition:fill-opacity .2s}
+.nav button.tab.active .fi{fill-opacity:.2}
+.orb{justify-self:center;width:62px;height:62px;margin-top:-30px;border-radius:50%;border:0;cursor:pointer;background:radial-gradient(circle at 30% 28%,color-mix(in srgb,var(--accent) 45%,#fff),var(--accent) 45%,color-mix(in srgb,var(--accent) 62%,#000));box-shadow:0 12px 28px color-mix(in srgb,var(--accent) 50%,transparent),inset 0 2px 6px rgba(255,255,255,.35);display:grid;place-items:center;color:#fff;position:relative;transition:transform .4s var(--ease),opacity .25s}
+.orb:active{transform:scale(.92)}
+.orb svg{width:26px;height:26px}
+.orb::before{content:"";position:absolute;inset:-6px;border-radius:50%;border:2px solid color-mix(in srgb,var(--accent) 32%,transparent);animation:breathe 3s ease-in-out infinite}
 .nav.on-home .orb{transform:translateY(26px) scale(.35);opacity:0;pointer-events:none}
 @keyframes breathe{50%{transform:scale(1.08);opacity:.4}}
 
@@ -152,20 +259,22 @@ h2{font-size:26px;font-weight:800;letter-spacing:-.6px;margin:0 0 4px}
 body.at-home .app{padding-bottom:calc(98px + var(--safe-b))}
 .hm{flex-direction:column;min-height:calc(100vh - 112px - var(--safe-t) - var(--safe-b));min-height:calc(100svh - 112px - var(--safe-t) - var(--safe-b))}
 .view.hm.active{display:flex}
-.hm-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:4px}
+.hm-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:6px}
 .hm-top>div{min-width:0}
-.hm-greet{font-size:22px;font-weight:800;letter-spacing:-.55px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hm-date{color:var(--muted);font-size:13px;font-weight:500;margin-top:2px}
-.hm-top .icon-btn{flex:none;border-radius:50%;width:42px;height:42px;color:var(--muted)}
+.hm-greet{font-size:26px;font-weight:750;letter-spacing:-.032em;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hm-date{color:var(--muted);font-size:14px;font-weight:500;margin-top:3px;letter-spacing:-.005em}
+.hm-top .icon-btn{flex:none;width:42px;height:42px;color:var(--text);background:var(--fill)}
+.hm-av{flex:none;width:42px;height:42px;border-radius:50%;border:0;padding:0;display:grid;place-items:center;color:#fff;font-weight:700;font-size:17px;cursor:pointer;background:linear-gradient(140deg,color-mix(in srgb,var(--accent) 80%,#fff),var(--accent) 50%,color-mix(in srgb,var(--accent2) 70%,var(--accent)));box-shadow:0 6px 16px -6px color-mix(in srgb,var(--accent) 70%,transparent);transition:transform .15s var(--ease)}
+.hm-av:active{transform:scale(.92)}
 .hm-stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px 0 22px;min-height:0}
-.hm-orb{--sz:clamp(94px,calc(100vh - var(--safe-t) - var(--safe-b) - 600px),164px);--sz:clamp(94px,calc(100svh - var(--safe-t) - var(--safe-b) - 600px),164px);position:relative;width:var(--sz);height:var(--sz);flex:none;border:0;padding:0;background:none;cursor:pointer;border-radius:50%;display:grid;place-items:center;color:#fff;transition:transform .3s var(--ease)}
-.hm-orb:active{transform:scale(.95)}
+.hm-orb{--sz:clamp(94px,calc(100vh - var(--safe-t) - var(--safe-b) - 600px),164px);--sz:clamp(94px,calc(100svh - var(--safe-t) - var(--safe-b) - 600px),164px);position:relative;width:var(--sz);height:var(--sz);flex:none;border:0;padding:0;background:none;cursor:pointer;border-radius:50%;display:grid;place-items:center;color:#fff;transition:transform .35s var(--spring)}
+.hm-orb:active{transform:scale(.94)}
 .hm-orb:focus-visible{outline-offset:8px;outline-color:color-mix(in srgb,var(--accent) 70%,transparent)}
-.hm-glow{position:absolute;inset:-34%;border-radius:50%;background:radial-gradient(closest-side,rgba(109,93,252,.5),transparent);background:radial-gradient(closest-side,color-mix(in srgb,var(--accent) 52%,transparent),color-mix(in srgb,var(--accent2) 10%,transparent) 62%,transparent);animation:hmBreathe 5s ease-in-out infinite;pointer-events:none}
-:root[data-theme="light"] .hm-glow{opacity:.65}
+.hm-glow{position:absolute;inset:-34%;border-radius:50%;background:radial-gradient(closest-side,color-mix(in srgb,var(--accent) 48%,transparent),color-mix(in srgb,var(--accent2) 10%,transparent) 62%,transparent);animation:hmBreathe 5s ease-in-out infinite;pointer-events:none}
+:root[data-theme="light"] .hm-glow{opacity:.6}
 .hm-ring{position:absolute;inset:0;border-radius:50%;border:1.5px solid color-mix(in srgb,var(--accent) 55%,transparent);opacity:0;animation:hmRipple 5s cubic-bezier(.2,.6,.3,1) infinite;pointer-events:none}
 .hm-ring.r2{animation-delay:2.5s}
-.hm-core{position:absolute;inset:0;border-radius:50%;overflow:hidden;background:radial-gradient(circle at 32% 26%,#b3a9ff 0%,var(--accent) 45%,#2f24b8 100%);background:radial-gradient(circle at 32% 26%,color-mix(in srgb,var(--accent) 42%,#fff) 0%,var(--accent) 46%,color-mix(in srgb,var(--accent) 58%,#000) 100%);box-shadow:0 22px 48px -10px color-mix(in srgb,var(--accent) 75%,transparent),inset 0 2px 10px rgba(255,255,255,.35),inset 0 -14px 28px rgba(0,0,0,.22)}
+.hm-core{position:absolute;inset:0;border-radius:50%;overflow:hidden;background:radial-gradient(circle at 32% 26%,color-mix(in srgb,var(--accent) 42%,#fff) 0%,var(--accent) 46%,color-mix(in srgb,var(--accent) 58%,#000) 100%);box-shadow:0 22px 48px -10px color-mix(in srgb,var(--accent) 75%,transparent),inset 0 2px 10px rgba(255,255,255,.35),inset 0 -14px 28px rgba(0,0,0,.22)}
 .hm-core::before{content:"";position:absolute;inset:-20%;background:conic-gradient(from 0deg,transparent 0 15%,rgba(255,255,255,.16) 25%,transparent 38% 55%,color-mix(in srgb,var(--accent2) 38%,transparent) 68%,transparent 82%);animation:hmSpin 14s linear infinite}
 .hm-core::after{content:"";position:absolute;left:18%;right:18%;top:6%;height:38%;border-radius:50%;background:linear-gradient(180deg,rgba(255,255,255,.32),rgba(255,255,255,0))}
 .hm-ic{position:relative;z-index:1;width:30%;height:30%;filter:drop-shadow(0 2px 6px rgba(0,0,0,.2));transition:opacity .2s,transform .3s var(--ease)}
@@ -181,20 +290,20 @@ body.is-listening .hm-glow{animation-duration:1.8s}
 @keyframes hmRipple{0%{transform:scale(1);opacity:.5}100%{transform:scale(1.6);opacity:0}}
 @keyframes hmSpin{to{transform:rotate(360deg)}}
 @keyframes hmWave{0%,100%{height:18%}50%{height:100%}}
-.hm-hint{margin:16px 0 0;border:0;background:none;padding:8px 12px;min-height:40px;max-width:100%;color:var(--muted);font-size:15px;font-weight:500;line-height:1.4;text-align:center;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hm-hint.reply{color:var(--text);opacity:.8;font-size:14.5px}
+.hm-hint{margin:18px 0 0;border:0;background:none;padding:8px 12px;min-height:40px;max-width:100%;color:var(--muted);font-size:16px;font-weight:500;letter-spacing:-.012em;line-height:1.4;text-align:center;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hm-hint.reply{color:var(--text);opacity:.82;font-size:15px}
 .hm-hint b{color:var(--text);font-weight:700}
-.hm-type{margin-top:6px;display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 15px 0 13px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;transition:transform .15s var(--ease)}
-.hm-type svg{width:17px;height:17px}
+.hm-type{margin-top:6px;display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 16px 0 13px;border-radius:999px;border:0;background:var(--fill);color:var(--text);opacity:.85;font-size:14px;font-weight:600;letter-spacing:-.01em;cursor:pointer;transition:transform .15s var(--ease)}
+.hm-type svg{width:17px;height:17px;color:var(--muted)}
 .hm-type:active,.hm-brief:active,.tile:active{transform:scale(.97)}
-.hm-brief{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;border-radius:18px;border:1px solid var(--line);background:var(--card);padding:7px 14px 7px 8px;font-size:14.5px;font-weight:600;text-align:left;cursor:pointer;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);transition:transform .15s var(--ease)}
+.hm-brief{display:flex;align-items:center;gap:12px;width:100%;min-height:58px;border-radius:20px;border:1px solid var(--card-border);background:var(--card);box-shadow:var(--card-shadow);padding:8px 14px 8px 9px;font-size:14.5px;font-weight:600;text-align:left;cursor:pointer;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);transition:transform .15s var(--ease)}
 .hm-brief[hidden]{display:none}
-.hm-brief .pb{flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent)}
+.hm-brief .pb{flex:none;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent)}
 .hm-brief .pb svg{width:15px;height:15px}
 .hm-brief .bt{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.25}
 .hm-brief .bt b,.hm-brief .bt small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hm-brief .bt b{font-weight:700;font-size:14.5px}
-.hm-brief .bt small{color:var(--muted);font-size:12px;font-weight:500;margin-top:1px}
+.hm-brief .bt b{font-weight:650;font-size:15px;letter-spacing:-.015em}
+.hm-brief .bt small{color:var(--muted);font-size:12.5px;font-weight:500;margin-top:2px}
 .hm-brief .chev{flex:none;width:18px;height:18px;color:var(--faint)}
 .hm-brief .eq{display:none;align-items:flex-end;gap:2px;height:14px}
 .hm-brief .eq i{width:3px;border-radius:2px;background:currentColor;animation:hmEq .9s ease-in-out infinite}
@@ -203,140 +312,227 @@ body.is-listening .hm-glow{animation-duration:1.8s}
 @keyframes hmEq{0%,100%{height:4px}50%{height:14px}}
 .hm-tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
 .hm-tiles:empty{display:none}
-.tile{position:relative;min-width:0;min-height:96px;text-align:left;border:1px solid var(--line);background:var(--card);border-radius:20px;padding:12px 14px 13px;display:flex;flex-direction:column;cursor:pointer;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);transition:transform .15s var(--ease)}
+.tile{position:relative;min-width:0;min-height:98px;text-align:left;border:1px solid var(--card-border);background:var(--card);box-shadow:var(--card-shadow);border-radius:22px;padding:13px 14px 13px;display:flex;flex-direction:column;cursor:pointer;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);transition:transform .18s var(--ease)}
 .tile.wide{grid-column:1/-1}
 .t-top{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:24px}
-.t-lbl{color:var(--muted);font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.t-lbl{color:var(--muted);font-size:12.5px;font-weight:600;letter-spacing:-.005em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .t-ic{flex:none;width:24px;height:24px;display:grid;place-items:center;color:var(--accent)}
 .t-ic svg{width:100%;height:100%}
 .t-ic.sm{width:20px;height:20px;opacity:.9}
-.t-val{padding-top:6px;font-size:25px;font-weight:800;letter-spacing:-.8px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
-.t-val.txt{font-size:16.5px;letter-spacing:-.3px;font-weight:700;line-height:1.25}
-.t-val small{font-size:13px;font-weight:700;letter-spacing:0;color:var(--muted);margin-left:3px}
+.t-val{padding-top:6px;font-size:26px;font-weight:750;letter-spacing:-.035em;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.t-val.txt{font-size:17px;letter-spacing:-.022em;font-weight:650;line-height:1.25}
+.t-val small{font-size:13px;font-weight:650;letter-spacing:0;color:var(--muted);margin-left:3px}
 .t-bar+.t-sub{margin-top:5px}
-.t-sub{margin-top:auto;padding-top:3px;color:var(--muted);font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.t-sub{margin-top:auto;padding-top:3px;color:var(--muted);font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .t-sub.bad{color:var(--bad);font-weight:600}.t-sub.warn{color:var(--warn);font-weight:600}
-.t-bar{height:4px;border-radius:9px;background:var(--line);overflow:hidden;margin-top:auto}
+.t-bar{height:4px;border-radius:9px;background:var(--fill2);overflow:hidden;margin-top:auto}
 .t-bar i{display:block;height:100%;border-radius:9px;background:linear-gradient(90deg,var(--accent),var(--accent2))}
 .t-bar i.bad{background:var(--bad)}.t-bar i.warn{background:linear-gradient(90deg,var(--warn),var(--bad))}
 .t-bar i.good{background:linear-gradient(90deg,#16a34a,var(--good))}
-.t-skel{display:block;height:24px;width:55%;border-radius:8px;margin-top:10px;background:linear-gradient(90deg,var(--line),rgba(255,255,255,.12),var(--line));background-size:200% 100%;animation:hmShim 1.4s linear infinite}
+.t-skel{display:block;height:24px;width:55%;border-radius:8px;margin-top:10px;background:linear-gradient(90deg,var(--fill),var(--fill2),var(--fill));background-size:200% 100%;animation:hmShim 1.4s linear infinite}
 @keyframes hmShim{to{background-position:-200% 0}}
-.t-val.sm{font-size:21px;letter-spacing:-.6px}.t-val.xs{font-size:18px;letter-spacing:-.4px}
+.t-val.sm{font-size:22px;letter-spacing:-.03em}.t-val.xs{font-size:18px;letter-spacing:-.02em}
 :root[data-theme="light"] .t-sub.warn{color:#b45309}
 .hm-brief.ready .pb{background:var(--accent);color:#fff;box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 22%,transparent)}
 .hm-brief.ready .pb::after{content:"";position:absolute;top:-1px;right:-1px;width:10px;height:10px;border-radius:50%;background:#ffb020;border:2px solid var(--bg)}
 .hm-brief .pb{position:relative}
-/* shorter phones (iPhone SE / 8 / mini, Android with tall bars): everything still fits above the menu without scrolling */
 @media (max-height:760px){
   .hm-top{margin-top:0}
+  .hm-greet{font-size:23px}
   .hm-stage{padding:4px 0 12px;min-height:0}
   .hm-orb{--sz:clamp(88px,calc(100vh - var(--safe-t) - var(--safe-b) - 532px),128px);--sz:clamp(88px,calc(100svh - var(--safe-t) - var(--safe-b) - 532px),128px)}
   .hm-hint{margin-top:6px}
   .hm-type{margin-top:4px;height:36px}
-  .hm-brief{min-height:50px;padding:5px 12px 5px 7px;border-radius:16px}
+  .hm-brief{min-height:50px;padding:5px 12px 5px 7px;border-radius:17px}
   .hm-brief .pb{width:34px;height:34px}
   .hm-tiles{gap:8px;margin-top:8px}
-  .tile{min-height:0;padding:10px 12px 11px;border-radius:18px}
+  .tile{min-height:0;padding:10px 12px 11px;border-radius:19px}
   .t-val{font-size:22px;padding-top:3px}.t-val.sm{font-size:19px}.t-val.xs{font-size:16.5px}
   .t-val.txt{font-size:15.5px}
 }
 @media (max-height:620px){.hm-glow{inset:-22%}.hm-orb{--sz:88px}.hm-hint{margin-top:4px}}
-@media (prefers-reduced-motion:reduce){
-  .hm-glow,.hm-ring,.hm-core::before,.orb::before,.hm-wave i,.hm-brief .eq i,.t-skel{animation:none!important}
-  .hm-ring{opacity:0}.view{animation:none}.nav,.orb{transition:none}
-}
 
-/* assistant sheet */
-.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:30;opacity:0;pointer-events:none;transition:opacity .3s}
+/* ---------- assistant sheet ---------- */
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.42);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);z-index:30;opacity:0;pointer-events:none;transition:opacity .3s}
 .sheet-bg.open{opacity:1;pointer-events:auto}
-.sheet{position:fixed;left:50%;bottom:0;transform:translate(-50%,105%);width:100%;max-width:520px;height:min(86vh,760px);z-index:31;background:var(--bg2);border:1px solid var(--line);border-bottom:0;border-radius:28px 28px 0 0;display:flex;flex-direction:column;transition:transform .42s var(--ease);box-shadow:0 -20px 60px rgba(0,0,0,.4)}
+.sheet{position:fixed;left:50%;bottom:0;transform:translate(-50%,105%);width:100%;max-width:520px;height:min(88vh,780px);z-index:31;background:var(--bg2);border:1px solid var(--line);border-bottom:0;border-radius:30px 30px 0 0;display:flex;flex-direction:column;transition:transform .48s var(--spring);box-shadow:0 -20px 60px rgba(0,0,0,.35)}
 .sheet.open{transform:translate(-50%,0)}
-.sheet:not(.open){visibility:hidden;transition:transform .42s var(--ease),visibility 0s linear .42s}
-.grab{width:42px;height:5px;border-radius:9px;background:var(--faint);opacity:.5;margin:10px auto 4px}
-.sheet-head{display:flex;align-items:center;justify-content:space-between;padding:6px 16px 8px}
-.sheet-head b{font-size:16px}
-.chat{flex:1;overflow-y:auto;padding:8px 16px 12px;display:flex;flex-direction:column;gap:10px}
-.msg{max-width:84%;padding:11px 14px;border-radius:18px;font-size:15px;animation:fadeUp .3s var(--ease);word-wrap:break-word}
+.sheet:not(.open){visibility:hidden;transition:transform .36s var(--ease),visibility 0s linear .36s}
+.grab{width:38px;height:5px;border-radius:9px;background:var(--faint);opacity:.55;margin:8px auto 2px;flex:none}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;padding:4px 14px 8px 20px}
+.sheet-head b{font-size:19px;font-weight:700;letter-spacing:-.025em}
+.sheet-head .icon-btn{width:34px;height:34px}
+.sheet-head .icon-btn svg{width:16px;height:16px;color:var(--muted)}
+.chat{flex:1;overflow-y:auto;padding:8px 16px 12px;display:flex;flex-direction:column;gap:8px;overscroll-behavior:contain}
+.msg{max-width:82%;padding:10px 14px;border-radius:20px;font-size:16px;line-height:1.38;letter-spacing:-.012em;animation:msgIn .34s var(--spring);word-wrap:break-word}
+@keyframes msgIn{from{opacity:0;transform:translateY(8px) scale(.97)}to{opacity:1;transform:none}}
 .msg.me{align-self:flex-end;background:var(--accent);color:#fff;border-bottom-right-radius:6px}
-.msg.ai{align-self:flex-start;background:var(--card-solid);border:1px solid var(--line);border-bottom-left-radius:6px}
-.msg.ai .who{font-size:11px;font-weight:700;color:var(--accent);margin-bottom:2px}
-.voice-stage{display:flex;flex-direction:column;align-items:center;gap:10px;padding:8px 16px 4px}
-.wave{display:flex;align-items:center;gap:4px;height:40px}
+.msg.ai{align-self:flex-start;background:var(--card-solid);border:1px solid var(--card-border);box-shadow:var(--card-shadow);border-bottom-left-radius:6px}
+:root[data-theme="dark"] .msg.ai{background:#232329;border-color:transparent}
+.msg.ai .who{display:none}
+.voice-stage{display:flex;flex-direction:column;align-items:center;gap:8px;padding:6px 16px 4px}
+.wave{display:flex;align-items:center;gap:4px;height:36px}
 .wave i{width:4px;border-radius:4px;background:linear-gradient(180deg,var(--accent2),var(--accent));height:6px;transition:height .1s}
 .listening .wave i{animation:wv 1s ease-in-out infinite}
 .wave i:nth-child(2){animation-delay:.1s}.wave i:nth-child(3){animation-delay:.2s}.wave i:nth-child(4){animation-delay:.3s}.wave i:nth-child(5){animation-delay:.4s}.wave i:nth-child(6){animation-delay:.3s}.wave i:nth-child(7){animation-delay:.2s}.wave i:nth-child(8){animation-delay:.1s}
-@keyframes wv{0%,100%{height:6px}50%{height:34px}}
+@keyframes wv{0%,100%{height:6px}50%{height:32px}}
 .live{min-height:22px;color:var(--muted);text-align:center;font-size:15px;padding:0 10px}
 .composer{display:flex;gap:8px;align-items:center;padding:10px 12px calc(12px + var(--safe-b));border-top:1px solid var(--line)}
-.composer input{flex:1;min-width:0;border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:999px;padding:13px 16px;font-size:16px;outline:none}
+.composer input{flex:1;min-width:0;border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:999px;padding:12px 16px;font-size:16px;outline:none;transition:border-color .2s}
 .composer input:focus{border-color:var(--accent)}
-.round{flex:none;width:48px;height:48px;border-radius:50%;border:0;display:grid;place-items:center;cursor:pointer;background:var(--card);border:1px solid var(--line)}
-.round svg{width:22px;height:22px}
-.round.primary{background:var(--accent);border:0;color:#fff;box-shadow:0 8px 18px rgba(109,93,252,.4);box-shadow:0 8px 18px color-mix(in srgb,var(--accent) 40%,transparent)}
+.round{flex:none;width:46px;height:46px;border-radius:50%;display:grid;place-items:center;cursor:pointer;background:var(--fill);border:0;transition:transform .15s var(--ease)}
+.round:active{transform:scale(.9)}
+.round svg{width:21px;height:21px}
+.round.primary{background:var(--accent);color:#fff;box-shadow:0 8px 18px color-mix(in srgb,var(--accent) 40%,transparent)}
 .round.rec{background:var(--bad);animation:pulse 1.3s infinite}
 @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(244,63,94,.55)}70%{box-shadow:0 0 0 18px rgba(244,63,94,0)}100%{box-shadow:0 0 0 0 rgba(244,63,94,0)}}
 .suggest{display:flex;gap:8px;overflow-x:auto;padding:0 16px 8px;scrollbar-width:none}
 .suggest::-webkit-scrollbar{display:none}
+.suggest .chip{box-shadow:none;background:var(--fill);border-color:transparent;font-weight:550}
 
-/* settings */
-.set-group{background:var(--card);border:1px solid var(--line);border-radius:20px;overflow:hidden;margin-bottom:16px}
-.set-row{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line)}
-.set-row:last-child{border-bottom:0}
+/* ---------- settings ---------- */
+.set-group{background:var(--card);border:1px solid var(--card-border);box-shadow:var(--card-shadow);border-radius:var(--radius);overflow:hidden;margin-bottom:12px}
+.set-row{position:relative;display:flex;align-items:center;gap:13px;padding:12px 16px;min-height:56px}
+.set-row+.set-row::before{content:"";position:absolute;top:0;right:0;left:63px;border-top:1px solid var(--sep)}
 .set-row .lbl{flex:1;min-width:0}
-.set-row .lbl b{display:block;font-weight:600}
-.set-row .lbl small{color:var(--muted);font-size:12.5px}
-.set-ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-size:17px;flex:none}
-select,.set-row input[type=number],.set-row input[type=text]{background:var(--bg2);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font:inherit;font-size:14px;max-width:150px}
+.set-row .lbl b{display:block;font-weight:550;font-size:16px;letter-spacing:-.015em}
+.set-row .lbl small{display:block;color:var(--muted);font-size:13px;line-height:1.35;margin-top:1px}
+.set-ic{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;font-size:16px;flex:none;color:#fff}
+.set-ic svg{width:19px;height:19px}
+select,.set-row input[type=number],.set-row input[type=text]{background:var(--fill);color:var(--text);border:0;border-radius:10px;padding:8px 10px;font:inherit;font-size:16px;max-width:150px;outline:none}
+.set-row input[type=number],.set-row input[type=text]{text-align:right;width:120px;background:none;color:var(--muted);padding:8px 0}
+.set-row input[type=number]:focus,.set-row input[type=text]:focus{box-shadow:none;color:var(--text)}
+.set-row input:focus,.set-row select:focus{box-shadow:0 0 0 2px var(--accent)}
 input[type=range]{width:120px;accent-color:var(--accent)}
-.switch{position:relative;width:50px;height:30px;flex:none}
-.switch input{opacity:0;width:0;height:0}
-.switch span{position:absolute;inset:0;border-radius:999px;background:var(--faint);transition:.2s;cursor:pointer}
-.switch span::after{content:"";position:absolute;left:3px;top:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:.2s var(--ease)}
+.switch{position:relative;width:51px;height:31px;flex:none}
+.switch input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer;z-index:1}
+.switch span{position:absolute;inset:0;border-radius:999px;background:var(--fill2);transition:background .25s;cursor:pointer}
+.switch span::after{content:"";position:absolute;left:2px;top:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.22);transition:transform .3s var(--spring)}
 .switch input:checked+span{background:var(--good)}
 .switch input:checked+span::after{transform:translateX(20px)}
-.swatches{display:flex;gap:8px}
-.swatches button{width:26px;height:26px;border-radius:50%;border:2px solid transparent;cursor:pointer}
-.swatches button.on{border-color:var(--text)}
-.btn{border:0;border-radius:14px;padding:12px 16px;font-weight:700;cursor:pointer;background:var(--accent);color:#fff}
-.btn.ghost{background:var(--card);color:var(--text);border:1px solid var(--line)}
-.btn.danger{background:rgba(244,63,94,.14);color:var(--bad)}
-.voice-list{max-height:260px;overflow-y:auto}
-.vrow{display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:1px solid var(--line);cursor:pointer}
-.vrow:last-child{border-bottom:0}
-.vrow .radio{width:20px;height:20px;border-radius:50%;border:2px solid var(--faint);flex:none}
+.switch input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+.swatches{display:flex;gap:9px;flex:none}
+@media (max-width:380px){.swatches{gap:7px}.swatches button{width:24px;height:24px}.set-row input[type=number],.set-row input[type=text]{width:100px}}
+.swatches button{width:28px;height:28px;border-radius:50%;border:0;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);transition:transform .2s var(--spring)}
+.swatches button.on{box-shadow:0 0 0 2px var(--bg2),0 0 0 4px currentColor;transform:scale(.9)}
+.btn{border:0;border-radius:14px;padding:12px 16px;min-height:44px;font-weight:650;font-size:15px;letter-spacing:-.012em;cursor:pointer;background:var(--accent);color:#fff;transition:transform .15s var(--ease),opacity .2s}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.45;cursor:default}
+.btn.ghost{background:var(--fill);color:var(--text);border:0}
+.btn.danger{background:rgba(244,63,94,.13);color:var(--bad)}
+.set-row .btn{min-height:36px;padding:8px 14px;border-radius:999px;font-size:14px}
+.voice-list{max-height:280px;overflow-y:auto}
+.vrow{position:relative;display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;min-height:52px}
+.vrow+.vrow::before{content:"";position:absolute;top:0;right:0;left:48px;border-top:1px solid var(--sep)}
+.vrow:active{background:var(--press)}
+.vrow .radio{width:20px;height:20px;border-radius:50%;border:2px solid var(--faint);flex:none;transition:border .2s}
 .vrow.on .radio{border:6px solid var(--accent)}
-.vrow .nm{flex:1;min-width:0;font-size:14px}
-.vrow .nm small{display:block;color:var(--muted);font-size:11.5px}
-.star{font-size:10px;font-weight:800;color:var(--good);background:rgba(34,197,94,.14);padding:2px 6px;border-radius:999px}
-.tip{font-size:13px;color:var(--muted);background:var(--accent-soft);border-radius:14px;padding:12px 14px;margin:-6px 0 16px}
+.vrow .nm{flex:1;min-width:0;font-size:15px}
+.vrow .nm small{display:block;color:var(--muted);font-size:12px}
+.star{font-size:10.5px;font-weight:700;color:var(--good);background:rgba(34,197,94,.14);padding:2px 7px;border-radius:999px;white-space:nowrap}
+.tip{display:flex;gap:10px;font-size:13.5px;line-height:1.45;color:var(--muted);background:var(--accent-soft);border-radius:16px;padding:12px 14px;margin:0 0 12px}
+.tip svg{width:18px;height:18px;flex:none;color:var(--accent);margin-top:1px}
 .tip b{color:var(--text)}
+.jv-foot{text-align:center;color:var(--faint);font-size:12.5px;margin:22px 0 4px;line-height:1.5}
 
-/* toast + modal */
-.toast{position:fixed;left:50%;bottom:calc(98px + var(--safe-b));transform:translate(-50%,20px);background:var(--card-solid);border:1px solid var(--line);color:var(--text);padding:12px 14px 12px 16px;border-radius:16px;box-shadow:var(--shadow);z-index:40;opacity:0;pointer-events:none;transition:.3s var(--ease);display:flex;gap:12px;align-items:center;max-width:calc(100% - 32px);font-weight:500}
-.toast.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
-.toast button{border:0;background:none;color:var(--accent);font-weight:700;cursor:pointer}
-.modal{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.55);backdrop-filter:blur(6px)}
-.modal.open{display:flex}
-.modal .box{width:100%;max-width:420px;background:var(--bg2);border:1px solid var(--line);border-radius:24px;padding:18px;animation:fadeUp .25s var(--ease)}
-.modal h4{margin:0 0 12px;font-size:17px}
-.modal textarea,.modal input,.modal select{width:100%;background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:12px;font:inherit;font-size:16px;margin-bottom:10px;max-width:none}
-.modal textarea{min-height:110px;resize:vertical}
-.modal .row{display:flex;gap:8px;justify-content:flex-end;margin-top:6px}
+/* ---------- toast ---------- */
+.toast{position:fixed;left:50%;bottom:calc(92px + var(--safe-b));transform:translate(-50%,16px) scale(.96);background:rgba(28,28,32,.94);color:#fff;padding:12px 8px 12px 18px;min-height:48px;border-radius:999px;box-shadow:0 14px 40px rgba(0,0,0,.3);z-index:80;opacity:0;pointer-events:none;transition:opacity .25s,transform .4s var(--spring);display:flex;gap:10px;align-items:center;max-width:calc(100% - 32px);font-weight:550;font-size:14.5px;letter-spacing:-.01em;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+:root[data-theme="dark"] .toast{background:rgba(58,58,66,.92)}
+.toast.show{opacity:1;transform:translate(-50%,0) scale(1);pointer-events:auto}
+.toast #toastText{padding-right:10px}
+.toast button{border:0;background:rgba(255,255,255,.14);color:#fff;font-weight:700;cursor:pointer;border-radius:999px;padding:7px 14px;font-size:14px}
+body.at-home .toast{bottom:calc(92px + var(--safe-b))}
+
+/* ---------- modal = iOS bottom sheet (features use it with h4 + inputs + .row) ---------- */
+.modal{position:fixed;left:0;right:0;top:var(--vv-top);height:var(--vv-h);z-index:50;display:none;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.4);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+.modal.open{display:flex;animation:mFade .25s ease}
+.modal.closing{animation:mFadeOut .22s ease forwards}
+@keyframes mFade{from{opacity:0}}
+@keyframes mFadeOut{to{opacity:0}}
+.modal .box{position:relative;width:100%;max-width:520px;max-height:calc(100% - 10px - var(--safe-t));overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:var(--bg2);border:1px solid var(--line);border-bottom:0;border-radius:28px 28px 0 0;padding:26px 18px calc(18px + var(--safe-b));box-shadow:0 -16px 50px rgba(0,0,0,.3);animation:mUp .44s var(--spring)}
+.modal.closing .box{animation:mDown .24s var(--ease) forwards}
+.modal .box::before{content:"";position:absolute;top:8px;left:50%;width:38px;height:5px;margin-left:-19px;border-radius:9px;background:var(--faint);opacity:.5}
+@keyframes mUp{from{transform:translateY(100%)}to{transform:none}}
+@keyframes mDown{to{transform:translateY(100%)}}
+.modal h4{margin:0 0 14px;font-size:20px;font-weight:700;letter-spacing:-.025em}
+.modal p{line-height:1.45}
+.modal textarea,.modal input,.modal select{width:100%;background:var(--card);color:var(--text);border:1px solid var(--card-border);border-radius:14px;padding:13px 14px;font:inherit;font-size:16px;margin-bottom:10px;max-width:none;outline:none;transition:box-shadow .2s}
+.modal textarea:focus,.modal input:focus,.modal select:focus{box-shadow:0 0 0 2px var(--accent)}
+.modal input[type=checkbox],.modal input[type=radio],.modal input[type=range]{width:auto;margin:0;padding:0;box-shadow:none;background:none}
+.modal .switch input{width:100%}
+.modal textarea{min-height:110px;resize:vertical;line-height:1.45}
+.modal .row{display:flex;gap:10px;justify-content:flex-end;margin-top:8px}
+.modal .row .btn{flex:1}
+@media (min-width:600px){.modal{align-items:center}.modal .box{border-radius:28px;border-bottom:1px solid var(--line);padding-bottom:20px;max-width:440px}.modal .box::before{display:none}}
+
+/* ---------- edit sheets (expense, reminder, note) ---------- */
+.modal .box.fs{padding:0 0 calc(20px + var(--safe-b))}
+.modal .box.fs::before{display:none}
+.fs-head{position:sticky;top:0;z-index:2;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;padding:8px 8px 6px;background:var(--bg2);border-radius:28px 28px 0 0}
+.fs-head::before{content:"";position:absolute;top:8px;left:50%;width:38px;height:5px;margin-left:-19px;border-radius:9px;background:var(--faint);opacity:.5}
+.fs-head b{grid-column:2;font-size:17px;font-weight:650;letter-spacing:-.022em;padding-top:12px;white-space:nowrap}
+.fs-hb{border:0;background:none;color:var(--accent);font-size:17px;letter-spacing:-.02em;padding:16px 12px 6px;cursor:pointer;justify-self:start;min-height:44px}
+.fs-hb.save{justify-self:end;font-weight:650}
+.fs-hb:disabled{opacity:.35;cursor:default}
+.fs-hb:active{opacity:.5}
+.fs-body{padding:6px 16px 0}
+.fs-amt{display:flex;align-items:center;justify-content:center;gap:4px;margin:10px 0 4px;font-weight:700;letter-spacing:-.04em}
+.fs-amt span{font-size:34px;color:var(--muted);font-weight:600}
+.modal .fs-amt input{width:auto;min-width:3ch;max-width:100%;border:0;background:none;box-shadow:none;padding:0;margin:0;text-align:center;font-size:52px;font-weight:750;letter-spacing:-.045em;color:var(--text);font-variant-numeric:tabular-nums;field-sizing:content}
+.modal .fs-amt input:focus{box-shadow:none}
+.fs-amt input::placeholder{color:var(--faint)}
+.fs-amt.in input,.fs-amt.in span{color:var(--good)}
+.fs-sub{text-align:center;color:var(--muted);font-size:13px;margin:0 0 14px}
+.fs-group{background:var(--card);border:1px solid var(--card-border);box-shadow:var(--card-shadow);border-radius:16px;overflow:hidden;margin:0 0 14px}
+.fs-field{position:relative;display:flex;align-items:center;gap:12px;min-height:52px;padding:0 14px}
+.fs-field+.fs-field::before{content:"";position:absolute;top:0;left:14px;right:0;border-top:1px solid var(--sep)}
+.fs-field>label,.fs-field>.fl{flex:none;font-size:16px;letter-spacing:-.015em;color:var(--text);min-width:76px}
+.fs-field input,.fs-field select,.fs-field textarea{flex:1;min-width:0;width:auto;margin:0;border:0;background:none;box-shadow:none;padding:14px 0;text-align:right;font-size:16px;color:var(--text);border-radius:0}
+.fs-field textarea{text-align:left;min-height:120px;padding:14px 0;resize:none}
+.modal .fs-field.tall{align-items:stretch}
+.fs-field input[type=datetime-local],.fs-field input[type=date],.fs-field input[type=time]{color:var(--accent);font-weight:550;-webkit-appearance:none;appearance:none;min-height:24px}
+.fs-field input::-webkit-date-and-time-value{text-align:right}
+.fs-lbl{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:18px 14px 8px}
+.fs-cats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:0 0 14px}
+.fs-cat{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 2px 9px;border-radius:14px;border:1.5px solid transparent;background:var(--card);box-shadow:var(--card-shadow);cursor:pointer;font-size:11.5px;font-weight:600;color:var(--muted);letter-spacing:-.005em;transition:border-color .2s,transform .15s var(--ease),color .2s;min-width:0}
+.fs-cat span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fs-cat:active{transform:scale(.95)}
+.fs-cat .jv-ico{width:34px;height:34px;border-radius:10px}
+.fs-cat .jv-ico svg{width:19px;height:19px}
+.fs-cat.on{border-color:var(--c);color:var(--text)}
+.fs-seg{margin:0 0 14px}
+.fs-seg.in button.active[data-v="income"]{color:var(--good)}
+.fs-acts{display:flex;flex-direction:column;gap:0}
+.fs-act{display:flex;align-items:center;gap:12px;width:100%;min-height:52px;padding:0 14px;border:0;background:none;color:var(--accent);font-size:16px;letter-spacing:-.015em;cursor:pointer;text-align:left;position:relative}
+.fs-act+.fs-act::before{content:"";position:absolute;top:0;left:14px;right:0;border-top:1px solid var(--sep)}
+.fs-act svg{width:20px;height:20px;flex:none}
+.fs-act.danger{color:var(--bad)}
+.fs-act:active{background:var(--press)}
+.fs-note{font-size:12.5px;color:var(--muted);margin:-6px 14px 14px;line-height:1.4}
+.fs-chips{display:flex;gap:8px;flex-wrap:wrap;margin:-4px 0 14px}
+.fs-chips button{border:0;background:var(--fill);color:var(--text);border-radius:999px;padding:8px 13px;font-size:13.5px;font-weight:600;cursor:pointer}
+.fs-chips button:active{transform:scale(.96)}
+
 .banner{display:none;margin-bottom:14px}
 
-/* accessibility: visible keyboard focus, and comfortable (≥ 42px) tap areas for small icon buttons without changing the look */
+/* accessibility: visible keyboard focus, comfortable tap areas for small icon buttons */
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .mini,.check,.link,.swatches button,.fin-range button{position:relative}
 .mini::after{content:"";position:absolute;inset:-5px}
-.check::after{content:"";position:absolute;inset:-8px}
-.link::after{content:"";position:absolute;inset:-8px -4px}
-.swatches{gap:12px}
-.swatches button::after{content:"";position:absolute;inset:-8px}
+.check::after{content:"";position:absolute;inset:-9px}
+.link::after{content:"";position:absolute;inset:-8px -6px}
+.swatches button::after{content:"";position:absolute;inset:-7px}
 .fin-range button::after{content:"";position:absolute;inset:-9px -2px}
+@media (hover:hover){.jv-row:hover,.vrow:hover{background:var(--press)}.chip:hover,.tile:hover,.jv-me:hover{filter:brightness(1.03)}}
+@media (prefers-reduced-motion:reduce){
+  .hm-glow,.hm-ring,.hm-core::before,.orb::before,.hm-wave i,.hm-brief .eq i,.t-skel{animation:none!important}
+  .hm-ring{opacity:0}.view.active,.view.active.v-push,.view.active.v-back,.msg,.modal .box,.modal.open{animation:none!important}.nav,.orb{transition:none}
+}
 </style>
 </head>
 <body class="at-home">
+<!-- top bar on every screen but Home: back chevron (to where you came from) + title -->
+<header class="jv-bar" id="jvBar"><button class="jv-back" id="jvBack" hidden aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7"/></svg><span id="jvBackTxt">Back</span></button><div class="jv-title" id="jvTitle" aria-hidden="true"></div><div class="jv-bar-r" id="jvBarR"></div></header>
 <div class="app">
 
   <!-- ============ HOME: one big mic + today's key numbers (everything else is behind the bottom menu) ============ -->
@@ -371,47 +567,47 @@ input[type=range]{width:120px;accent-color:var(--accent)}
       <div class="home-block" style="order:30"><div class="section-h"><h3>Budget</h3><button class="link" data-go="budget">Details</button></div>
       <div class="card" id="homeBudget"></div></div>
       <div class="home-block" style="order:40"><div class="section-h"><h3>Up next</h3><button class="link" data-go="reminders">All</button></div>
-      <div class="list" id="homeRem"></div></div>
+      <div id="homeRem"></div></div>
       <div class="home-block" style="order:60"><div class="section-h"><h3>Recent notes</h3><button class="link" data-go="notes">All</button></div>
-      <div class="list" id="homeNotes"></div></div>
+      <div id="homeNotes"></div></div>
     </div>
   </section>
 
   <!-- ============ NOTES ============ -->
   <section class="view" id="v-notes">
-    <h2>Notes</h2><p class="lede">Say “Note: …” or tap a note to edit it.</p>
-    <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="noteSearch" placeholder="Search notes"></div>
+    <h2>Notes</h2><p class="lede">Say “Note: …”, or tap any note to edit it.</p>
+    <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="noteSearch" type="search" placeholder="Search" aria-label="Search notes" autocomplete="off"></div>
     <div class="seg" id="noteFilter"><button data-f="all" class="active">All</button><button data-f="pinned">Pinned</button><button data-f="idea">Ideas</button><button data-f="work">Work</button><button data-f="personal">Personal</button></div>
-    <div class="list" id="noteList"></div>
-    <button class="btn ghost" style="width:100%;margin-top:14px" id="addNoteBtn">+ New note</button>
+    <div id="noteList"></div>
+    <button class="jv-add" id="addNoteBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg> New note</button>
   </section>
 
   <!-- ============ REMINDERS ============ -->
   <section class="view" id="v-reminders">
-    <h2>Reminders</h2><p class="lede">“Remind me to call mom every Sunday at 6 pm”</p>
+    <h2>Reminders</h2><p class="lede">“Remind me to call mom every Sunday at 6 pm.” Tap one to change it.</p>
     <div class="seg" id="remFilter"><button data-f="upcoming" class="active">Upcoming</button><button data-f="overdue">Overdue</button><button data-f="done">Done</button></div>
-    <div class="list" id="remList"></div>
-    <button class="btn ghost" style="width:100%;margin-top:14px" id="addRemBtn">+ New reminder</button>
+    <div id="remList"></div>
+    <button class="jv-add" id="addRemBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg> New reminder</button>
   </section>
 
-  <!-- ============ BUDGET ============ -->
+  <!-- ============ MONEY (budget) ============ -->
   <section class="view" id="v-budget">
-    <h2>Budget</h2><p class="lede">“Paid 15 dollars for groceries” · “Got paid 2000”</p>
-    <div class="month-nav"><button class="icon-btn" id="prevM" aria-label="Previous month">‹</button><b id="monthLabel"></b><button class="icon-btn" id="nextM" aria-label="Next month">›</button></div>
+    <h2>Money</h2><p class="lede">“Paid 15 for groceries” · “Got paid 2000”. Tap any payment to edit it.</p>
+    <div class="month-nav"><button class="icon-btn" id="prevM" aria-label="Previous month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7"/></svg></button><b id="monthLabel"></b><button class="icon-btn" id="nextM" aria-label="Next month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg></button></div>
     <div class="grid2" id="budgetStats"></div>
     <div class="card" style="margin-top:12px" id="budgetGoal"></div>
     <div class="section-h"><h3>Where it went</h3></div>
     <div class="card" id="donutCard"></div>
     <div class="section-h"><h3>Daily spending</h3></div>
     <div class="card" id="dailyCard"></div>
-    <div class="section-h"><h3>Transactions</h3><button class="link" id="addExpBtn">+ Add</button></div>
-    <div class="list" id="txList"></div>
+    <div class="section-h"><h3>Transactions</h3><button class="link" id="addExpBtn">Add</button></div>
+    <div id="txList"></div>
   </section>
 
-  <!-- ============ APPS ============ -->
+  <!-- ============ MORE: everything, grouped like iPhone Settings ============ -->
   <section class="view" id="v-apps">
-    <h2>More</h2><p class="lede">Everything Jarvis can do.</p>
-    <div class="app-grid" id="appGrid"></div>
+    <h2>More</h2><p class="lede">Everything Jarvis can do for you.</p>
+    <div id="moreMenu"></div>
   </section>
 
   <div id="pluginViews"></div>
@@ -423,43 +619,43 @@ input[type=range]{width:120px;accent-color:var(--accent)}
     <div class="section-h"><h3>Voice</h3></div>
     <div class="tip" id="voiceTip"></div>
     <div class="set-group">
-      <div class="set-row"><div class="set-ic" style="background:rgba(109,93,252,.15)">🔊</div><div class="lbl"><b>Speak replies</b><small>Jarvis talks back</small></div><label class="switch"><input type="checkbox" id="sSpeak"><span></span></label></div>
-      <div class="set-row"><div class="set-ic" style="background:rgba(34,211,238,.15)">⏩</div><div class="lbl"><b>Speed</b></div><input type="range" id="sRate" min="0.7" max="1.4" step="0.05"></div>
-      <div class="set-row"><div class="set-ic" style="background:rgba(245,158,11,.15)">🎚️</div><div class="lbl"><b>Pitch</b></div><input type="range" id="sPitch" min="0.6" max="1.4" step="0.05"></div>
+      <div class="set-row"><div class="set-ic" style="background:#ff2d55"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg></div><div class="lbl"><b>Speak replies</b><small>Jarvis talks back</small></div><label class="switch"><input type="checkbox" id="sSpeak" aria-label="Speak replies"><span></span></label></div>
+      <div class="set-row"><div class="set-ic" style="background:#0a84ff"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.6 17.5a8.5 8.5 0 1 1 14.8 0"/><path d="m12 13.5 4-4.5"/><circle cx="12" cy="13.5" r="1.2" fill="currentColor"/></svg></div><div class="lbl"><b>Speed</b></div><input type="range" id="sRate" min="0.7" max="1.4" step="0.05" aria-label="Speaking speed"></div>
+      <div class="set-row"><div class="set-ic" style="background:#ff9500"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg></div><div class="lbl"><b>Pitch</b></div><input type="range" id="sPitch" min="0.6" max="1.4" step="0.05" aria-label="Voice pitch"></div>
     </div>
-    <div class="set-group"><div class="set-row" style="padding-bottom:8px"><div class="lbl"><b>Choose a voice</b><small>Tap to hear it. ★ = most natural.</small></div></div><div class="voice-list" id="voiceList"></div></div>
+    <div class="set-group"><div class="set-row"><div class="lbl"><b>Choose a voice</b><small>Tap to hear it. ★ = most natural.</small></div></div><div class="voice-list" id="voiceList"></div></div>
 
     <div class="section-h"><h3>Personal</h3></div>
     <div class="set-group">
-      <div class="set-row"><div class="set-ic" style="background:rgba(34,197,94,.15)">👤</div><div class="lbl"><b>Your name</b></div><input type="text" id="sName"></div>
-      <div class="set-row"><div class="set-ic" style="background:rgba(34,197,94,.15)">💵</div><div class="lbl"><b>Currency</b></div><select id="sCur"><option>$</option><option>€</option><option>£</option><option>L£</option><option>AED</option><option>SAR</option></select></div>
-      <div class="set-row"><div class="set-ic" style="background:rgba(34,197,94,.15)">🎯</div><div class="lbl"><b>Monthly budget</b><small>Or say “Set my budget to 1500”</small></div><input type="number" id="sBudget" inputmode="decimal"></div>
+      <div class="set-row"><div class="set-ic" style="background:#8e8e93"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/></svg></div><div class="lbl"><b>Your name</b></div><input type="text" id="sName" autocomplete="given-name" aria-label="Your name"></div>
+      <div class="set-row"><div class="set-ic" style="background:#34c759"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><circle cx="12" cy="12" r="2.6"/><path d="M6 9.5h.01M18 14.5h.01"/></svg></div><div class="lbl"><b>Currency</b></div><select id="sCur" aria-label="Currency"><option>$</option><option>€</option><option>£</option><option>L£</option><option>AED</option><option>SAR</option></select></div>
+      <div class="set-row"><div class="set-ic" style="background:#ff3b30"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg></div><div class="lbl"><b>Monthly budget</b><small>Or say “Set my budget to 1500”</small></div><input type="number" id="sBudget" inputmode="decimal" placeholder="None" aria-label="Monthly budget"></div>
     </div>
 
     <div class="section-h"><h3>Look</h3></div>
     <div class="set-group">
-      <div class="set-row"><div class="set-ic" style="background:rgba(109,93,252,.15)">🌗</div><div class="lbl"><b>Theme</b></div><select id="sTheme"><option value="dark">Dark</option><option value="light">Light</option><option value="auto">Match phone</option></select></div>
-      <div class="set-row"><div class="set-ic" style="background:rgba(244,63,94,.15)">🎨</div><div class="lbl"><b>Accent color</b></div><div class="swatches" id="swatches"></div></div>
+      <div class="set-row"><div class="set-ic" style="background:#5e5ce6"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/></svg></div><div class="lbl"><b>Theme</b></div><select id="sTheme" aria-label="Theme"><option value="dark">Dark</option><option value="light">Light</option><option value="auto">Match phone</option></select></div>
+      <div class="set-row"><div class="set-ic" style="background:#af52de"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.2 0 1.8-.8 1.8-1.7 0-1.2-1-1.5-1-2.6 0-1 .8-1.7 1.8-1.7H17a4 4 0 0 0 4-4C21 6.5 17 3 12 3z"/><circle cx="7.5" cy="11" r="1.1" fill="currentColor"/><circle cx="10.5" cy="7.3" r="1.1" fill="currentColor"/><circle cx="15" cy="7.8" r="1.1" fill="currentColor"/></svg></div><div class="lbl"><b>Color</b></div><div class="swatches" id="swatches"></div></div>
     </div>
 
     <div class="section-h"><h3>Alerts &amp; data</h3></div>
     <div class="set-group">
-      <div class="set-row"><div class="set-ic" style="background:rgba(245,158,11,.15)">🔔</div><div class="lbl"><b>Reminder alerts</b><small id="notifState">Pop-up alerts on this device</small></div><button class="btn ghost" id="notifBtn">Turn on</button></div>
-      <div class="set-row"><div class="set-ic" style="background:rgba(34,211,238,.15)">💾</div><div class="lbl"><b>Backup</b><small>Save or restore all your data</small></div><button class="btn ghost" id="exportBtn">Save</button><button class="btn ghost" id="importBtn">Restore</button></div>
-      <div class="set-row"><div class="set-ic" style="background:rgba(244,63,94,.15)">🗑️</div><div class="lbl"><b>Erase everything</b></div><button class="btn danger" id="wipeBtn">Erase</button></div>
+      <div class="set-row"><div class="set-ic" style="background:#ff9500"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16v-5a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/></svg></div><div class="lbl"><b>Reminder alerts</b><small id="notifState">Pop-up alerts on this device</small></div><button class="btn ghost" id="notifBtn">Turn on</button></div>
+      <div class="set-row"><div class="set-ic" style="background:#0a84ff"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18.5a4.5 4.5 0 0 1-.6-9 6 6 0 0 1 11.4 1.6 3.8 3.8 0 0 1-.3 7.4z"/><path d="M12 16v-5M9.8 13 12 10.8l2.2 2.2"/></svg></div><div class="lbl"><b>Backup</b><small>Save or restore all your data</small></div><button class="btn ghost" id="exportBtn">Save</button><button class="btn ghost" id="importBtn">Restore</button></div>
+      <div class="set-row"><div class="set-ic" style="background:#ff3b30"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></div><div class="lbl"><b>Erase everything</b><small>Notes, money, food, habits…</small></div><button class="btn danger" id="wipeBtn">Erase</button></div>
     </div>
-    <p style="text-align:center;color:var(--faint);font-size:12px">Jarvis 2.0 · v2 · Your data stays on this device.</p>
+    <p class="jv-foot">Jarvis 2.0<br>Your data stays on this device.</p>
     <input type="file" id="importFile" accept="application/json" hidden>
   </section>
 </div>
 
 <!-- bottom nav -->
 <nav class="nav on-home" id="nav" aria-label="Main">
-  <button class="tab active" data-go="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</button>
-  <button class="tab" data-go="today"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16.5" rx="3"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/><circle cx="12" cy="15" r="1.6" fill="currentColor" stroke="none"/></svg>Today</button>
+  <button class="tab active" data-go="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path class="fi" d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</button>
+  <button class="tab" data-go="today"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect class="fi" x="3" y="4.5" width="18" height="16.5" rx="3"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/><circle cx="12" cy="15" r="1.6" fill="currentColor" stroke="none"/></svg>Today</button>
   <button class="orb" id="orb" aria-label="Talk to Jarvis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="2.5" width="6" height="12" rx="3"/><path d="M5 10.5a7 7 0 0 0 14 0M12 17.5V21"/></svg></button>
-  <button class="tab" data-go="budget"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7V5.5A1.5 1.5 0 0 0 17.5 4h-12A2.5 2.5 0 0 0 3 6.5v11A2.5 2.5 0 0 0 5.5 20h13a2.5 2.5 0 0 0 2.5-2.5v-8A2.5 2.5 0 0 0 18.5 7H5.5A2.5 2.5 0 0 1 3 4.5"/><circle cx="16.5" cy="13.5" r="1.3" fill="currentColor" stroke="none"/></svg>Money</button>
-  <button class="tab" data-go="apps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>More</button>
+  <button class="tab" data-go="budget"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path class="fi" d="M19 7V5.5A1.5 1.5 0 0 0 17.5 4h-12A2.5 2.5 0 0 0 3 6.5v11A2.5 2.5 0 0 0 5.5 20h13a2.5 2.5 0 0 0 2.5-2.5v-8A2.5 2.5 0 0 0 18.5 7H5.5A2.5 2.5 0 0 1 3 4.5"/><circle cx="16.5" cy="13.5" r="1.3" fill="currentColor" stroke="none"/></svg>Money</button>
+  <button class="tab" data-go="apps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect class="fi" x="3" y="3" width="7" height="7" rx="2"/><rect class="fi" x="14" y="3" width="7" height="7" rx="2"/><rect class="fi" x="3" y="14" width="7" height="7" rx="2"/><rect class="fi" x="14" y="14" width="7" height="7" rx="2"/></svg>More</button>
 </nav>
 
 <!-- assistant sheet -->
@@ -646,8 +842,8 @@ function ago(ts){ const s = (Date.now()-ts)/1000; if (s<60) return 'just now'; i
 /* ---------- the brain ---------- */
 /* Clean up what the phone's speech-to-text gives us: curly apostrophes (iPhone), the wake word, end punctuation */
 /* ...and the way people really talk: "Um, okay so can you tell me what's the weather, please?" -> "what's the weather" */
-const SP_FILLER = /^(?:(?:um+|uh+|uhm+|erm+|hmm+|so|okay|ok|alright|oh|yeah|yes|yep|hey|hi|hello|yo|listen|actually|quick question)\b[\s,.:;!?-]*|(?:well|right|like|and|all right|now)\s*[,.:;!?-]+\s*)/i;
-const SP_WAKE = /^jarvis\b[\s,.:;!?-]*/i;
+const SP_FILLER = /^(?:(?:um+|uh+|uhm+|erm+|hmm+|so|okay|ok|alright|oh|yeah|yes|yep|hey|hi|hello|yo|ya|yalla|habibi|wallah|listen|actually|quick question)\b[\s,.:;!?-]*|(?:well|right|like|and|all right|now|khalas)\s*[,.:;!?-]+\s*)/i;
+const SP_WAKE = /^(?:jarvis|jarvis's|jarvas|jervis|javis|jarvus|jarviss)\b[\s,.:;!?-]*/i;
 const SP_ASK = /^(?:(?:can|could|would) you (?:please )?tell me|(?:please )?tell me|let me know|i (?:want|wanna|would like|'d like|need) to know|do you know|you know|i was wondering|any idea)\b[\s,]*(?=(?:what|what's|whats|how|how's|hows|when|when's|whens|where|where's|who|who's|which|why|if|whether|is|are|am|will|was|were|do|does|did|should|can|could|have|has|any)\b)/i;
 const SP_POLITE = /^(?:(?:can|could|would|will) (?:you|u)(?: please)?|please|kindly|i was wondering if you could|do me a favou?r and)\b[\s,]*/i;
 function normalizeSpeech(raw){
@@ -661,25 +857,44 @@ function normalizeSpeech(raw){
   }
   s = s.replace(/[\s,]+jarvis\s*([.!?]*)$/i, '$1');
   if (/^(hey |hi |hello |ok |okay |yo )?jarvis[\s.!?,]*$/i.test(s)) return '';
-  for (let i = 0; i < 3; i++){ const n = s.replace(/[\s,]+(?:please|for me|thanks|thank you)\s*([.!?]*)$/i, '$1').replace(/[\s,]+jarvis\s*([.!?]*)$/i, '$1'); if (!/[a-z0-9]/i.test(n) || n === s) break; s = n; }
+  // "like what's...", "basically how much...", "good morning, brief me"
+  s = s.replace(/^(?:like|basically|so like|okay like|ok like)[\s,]+(?=(?:what|what's|how|how's|when|where|who|is|are|am|do|did|can|give|tell|show|brief|remind)\b)/i, '');
+  s = s.replace(/^(?:good (?:morning|afternoon|evening)|morning|evening)[\s,.!]+(?:jarvis[\s,.!]+)?(?=\S+\s+\S+)/i, '');
+  for (let i = 0; i < 3; i++){ const n = s.replace(/[\s,]+(?:please|for me|thanks|thank you|habibi|yalla)\s*([.!?]*)$/i, '$1').replace(/[\s,]+jarvis\s*([.!?]*)$/i, '$1'); if (!/[a-z0-9]/i.test(n) || n === s) break; s = n; }
+  // apostrophes Android dictation leaves out: "whats", "hows", "im", "dont"
+  s = s.replace(/\b(what|how|where|when|who|that|there|here|it)s\b(?=\s+\S)/gi, (m, w)=>/^its$/i.test(m) ? m : w+"'s").replace(/\bim\b/gi, "I'm").replace(/\bive\b/gi, "I've").replace(/\bid like\b/gi, "I'd like").replace(/\b(do|does|did|is|are|was|were|can|could|would|should|have|has|had|wo)nt\b/gi, "$1n't").replace(/\bcant\b/gi, "can't").replace(/\bwont\b/gi, "won't").replace(/\bwhatre\b/gi, "what're");
+  // words speech-to-text often gets wrong
+  s = s.replace(/\bthe whether\b/gi, 'the weather').replace(/\bwhether (?=today|tomorrow|like|forecast|outside|this)/gi, 'weather ').replace(/\b(my|any) remainders?\b/gi, (m, a)=>a+' reminder'+(/s$/i.test(m)?'s':'')).replace(/\bcalender\b/gi, 'calendar').replace(/\bbudge it\b/gi, 'budget');
   s = /^(note|notes|take a note|make a note|new note|add a note|save a note|write|jot|remember that|remember to)\b/i.test(s) ? s.replace(/[.!\s,]+$/,'').trim() : s.replace(/[.!?\s,]+$/,'').trim();
   return s;
 }
 /* the last exchange, so "save that" knows what "that" is */
-let lastTurn = null, turnKind = 'feature', pendingNote = 0;   // pendingNote: when "take a note" was said on its own (expires after a minute)
+let lastTurn = null, turnKind = 'feature', pendingNote = 0, turnSeq = 0;   // pendingNote: when "take a note" was said on its own (expires after a minute)
+const PLACEHOLDER = /^(One moment|Checking|Looking up|Looking that up|Let me (check|look|see|work|think))/;
+function brainHook(name, ...args){ const b = window.Jarvis && Jarvis.brain; if (!b || typeof b[name] !== 'function') return null; try { return b[name](...args); } catch(e){ console.error('brain '+name, e); return null; } }
 function handle(raw){
   const shown = String(raw||'').trim(); if (!shown) return;
   const said = normalizeSpeech(shown) || 'hello';
   addMsg('me', shown);
   let reply; renderHold++; turnKind = 'feature';
-  try { reply = think(said); } finally { renderHold--; renderWanted = false; }
-  lastTurn = {said, reply, kind: turnKind};
-  addMsg('ai', reply); speak(reply); renderAll();
+  const id = ++turnSeq; brainHook('before', id);
+  try { reply = think(said); } catch(e){ console.error(e); reply = null; } finally { renderHold--; renderWanted = false; }
+  if (!reply){ reply = fallbackReply(String(said).toLowerCase()); }
+  lastTurn = {id, said, reply, kind: turnKind};
+  brainHook('after', lastTurn);
+  addMsg('ai', reply); lastAiEl = $('chat').lastElementChild; speak(reply); renderAll();
 }
-/* a reply that arrives later (after a weather lookup): shown in chat, and "save that" will save it */
-function addLateReply(text){
-  addMsg('ai', text);
-  if (lastTurn && /^(One moment|Checking|Looking up)/.test(lastTurn.reply)) lastTurn.reply = text;
+/* a reply that arrives later (after a weather or Wikipedia lookup): shown in chat, and "save that" will save it.
+   opts.turn: the turn it answers (its "One moment…" placeholder is replaced when it is still the last message); opts.speak: say it aloud */
+let lastAiEl = null;
+function addLateReply(text, opts){
+  opts = opts || {}; text = String(text || ''); if (!text) return;
+  const t = opts.turn != null && lastTurn && lastTurn.id === opts.turn ? lastTurn : (opts.turn == null ? lastTurn : null);
+  const chat = $('chat');
+  if (t && PLACEHOLDER.test(t.reply || '') && lastAiEl && chat && chat.lastElementChild === lastAiEl){ try { lastAiEl.remove(); } catch(e){} }
+  addMsg('ai', text); lastAiEl = chat ? chat.lastElementChild : null;
+  if (t && PLACEHOLDER.test(t.reply || '')){ t.reply = text; if (opts.kind) t.kind = opts.kind; }
+  if (opts.speak){ let tries = 0; (function waitTurn(){ let busy = false; try { busy = speechSynthesis.speaking; } catch(e){} if (busy && ++tries < 24) return setTimeout(waitTurn, 250); speak(text); })(); }
 }
 /* =========================================================
    PLUGIN API: each feature file (features/*.js) registers here
@@ -716,21 +931,17 @@ function renderPlugins(full){
   cards.forEach(c=>{ let el = document.getElementById('hc-'+c.id); if (!el){ el = document.createElement('div'); el.id = 'hc-'+c.id; el.className='home-card'; el.style.order = HOME_ORDER[c.id] ?? (c.order||50); hc.appendChild(el); } try { c.render(el); } catch(e){ console.error(c.id, e); } });
   // only the screen on show is redrawn (others redraw when you open them), so every command stays fast
   plugins.views.forEach(v=>{ if (full || v.id===current) try { v.render(v.el); } catch(e){ console.error(v.id, e); } });
-  const tiles = [
-    {go:'notes', label:'Notes', icon:'📝', color:'#22c55e', order:10},
-    {go:'reminders', label:'Reminders', icon:'⏰', color:'#f59e0b', order:11},
-    {go:'budget', label:'Budget', icon:'💳', color:'#6d5dfc', order:12},
-    ...plugins.tiles,
-    {go:'settings', label:'Settings', icon:'⚙️', color:'#64748b', order:99}
-  ].sort((a,b)=>a.order-b.order);
-  $('appGrid').innerHTML = tiles.map(t=>`<button class="app-tile" data-go="${t.go}"><span class="a-ic" style="background:linear-gradient(135deg,${t.color},${t.color}bb)">${t.icon}</span>${esc(t.label)}</button>`).join('');
+  renderMore();
 }
 
-function think(said){
+/* think(said, depth): depth 0 is what was said; depth 1 is a rewording tried by the brain (features/brain.js),
+   which returns null instead of a fallback so the brain can try something else */
+function think(said, depth){
+  depth = depth || 0;
   const t = wordsToNumbers(said.toLowerCase()).replace(/(\d),(\d{3})/g,'$1$2').replace(/[!?]/g,'').replace(/,/g,' ').replace(/\s+/g,' ').trim();
   const key = monthKey(Date.now()); let m;
   // "take a note" on its own: the next thing said becomes the note
-  const wasPending = pendingNote && Date.now() - pendingNote < 60e3; pendingNote = 0;
+  const wasPending = !depth && pendingNote && Date.now() - pendingNote < 60e3; if (!depth) pendingNote = 0;
   if (wasPending){
     if (/^(take a note|take note|make a note|new note|add a note|save a note|create a note|write a note|note|write (this |something )?down|jot (this |something )?down|jot down|note down)$/.test(t)){ pendingNote = Date.now(); turnKind = 'chat'; return 'Sure. What should the note say?'; }
     if (/^(never ?mind|forget it|cancel|stop|nothing|no|nope|no thanks)$/.test(t)) { turnKind = 'chat'; return 'Okay, no note.'; }
@@ -738,10 +949,12 @@ function think(said){
   }
   // conversation first (exact phrases only), so no feature mistakes "can you hear me" for a command
   const chat = smallTalk(t, said); if (chat) return chat;
+  // the brain first: fixing an entry ("that was actually 40"), maths, conversions, time abroad (strict phrases only)
+  { const b = brainHook('early', said, t, depth); if (b) return b; }
   for (const fn of plugins.intents){ try { const r = fn(said, t); if (r) return r; } catch(e){ console.error(e); } }
 
   if (/^(hi|hello|hey|hey there|hi there|good (morning|afternoon|evening)|afternoon|evening)( jarvis)?$/.test(t)) { turnKind = 'chat'; return `${greeting()}, ${S.name}. What can I do for you?`; }
-  if (/\b(help|what can you do)\b/.test(t)) { turnKind = 'chat'; return HELP_TEXT; }
+  if (/^(help|help me|i need (some )?help|can you help( me)?|what can you do|what else can you do|how can you help( me)?|what do you do)( jarvis| please)?$|^(i'm|i am) (lost|confused)$/.test(t)) { turnKind = 'chat'; return HELP_TEXT; }
   if (/\b(thanks|thank you)\b/.test(t) && t.split(' ').length <= 6) { turnKind = 'chat'; return `Anytime, ${S.name}.`; }
 
   // budget goal
@@ -793,7 +1006,7 @@ function think(said){
   if (/(delete|remove|undo|cancel|scratch) (the |my )?last (reminder)/.test(t)){ db.reminders.sort((a,b)=>b.created-a.created); const x = db.reminders.shift(); save(); return x?'Removed your last reminder.':'No reminders to remove.'; }
 
   // reminders
-  if (/^remind me (what|who|where|which|how|why|if|whether)\b/.test(t)) { turnKind = 'chat'; return `I don't keep a memory of our chats yet. To keep something, say note, then what you want saved.`; }
+  if (/^remind me (what|who|where|which|how|why|if|whether)\b/.test(t)) { turnKind = 'chat'; const rc = /^remind me what (we talked about|i (asked|said)( you)?)( before| earlier| today)?$/.test(t) && brainHook('recap'); return rc || `I only remember what we said since you opened Jarvis. To keep something for good, say note, then what you want saved.`; }
   if ((m = said.match(/^(?:hey jarvis,?\s*)?(?:please\s+)?(?:can you\s+)?(?:remind me|set (?:a )?reminder|reminder|don'?t let me forget)\s*(?:to|that|about|for)?\s*(.*)$/i))){
     const {date, rest, repeat} = parseTime(wordsToNumbers(m[1]));
     const text = cap(rest || 'Reminder');
@@ -820,7 +1033,7 @@ function think(said){
   if (m){
     const amount = parseFloat(m[1]) + (m[2]?parseInt(m[2])/100:0);
     let desc = (m[3]||'').replace(/^(the|some|a|an|my)\s+/,'').trim();
-    if (!desc){ const b = t.match(/bought (.*?) for/); desc = b?b[1].replace(/^(a|an|the|some)\s+/,''):'Something'; }
+    if (!desc){ const b = t.match(/bought (.*?) for/) || t.match(/^(?:i )?(?:the |my |a |an |our )?([a-z][a-z' ]{1,30}?) (?:cost|costs|cost me|came to|charged me|set me back)\b/); desc = b?b[1].replace(/^(a|an|the|some)\s+/,''):'Something'; }
     const cat = categorize(desc);
     db.expenses.unshift({id:uid(), type:'expense', amount, desc:cap(desc), cat, at:Date.now()}); save(); go('budget');
     const tot = sum(inMonth(key));
@@ -829,13 +1042,19 @@ function think(said){
     else if (S.budget && tot > S.budget*.8) s += ` You've used ${Math.round(tot/S.budget*100)}% of your budget.`;
     return s;
   }
-  // nothing matched: answer, never save
+  // nothing matched: the brain rewords it, looks it up, or asks the AI; never saves
+  if (depth) return null;
+  const late = brainHook('late', said, t); if (late) return late;
   return fallbackReply(t);
 }
+Jarvis.rethink = (s)=>think(String(s||''), 1);
+Jarvis.addLateReply = (text, opts)=>addLateReply(text, opts);
+Jarvis.setTurnKind = k=>{ turnKind = k; };
+Jarvis.turnInfo = ()=>({kind: turnKind, last: lastTurn, seq: turnSeq});
 /** tell features (e.g. receipts) that an expense was removed or put back */
 function expenseEvent(kind, e){ try { window.dispatchEvent(new CustomEvent('jarvis:expense-'+kind, {detail:{id:e.id, expense:e}})); } catch(err){} }
 /* Conversation: simple answers, never saves anything (except "save that", which you asked for) */
-const HELP_TEXT = "I can brief you on your day, check the weather, markets and your calendar, set reminders and alarms, track spending, food, water and habits, scan receipts and food photos, and save notes when you ask. Try: brief me.";
+const HELP_TEXT = "Just talk to me normally. I can brief you on your day, the weather, markets and your calendar, set reminders, alarms and timers, track spending, food, water and habits, and fix entries, like: that was actually 40. I also do maths, conversions, exchange rates, time abroad and quick facts. Try: brief me.";
 const pick = list => list[Math.floor(Math.random()*list.length)];
 function spendPeriod(t){
   const d0 = new Date(); d0.setHours(0,0,0,0);
@@ -864,7 +1083,8 @@ function smallTalk(t, said){
   if (/^(what('s| is) (the |today's )?date|today's date|the date|date|what day is (it|today)|what('s| is) (the )?day( today)?|which day is (it|today)|what('s| is) today|what month is it|what year is it|what('s| is) the month|what day of the week is it|what('s| is) the day of the week)( today| now)?$/.test(t)) return chat(`Today is ${now.toLocaleDateString([], {weekday:'long', month:'long', day:'numeric', year:'numeric'})}.`);
   if (/^what did i (just )?say$/.test(t)) return chat(lastTurn ? `You said: ${lastTurn.said}.` : "You haven't said anything yet.");
   if (/^(do you )?(know|remember) (my name|who i am)$|^what('s| is) my name$|^who am i$/.test(t)) return chat(`You're ${N}.`);
-  if (/^do you remember\b|^remember (when|the time|what|how|who|where|if)\b/.test(t)) return chat("I don't keep a memory of our chats yet. To keep something, say note, then what you want saved.");
+  if (/^(what (did|have) (we|i) (talk|talked|speak|spoke|chat|chatted) about|what (did|have) i (ask|asked)( you)?( before| earlier| today| so far)?)$/.test(t)){ const rc = brainHook('recap'); if (rc) return chat(rc); }
+  if (/^do you remember\b|^remember (when|the time|what|how|who|where|if)\b/.test(t)) return chat("I only remember what we've said since you opened Jarvis. To keep something for good, say note, then what you want saved.");
   if (/^(how are you|how are you doing|how're you|how you doing|how are things|how('s| is) it going|how('s| is) everything|how('s| is) life|how('s| is) your life|how do you do|what's up|whats up|sup|what's good|how have you been|you good|you okay|you ok|are you okay|are you ok)( today| doing| jarvis)?$/.test(t)) return chat(pick([`I'm doing great, thanks for asking, ${N}. What can I do for you?`, `All good here, ${N}. How can I help?`]));
   if (/^(how was your day|how('s| is) your day( going)?)$/.test(t)) return chat(`Pretty good. I've been keeping an eye on your day. How's yours going, ${N}?`);
   if (/^(who are you|what are you|what('s| is) your name|introduce yourself|tell me about yourself|are you (real|human|a robot|a person|an ai|a bot)|who (made|built|created|designed) you)$/.test(t)) return chat(`I'm Jarvis, your personal assistant, built just for you. I can brief you on your day, the weather and markets, your money, food and habits, and save notes when you ask.`);
@@ -873,8 +1093,9 @@ function smallTalk(t, said){
   if (/^(tell me a story|sing( me)? a song|sing something)$/.test(t)) return chat(`I'm better with facts than stories, ${N}. Want a joke instead? Just say tell me a joke.`);
   if (/^(thanks|thank you|thank you so much|thanks a lot|thanks so much|thx|cheers|much appreciated|appreciate it|(awesome|great|perfect|ok|okay|cool|nice) (thanks|thank you)|thanks (jarvis|man|buddy|bro)|that's great thanks)$/.test(t)) return chat(pick([`Anytime, ${N}.`, `You're welcome, ${N}.`, `Happy to help.`]));
   if (/^(ok|okay|cool|nice|great|awesome|perfect|got it|alright|all right|sure|good|wow|fine|sounds good|sounds great|okay cool|ok cool|i see|makes sense|interesting|lovely|amazing)$/.test(t)) return chat(`Anything else, ${N}?`);
+  { const cf = brainHook('confirm', t); if (cf) return cf; }   // "Should I log $18 for lunch?" "Yes."
   if (/^(yes|yeah|yep|yup|yes please|please|sure thing|of course|definitely)$/.test(t)) return chat(`Great. What would you like me to do?`);
-  if (/^(no|nope|nah|no thanks|no thank you|nothing|nothing else|never ?mind( that| it)?|forget it|forget about it|stop|cancel|that's it|that's all|thats all|that's all for now|i'm good|im good|i'm fine|all good|that's fine)$/.test(t)) return chat(/^(stop|cancel)$/.test(t) ? 'Okay, stopped.' : pick(['No problem.', `Okay, I'm here if you need me.`]));
+  if (/^(no|nope|nah|no thanks|no thank you|nothing|nothing else|never ?mind( that| it)?|forget it|forget about it|stop|cancel|that's it|that's all|thats all|that's all for now|i'm good|im good|i'm fine|all good|that's fine|khalas|khalas khalas|bas|bas khalas|that's enough|enough|shut up|be quiet|quiet|stop talking|ok stop|okay stop)$/.test(t)) return chat(/^(stop|cancel|khalas( khalas)?|bas( khalas)?|that's enough|enough|shut up|be quiet|quiet|stop talking|ok stop|okay stop)$/.test(t) ? 'Okay, stopped.' : pick(['No problem.', `Okay, I'm here if you need me.`]));
   if (/^(wait|hold on|(one|1) sec(ond)?|hang on|give me a (sec|second|minute)|just a (sec|second|minute))$/.test(t)) return chat('Sure, take your time.');
   if (/^(what|huh|pardon|sorry what|come again|say that again|repeat that|what did you say)$/.test(t)) return chat(lastTurn && lastTurn.reply ? lastTurn.reply : "Sorry, I didn't catch that. Could you say it again?");
   if (/^(sorry|my bad|oops|i'm sorry)$/.test(t)) return chat('No worries at all.');
@@ -893,7 +1114,7 @@ function smallTalk(t, said){
   if (/^(let's talk|let's chat|talk to me|i('m| am) just (talking|chatting)( to you| with you)?|just talking|just chatting|i just want(ed)? to talk|i want to talk|keep me company)$/.test(t)) return chat(`I'm always up for a chat, ${N}. Ask me about your day, the weather or the markets anytime.`);
   if (/^what do you think( about it| of that)?$/.test(t)) return chat(`I think you're doing great, ${N}. What would you like to know?`);
   if (/^i('m| am) (so |really |very |kind of |a bit )?(bored)$/.test(t)) return chat(`Want a joke? Or I can give you a quick market update. Just ask.`);
-  if (/^i('m| am) (so |really |very |kind of |a bit )?(tired|exhausted|stressed|stressed out|sad|down|not feeling (good|great|well))$|^(i had|it's been|it was|that was) (a )?(long|rough|hard|tough|busy|crazy|bad) day$/.test(t)) return chat(pick([`Sorry to hear that, ${N}. Take it easy. I'm here if you need anything.`, `That sounds tough, ${N}. Take a breather. I've got your reminders covered.`]));
+  if (/^i('m| am) (so |really |very |kind of |a bit )?(tired|exhausted|stressed|stressed out|sad|down|not feeling (good|great|well)|busy|swamped|overwhelmed|slammed|drained|burnt out|burned out)$|^(i had|it's been|it was|that was) (a )?(long|rough|hard|tough|busy|crazy|bad) day$/.test(t)) return chat(pick([`Sorry to hear that, ${N}. Take it easy. I'm here if you need anything.`, `That sounds tough, ${N}. Take a breather. I've got your reminders covered.`]));
   if (/^i('m| am) (so |really |very |kind of |a bit )?(hungry|starving)$/.test(t)) return chat(`Ask me what should I eat, and I'll suggest something that fits your calories.`);
   if (/^i('m| am) (doing )?(good|great|fine|well|okay|ok|happy|excited|awesome|amazing)( today| thanks| thank you)?$|^i('m| am) (so |really |very )?happy( today)?$|^(not bad|pretty good|all good)$/.test(t)) return chat(`Love to hear that, ${N}.`);
   return null;
@@ -901,6 +1122,8 @@ function smallTalk(t, said){
 let fbLast = '';
 function fallbackReply(t){
   turnKind = 'fallback';
+  // the brain (features/brain.js) suggests the closest thing Jarvis can do; the lines below are only used if it failed to load
+  const viaBrain = brainHook('suggest', t); if (viaBrain){ turnKind = 'fallback'; return viaBrain; }
   const one = list => { const opts = list.filter(x=>x!==fbLast); const r = opts[Math.floor(Math.random()*opts.length)] || list[0]; fbLast = r; return r; };
   if (/^(call|phone|ring|dial|facetime|video call)\b/.test(t)) return one(["I can't make calls yet. Say remind me to call, and I'll make sure you don't forget."]);
   if (/^(text|message|send|email|e-mail|whatsapp|reply to)\b/.test(t)) return one(["I can't send messages yet. I can remind you to, or save it as a note."]);
@@ -929,47 +1152,111 @@ function greeting(){ const h = new Date().getHours(); return h<5?'Good evening':
    ========================================================= */
 let viewMonth = new Date(); viewMonth.setDate(1);
 let noteFilter = 'all', remFilter = 'upcoming', txAll = false;
+/* ---------- one consistent line-icon set (24 px grid, 2 px stroke, round caps) ---------- */
+const svgI = (d, w) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w||2}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+var IC = {
+  cart: svgI('<circle cx="9" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/><path d="M2.5 3.5h2.4l2.4 11.4a1.6 1.6 0 0 0 1.6 1.3h8a1.6 1.6 0 0 0 1.5-1.2L20.5 8H5.7"/>'),
+  fork: svgI('<path d="M6.5 3v6a2.5 2.5 0 0 0 5 0V3M9 11.5V21M17.5 21V3c-2.2 1-3.5 3.6-3.5 7v3.5h3.5"/>'),
+  car: svgI('<path d="M5 16v-4.6l1.7-4.6a2 2 0 0 1 1.9-1.3h6.8a2 2 0 0 1 1.9 1.3l1.7 4.6V16"/><path d="M3.5 11.4h17V16a1 1 0 0 1-1 1h-15a1 1 0 0 1-1-1z"/><path d="M6 17v2.2M18 17v2.2"/><circle cx="7.6" cy="14.1" r=".7" fill="currentColor"/><circle cx="16.4" cy="14.1" r=".7" fill="currentColor"/>'),
+  bolt: svgI('<path d="M13.2 2.5 5 13.6h6.4l-1 7.9 8.6-11.3h-6.6z"/>'),
+  bag: svgI('<path d="M5 8h14l-1.1 12.1a1 1 0 0 1-1 .9H7.1a1 1 0 0 1-1-.9z"/><path d="M9 10.5V7a3 3 0 0 1 6 0v3.5"/>'),
+  heart: svgI('<path d="M20.6 8.8a4.9 4.9 0 0 0-8.6-3.2 4.9 4.9 0 0 0-8.6 3.2c0 5.3 8.6 11.2 8.6 11.2s8.6-5.9 8.6-11.2z"/>'),
+  spark: svgI('<path d="M11 3.5 12.9 8l4.6 1.9-4.6 1.9L11 16.3l-1.9-4.5L4.5 9.9 9.1 8z"/><path d="M18.5 14.5l.8 1.9 1.9.8-1.9.8-.8 1.9-.8-1.9-1.9-.8 1.9-.8z"/>'),
+  coin: svgI('<circle cx="12" cy="12" r="8.5"/><path d="M14.6 9.3c-.5-.8-1.5-1.3-2.6-1.3-1.5 0-2.6.8-2.6 1.9 0 2.6 5.3 1.4 5.3 4.1 0 1.1-1.1 2-2.7 2-1.2 0-2.2-.5-2.8-1.3M12 6.6V8m0 8v1.4"/>'),
+  income: svgI('<path d="M12 3.5v11M7.5 10.2 12 14.7l4.5-4.5"/><path d="M4 15v2.5A2.5 2.5 0 0 0 6.5 20h11a2.5 2.5 0 0 0 2.5-2.5V15"/>'),
+  notes: svgI('<path d="M7 3h7l5 5v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M14 3v5h5M9 13h6M9 17h4"/>'),
+  checklist: svgI('<path d="M10.5 6.5H20M10.5 12H20M10.5 17.5H20"/><path d="m3.6 6.4 1.6 1.6 2.6-2.8M3.6 11.9l1.6 1.6 2.6-2.8"/><circle cx="5.4" cy="17.6" r="1.4"/>'),
+  cal: svgI('<rect x="3" y="4.5" width="18" height="16.5" rx="3"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/><path d="M7.5 13.5h.01M12 13.5h.01M16.5 13.5h.01M7.5 17h.01M12 17h.01"/>', 2.1),
+  flame: svgI('<path d="M12 21c-3.9 0-7-2.8-7-6.6 0-3.4 2.4-5.4 3.6-8.4.5 2 1.6 3.2 2.9 3.8C11.4 6.6 13 4.3 15.2 3c-.3 3 1 4.8 2.3 6.6 1 1.4 1.5 2.9 1.5 4.6C19 18.1 15.9 21 12 21z"/>'),
+  wallet: svgI('<path d="M19 7V5.5A1.5 1.5 0 0 0 17.5 4h-12A2.5 2.5 0 0 0 3 6.5v11A2.5 2.5 0 0 0 5.5 20h13a2.5 2.5 0 0 0 2.5-2.5v-8A2.5 2.5 0 0 0 18.5 7H5.5A2.5 2.5 0 0 1 3 4.5"/><circle cx="16.5" cy="13.5" r="1.3" fill="currentColor" stroke="none"/>'),
+  receipt: svgI('<path d="M6 2.8h12v18.4l-2.4-1.5-2 1.5-1.6-1.2-1.6 1.2-2-1.5L6 21.2z"/><path d="M9 8h6M9 11.5h6M9 15h3.5"/>'),
+  chart: svgI('<path d="M3.5 17 9 11.5l4 4L20.5 8"/><path d="M15 8h5.5v5.5"/>'),
+  apple: svgI('<path d="M12 7.6c-1.3-1.1-3-1.5-4.6-.9-2.4.9-3.4 3.6-2.9 6.5.6 3.6 3 7.3 5.2 7.3.9 0 1.4-.5 2.3-.5s1.4.5 2.3.5c2.2 0 4.6-3.7 5.2-7.3.5-2.9-.5-5.6-2.9-6.5-1.6-.6-3.3-.2-4.6.9z"/><path d="M12 7.6c0-2 1-3.6 3-4.6"/>'),
+  gear: svgI('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>'),
+  help: svgI('<path d="M4.5 18.5V7a3 3 0 0 1 3-3h9a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3H9z"/><path d="M8.5 9.5h7M8.5 12.8h4.5"/>'),
+  sun: svgI('<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/>'),
+  clock: svgI('<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>'),
+  repeat: svgI('<path d="M17 2.5 20.5 6 17 9.5"/><path d="M3.5 11V9.5A3.5 3.5 0 0 1 7 6h13.5M7 21.5 3.5 18 7 14.5"/><path d="M20.5 13v1.5a3.5 3.5 0 0 1-3.5 3.5H3.5"/>', 2.2),
+  bulb: svgI('<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.6.5 1.1 1.3 1.1 2.2h5c0-.9.5-1.7 1.1-2.2A6 6 0 0 0 12 3z"/>'),
+  brief: svgI('<rect x="3" y="7" width="18" height="13" rx="2.5"/><path d="M8.5 7V5.5a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2V7M3 12.5h18"/>'),
+  home: svgI('<path d="M3.5 10.5 12 3.5l8.5 7V19a1.5 1.5 0 0 1-1.5 1.5h-4v-6h-6v6H5A1.5 1.5 0 0 1 3.5 19z"/>'),
+  drop: svgI('<path d="M12 3.2s6.5 7 6.5 11.3a6.5 6.5 0 0 1-13 0C5.5 10.2 12 3.2 12 3.2z"/>'),
+  scan: svgI('<path d="M3.5 8V6a2.5 2.5 0 0 1 2.5-2.5h2M16 3.5h2A2.5 2.5 0 0 1 20.5 6v2M20.5 16v2a2.5 2.5 0 0 1-2.5 2.5h-2M8 20.5H6A2.5 2.5 0 0 1 3.5 18v-2M7.5 12h9"/>'),
+  plus: svgI('<path d="M12 5v14M5 12h14"/>', 2.4),
+  pen: svgI('<path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="m13.5 6.5 4 4"/>'),
+  pinO: svgI('<path d="M9 3.5h6M10 3.5v5.2L7 12.5v1.8h10v-1.8l-3-3.8V3.5M12 14.3V21"/>'),
+  play: svgI('<path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/>'),
+  done: svgI('<circle cx="12" cy="12" r="8.5"/><path d="m8.2 12.3 2.6 2.6 5-5.4"/>'),
+  undo: svgI('<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>'),
+  snooze: svgI('<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M5 3 2.5 5.5M19 3l2.5 2.5"/>'),
+  chev: svgI('<path d="m9 5.5 6.5 6.5L9 18.5"/>', 2.4),
+  pie: svgI('<path d="M12 3.5a8.5 8.5 0 1 0 8.5 8.5H12z"/><path d="M15 3.8A8.5 8.5 0 0 1 20.2 9H15z"/>'),
+  target: svgI('<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/>'),
+  trash: svgI('<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>')
+};
 const ICON = {
   pin:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 3a1 1 0 0 1 .7 1.7L15 6.4v4.2l2.7 2.7A1 1 0 0 1 17 15h-4v6l-1 1-1-1v-6H7a1 1 0 0 1-.7-1.7L9 10.6V6.4L7.3 4.7A1 1 0 0 1 8 3z"/></svg>',
-  trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
+  trash:IC.trash,
   check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>',
-  snooze:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M5 3 2 6M19 3l3 3"/></svg>',
-  speak:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 5 6 9H2v6h4l5 4zM15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></svg>'
+  snooze:IC.snooze,
+  speak:IC.play
 };
-function emptyHTML(ic, text){ return `<div class="empty"><div class="e-ic">${ic}</div>${text}</div>`; }
+Object.keys(IC).forEach(k=>{ if (!ICON[k]) ICON[k] = IC[k]; });
+/* category look: a colored rounded square with a white glyph (like iPhone Settings) */
+const CAT_GLYPH = {Groceries:'cart', 'Food & drink':'fork', Transport:'car', Bills:'bolt', Shopping:'bag', Health:'heart', Fun:'spark', Other:'coin', Income:'income'};
+const TAG_GLYPH = {idea:'bulb', work:'brief', personal:'home'};
+function ico(name, color, cls){ return `<span class="jv-ico ${cls||''}" style="--c:${color}">${IC[name]||IC.coin}</span>`; }
+function catIco(cat, type, cls){ const inc = type==='income' || cat==='Income'; return ico(inc ? 'income' : (CAT_GLYPH[cat]||'coin'), inc ? '#22c55e' : (CATS[cat]||CATS.Other).c, cls); }
+function emptyHTML(ic, text){
+  const map = {'⏰':'clock','📝':'notes','✅':'done','🍩':'pie','💳':'wallet'};
+  const k = IC[ic] ? ic : map[ic]; return `<div class="empty"><div class="e-ic">${k ? IC[k] : ic}</div>${text}</div>`;
+}
+const timeOf = ts => new Date(ts).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
+function dayLabel(ts){
+  const d = new Date(ts), now = new Date(); const y = new Date(now); y.setDate(now.getDate()-1);
+  if (d.toDateString()===now.toDateString()) return 'Today';
+  if (d.toDateString()===y.toDateString()) return 'Yesterday';
+  return d.toLocaleDateString([], {weekday:'long', month:'short', day:'numeric'});
+}
+/* a note: tap it to edit (pin, read aloud and delete live in its sheet) */
 function noteHTML(n){
   const tg = TAGS[n.tag]||TAGS.personal;
-  return `<div class="item note-card" style="border-left-color:${tg.c}" data-edit-note="${n.id}">
-    <div class="body"><div class="title">${esc(n.text)}</div><div class="meta"><span class="tag" style="background:${tg.c}22;color:${tg.c}">${tg.ic} ${n.tag}</span>${ago(n.at)}</div></div>
-    <div class="actions"><button class="mini ${n.pinned?'on':''}" data-pin="${n.id}" aria-label="Pin">${ICON.pin}</button><button class="mini" data-say="${esc(n.text)}" aria-label="Read aloud">${ICON.speak}</button><button class="mini" data-del="notes:${n.id}" aria-label="Delete">${ICON.trash}</button></div></div>`;
+  return `<button class="jv-row jv-note" data-edit-note="${n.id}"><span class="jv-rb"><span class="jv-rt wrap">${esc(n.text)}</span><span class="jv-rs"><span class="jv-dot" style="--c:${tg.c}"></span>${cap(n.tag||'personal')} · ${ago(n.at)}${n.pinned?`<svg class="jv-pin" viewBox="0 0 24 24" fill="currentColor" aria-label="Pinned"><path d="M16 3a1 1 0 0 1 .7 1.7L15 6.4v4.2l2.7 2.7A1 1 0 0 1 17 15h-4v6l-1 1-1-1v-6H7a1 1 0 0 1-.7-1.7L9 10.6V6.4L7.3 4.7A1 1 0 0 1 8 3z"/></svg>`:''}</span></span></button>`;
 }
+function notesGroup(list){ return `<div class="jv-group" style="--inset:14px">${list.map(noteHTML).join('')}</div>`; }
+/* a reminder: tick the circle to finish it, tap the text to change it, the clock snoozes 10 minutes */
 function remHTML(r){
-  const late = !r.done && r.at < Date.now()-6e4;
-  return `<div class="item ${r.done?'done':''}">
-    <button class="check ${r.done?'on':''}" data-done="${r.id}" aria-label="Done">${r.done?ICON.check:''}</button>
-    <div class="body"><div class="title">${esc(r.text)}</div><div class="meta">${late?'<span class="tag red">Overdue</span>':''}${r.repeat&&r.repeat!=='none'?`<span class="tag">🔁 ${r.repeat}</span>`:''}${whenText(r.at)}</div></div>
-    <div class="actions">${!r.done?`<button class="mini" data-snooze="${r.id}" aria-label="Snooze 10 minutes">${ICON.snooze}</button>`:''}<button class="mini" data-del="reminders:${r.id}" aria-label="Delete">${ICON.trash}</button></div></div>`;
+  const late = !r.done && r.at < Date.now()-6e4, rep = r.repeat && r.repeat!=='none';
+  return `<div class="jv-rowwrap ${r.done?'done':''}"><button class="check ${r.done?'on':''}" data-done="${r.id}" aria-label="${r.done?'Mark as not done':'Mark as done'}">${r.done?ICON.check:''}</button>
+    <button class="jv-row" data-edit-rem="${r.id}"><span class="jv-rb"><span class="jv-rt">${esc(r.text)}</span><span class="jv-rs">${late?'<span class="tag red">Overdue</span>':''}${rep?`<span class="tag">${IC.repeat}${cap(r.repeat)}</span>`:''}<span>${whenText(r.at)}</span></span></span></button>
+    ${!r.done?`<button class="mini" data-snooze="${r.id}" aria-label="Snooze 10 minutes">${ICON.snooze}</button>`:''}</div>`;
 }
-function txHTML(e){
-  const inc = e.type==='income'; const c = inc?{ic:INCOME_IC,c:'#22c55e'}:(CATS[e.cat]||CATS.Other);
-  return `<div class="item"><div class="ic" style="background:${c.c}22">${c.ic}</div>
-    <div class="body"><div class="title">${esc(e.desc)}</div><div class="meta">${inc?'Income':e.cat} · ${new Date(e.at).toLocaleDateString([], {month:'short',day:'numeric'})}</div></div>
-    <div class="amt" style="color:${inc?'var(--good)':'var(--text)'}">${inc?'+':'-'}${fmt(e.amount)}</div>
-    <button class="mini" data-del="expenses:${e.id}" aria-label="Delete">${ICON.trash}</button></div>`;
+function remsGroup(list){ return `<div class="jv-group" style="--inset:54px">${list.map(remHTML).join('')}</div>`; }
+/* a payment: tap it to edit amount, description, category, date or type */
+function txRow(e){
+  const inc = e.type==='income';
+  return `<button class="jv-row" data-edit-exp="${e.id}">${catIco(e.cat, e.type)}<span class="jv-rb"><span class="jv-rt">${esc(e.desc)}</span><span class="jv-rs">${inc?'Income':esc(e.cat)} · ${timeOf(e.at)}</span></span><span class="jv-amt ${inc?'in':''}">${inc?'+':'−'}${fmt(e.amount)}</span></button>`;
+}
+function txHTML(e){ return `<div class="jv-group">${txRow(e)}</div>`; }
+function txGrouped(list){
+  const days = []; let cur = null;
+  list.forEach(e=>{ const k = new Date(e.at).toDateString(); if (!cur || cur.k!==k){ cur = {k, at:e.at, items:[]}; days.push(cur); } cur.items.push(e); });
+  return days.map(d=>{ const out = sum(d.items.filter(e=>e.type!=='income')), inn = sum(d.items.filter(e=>e.type==='income'));
+    return `<div class="jv-day"><span>${dayLabel(d.at)}</span><b>${out?'−'+fmt(out):''}${out&&inn?' · ':''}${inn?'+'+fmt(inn):''}</b></div><div class="jv-group">${d.items.map(txRow).join('')}</div>`; }).join('');
 }
 function donutSVG(parts, total){
   const R = 52, C = 2*Math.PI*R; let off = 0;
-  const segs = parts.map(([c,v])=>{ const len = v/total*C; const s = `<circle cx="66" cy="66" r="${R}" fill="none" stroke="${(CATS[c]||CATS.Other).c}" stroke-width="16" stroke-dasharray="${Math.max(len-2,0.01)} ${C}" stroke-dashoffset="${-off}" stroke-linecap="butt"/>`; off += len; return s; }).join('');
-  return `<svg viewBox="0 0 132 132"><circle cx="66" cy="66" r="${R}" fill="none" stroke="var(--line)" stroke-width="16"/>${segs}</svg>`;
+  const segs = parts.map(([c,v])=>{ const len = v/total*C; const s = `<circle cx="66" cy="66" r="${R}" fill="none" stroke="${(CATS[c]||CATS.Other).c}" stroke-width="15" stroke-dasharray="${Math.max(len-2.5,0.01)} ${C}" stroke-dashoffset="${-off}" stroke-linecap="butt"/>`; off += len; return s; }).join('');
+  return `<svg viewBox="0 0 132 132"><circle cx="66" cy="66" r="${R}" fill="none" stroke="var(--fill2)" stroke-width="15"/>${segs}</svg>`;
 }
 function budgetGoalHTML(spent){
-  if (!S.budget) return `<div style="display:flex;align-items:center;gap:12px"><div style="font-size:26px">🎯</div><div style="flex:1"><b>Set a monthly budget</b><div style="color:var(--muted);font-size:13px">Say “Set my budget to 1500”</div></div><button class="btn" id="setBudgetBtn">Set</button></div>`;
+  if (!S.budget) return `<div class="jv-goal">${ico('target','#ff3b30')}<div style="flex:1;min-width:0"><b style="font-weight:650">Set a monthly budget</b><div style="color:var(--muted);font-size:13.5px;margin-top:1px">Or say “Set my budget to 1500”</div></div><button class="btn" data-set-budget style="min-height:38px;padding:8px 16px;border-radius:999px">Set</button></div>`;
   const pct = Math.min(spent/S.budget*100, 100); const over = spent > S.budget;
   const dLeft = new Date(viewMonth.getFullYear(), viewMonth.getMonth()+1, 0).getDate() - new Date().getDate() + 1;
   const isCur = monthKey(viewMonth)===monthKey(Date.now());
-  return `<div style="display:flex;justify-content:space-between;align-items:baseline"><b>Monthly budget</b><span style="color:var(--muted);font-size:13px">${fmt(spent)} of ${fmt(S.budget)}</span></div>
+  return `<button class="jv-gt" data-set-budget style="all:unset;display:flex;justify-content:space-between;align-items:baseline;gap:10px;width:100%;cursor:pointer" aria-label="Change monthly budget"><b style="font-size:16px;font-weight:650;letter-spacing:-.015em">Monthly budget</b><span style="color:var(--muted);font-size:13.5px;font-variant-numeric:tabular-nums">${fmt(spent)} of ${fmt(S.budget)}</span></button>
     <div class="progress"><i style="width:${pct}%;${over?'background:var(--bad)':pct>80?'background:linear-gradient(90deg,var(--warn),var(--bad))':''}"></i></div>
-    <div style="margin-top:8px;font-size:13px;color:${over?'var(--bad)':'var(--muted)'};font-weight:600">${over?`Over by ${fmt(spent-S.budget)}`:`${fmt(S.budget-spent)} left`}${isCur&&!over&&dLeft>0?` · about ${fmt(Math.floor((S.budget-spent)/dLeft))} a day for ${dLeft} days`:''}</div>`;
+    <div class="jv-gs ${over?'bad':''}">${over?`Over by ${fmt(spent-S.budget)}`:`${fmt(S.budget-spent)} left`}${isCur&&!over&&dLeft>0?` · about ${fmt(Math.floor((S.budget-spent)/dLeft))} a day for ${dLeft} day${dLeft===1?'':'s'}`:''}</div>`;
 }
 
 /* ---------- Home: greeting, the big mic, the brief pill and 3–4 glanceable tiles ---------- */
@@ -1070,6 +1357,8 @@ function homeTiles(){
     const left = food.goal - (food.kcal||0), over = left < 0;
     tiles.push({lbl: over?'Calories over':'Calories left', ic:TI.flame, icSm:true, val:N0.format(Math.abs(Math.round(left))), bar:(food.kcal||0)/food.goal*100, barCls:over?'bad':'good', sub:food.kcal?`${N0.format(Math.round(food.kcal))} of ${N0.format(food.goal)} eaten`:'Nothing logged yet', subCls:over?'warn':'', go:'food'});
   } else { try { const h = Jarvis.habits && typeof Jarvis.habits.today==='function' && Jarvis.habits.today(); if (h && h.total) tiles.push({lbl:'Habits today', ic:TI.habit, icSm:true, val:`${h.done}<small>/ ${h.total}</small>`, bar:h.done/h.total*100, barCls:'good', sub:h.done>=h.total?'All done today':`${h.total-h.done} to go`, go:'habits'}); } catch(e){} }
+  // iPhone Health (features/health.js): fills the last spot when there's room
+  if (tiles.length < 4) try { const h = Jarvis.health && typeof Jarvis.health.tile==='function' && Jarvis.health.tile(); if (h) tiles.push(h); } catch(e){}
   return tiles;
 }
 let lastReply = '';
@@ -1097,10 +1386,10 @@ function renderToday(){
   const key = monthKey(Date.now()); const spent = sum(inMonth(key));
   $('todayLede').textContent = new Date().toLocaleDateString([], {weekday:'long', month:'long', day:'numeric'});
   const up = upcoming();
-  $('homeBudget').innerHTML = budgetGoalHTML(spent) + (()=>{ const byCat={}; inMonth(key).forEach(e=>byCat[e.cat]=(byCat[e.cat]||0)+e.amount); const top = Object.entries(byCat).sort((a,b)=>b[1]-a[1])[0]; return top?`<div style="margin-top:10px;font-size:13px;color:var(--muted)">Biggest category: <b style="color:var(--text)">${(CATS[top[0]]||CATS.Other).ic} ${top[0]} · ${fmt(top[1])}</b></div>`:''; })();
+  $('homeBudget').innerHTML = budgetGoalHTML(spent) + (()=>{ const byCat={}; inMonth(key).forEach(e=>byCat[e.cat]=(byCat[e.cat]||0)+e.amount); const top = Object.entries(byCat).sort((a,b)=>b[1]-a[1])[0]; return top?`<div style="display:flex;align-items:center;gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid var(--sep);font-size:14px">${catIco(top[0], 'expense', 'sm')}<span style="flex:1;min-width:0;color:var(--muted)">Biggest category</span><b style="font-weight:650">${esc(top[0])} · ${fmt(top[1])}</b></div>`:''; })();
   const od = overdue();
-  $('homeRem').innerHTML = (od.length||up.length) ? [...od.slice(0,2), ...up.slice(0,3)].map(remHTML).join('') : emptyHTML('⏰','Nothing coming up. Say “Remind me to…”');
-  $('homeNotes').innerHTML = db.notes.length ? sortedNotes().slice(0,3).map(noteHTML).join('') : emptyHTML('📝','No notes yet. Say “Note: …”');
+  $('homeRem').innerHTML = (od.length||up.length) ? remsGroup([...od.slice(0,2), ...up.slice(0,3)]) : emptyHTML('clock','Nothing coming up. Say “Remind me to…”');
+  $('homeNotes').innerHTML = db.notes.length ? notesGroup(sortedNotes().slice(0,3)) : emptyHTML('notes','No notes yet. Say “Note: …”');
 }
 function sortedNotes(){ return db.notes.slice().sort((a,b)=>(b.pinned-a.pinned)||(b.at-a.at)); }
 function renderNotes(){
@@ -1108,44 +1397,46 @@ function renderNotes(){
   let list = sortedNotes();
   if (noteFilter==='pinned') list = list.filter(n=>n.pinned); else if (noteFilter!=='all') list = list.filter(n=>n.tag===noteFilter);
   if (q) list = list.filter(n=>n.text.toLowerCase().includes(q));
-  $('noteList').innerHTML = list.length ? list.map(noteHTML).join('') : emptyHTML('📝', q?'No notes match your search.':'Nothing here yet. Tap the mic and say “Note: …”');
+  $('noteList').innerHTML = list.length ? notesGroup(list) : emptyHTML('notes', q?'No notes match your search.':noteFilter!=='all'?'No notes here yet.':'Nothing here yet. Tap the mic and say “Note: …”');
 }
 function renderReminders(){
   const list = remFilter==='upcoming'?upcoming():remFilter==='overdue'?overdue():db.reminders.filter(r=>r.done).sort((a,b)=>b.at-a.at);
-  $('remList').innerHTML = list.length ? list.map(remHTML).join('') : emptyHTML(remFilter==='done'?'✅':'⏰', remFilter==='upcoming'?'No upcoming reminders.':remFilter==='overdue'?'Nothing overdue. Nice!':'Nothing completed yet.');
+  $('remList').innerHTML = list.length ? remsGroup(list) : emptyHTML(remFilter==='done'?'done':'clock', remFilter==='upcoming'?'No upcoming reminders.':remFilter==='overdue'?'Nothing overdue. Nice!':'Nothing completed yet.');
   const n = overdue().length; document.querySelector('#remFilter [data-f="overdue"]').textContent = 'Overdue' + (n?` (${n})`:'');
 }
 function renderBudget(){
   const key = monthKey(viewMonth);
   $('monthLabel').textContent = viewMonth.toLocaleDateString([], {month:'long', year:'numeric'});
+  const isCur = key===monthKey(Date.now());
+  $('nextM').disabled = isCur; $('nextM').style.opacity = isCur ? .3 : '';
   const exp = inMonth(key), inc = inMonth(key,'income'); const spent = sum(exp), earned = sum(inc);
   const prev = new Date(viewMonth); prev.setMonth(prev.getMonth()-1); const prevSpent = sum(inMonth(monthKey(prev)));
   const delta = prevSpent ? Math.round((spent-prevSpent)/prevSpent*100) : null;
   $('budgetStats').innerHTML = `
-    <div class="card stat"><div class="label">Spent</div><div class="val">${fmt(spent)}</div><div class="delta" style="color:${delta===null?'var(--muted)':delta>0?'var(--bad)':'var(--good)'}">${delta===null?`${exp.length} expenses`:`${delta>0?'▲':'▼'} ${Math.abs(delta)}% vs last month`}</div></div>
+    <div class="card stat"><div class="label">Spent</div><div class="val">${fmt(spent)}</div><div class="delta" style="color:${delta===null?'var(--muted)':delta>0?'var(--bad)':'var(--good)'}">${delta===null?`${exp.length} payment${exp.length===1?'':'s'}`:`${delta>0?'↑':'↓'} ${Math.abs(delta)}% vs last month`}</div></div>
     <div class="card stat"><div class="label">Income</div><div class="val" style="color:var(--good)">${fmt(earned)}</div><div class="delta" style="color:var(--muted)">Balance ${fmt(earned-spent)}</div></div>`;
   $('budgetGoal').innerHTML = budgetGoalHTML(spent);
   const byCat = {}; exp.forEach(e=>byCat[e.cat]=(byCat[e.cat]||0)+e.amount);
   const parts = Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
-  $('donutCard').innerHTML = parts.length ? `<div class="donut-wrap"><div class="donut">${donutSVG(parts, spent)}<div class="center"><div><b>${fmt(spent)}</b><span>total</span></div></div></div>
-    <div class="legend">${parts.slice(0,6).map(([c,v])=>`<div><i style="background:${(CATS[c]||CATS.Other).c}"></i><span>${(CATS[c]||CATS.Other).ic} ${c}</span><b>${Math.round(v/spent*100)}%</b></div>`).join('')}</div></div>` : emptyHTML('🍩','No spending this month yet.');
+  $('donutCard').innerHTML = parts.length ? `<div class="donut-wrap"><div class="donut">${donutSVG(parts, spent)}<div class="center"><div><b>${fmt(spent)}</b><span>spent</span></div></div></div>
+    <div class="legend">${parts.slice(0,6).map(([c,v])=>`<div><i style="background:${(CATS[c]||CATS.Other).c}"></i><span>${esc(c)}</span><b>${Math.round(v/spent*100)}%</b></div>`).join('')}</div></div>` : emptyHTML('pie', isCur?'No spending this month yet.':'No spending this month.');
   const days = new Date(viewMonth.getFullYear(), viewMonth.getMonth()+1, 0).getDate(); const perDay = Array(days).fill(0);
   exp.forEach(e=>perDay[new Date(e.at).getDate()-1]+=e.amount); const mx = Math.max(...perDay, 1);
-  const avg = spent / (monthKey(viewMonth)===monthKey(Date.now()) ? new Date().getDate() : days);
-  $('dailyCard').innerHTML = `<div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted)"><span>Average per day</span><b style="color:var(--text)">${fmt(Math.round(avg*100)/100)}</b></div>
-    <div class="bars">${perDay.map(v=>`<i class="${v?'':'zero'}" style="height:${v?Math.max(v/mx*100,6):3}%"></i>`).join('')}</div>
-    <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--faint);margin-top:4px"><span>1</span><span>${Math.ceil(days/2)}</span><span>${days}</span></div>`;
+  const avg = spent / (isCur ? new Date().getDate() : days); const td = isCur ? new Date().getDate()-1 : -1;
+  $('dailyCard').innerHTML = `<div style="display:flex;justify-content:space-between;align-items:baseline;font-size:14px;color:var(--muted)"><span>Average per day</span><b style="color:var(--text);font-size:17px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums">${fmt(Math.round(avg*100)/100)}</b></div>
+    <div class="bars">${perDay.map((v,i)=>`<i class="${v?'':'zero'}${i===td?' today':''}" style="height:${v?Math.max(v/mx*100,6):3}%"></i>`).join('')}</div>
+    <div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--faint);margin-top:6px;font-variant-numeric:tabular-nums"><span>1</span><span>${Math.ceil(days/2)}</span><span>${days}</span></div>`;
   const tx = [...exp, ...inc].sort((a,b)=>b.at-a.at); const shown = txAll ? tx : tx.slice(0, 30);
-  $('txList').innerHTML = tx.length ? shown.map(txHTML).join('') + (tx.length > shown.length ? `<button class="btn ghost" id="txMore" style="width:100%">Show all ${tx.length} transactions</button>` : '') : emptyHTML('💳','No transactions. Say “Paid 15 dollars for groceries”.');
+  $('txList').innerHTML = tx.length ? txGrouped(shown) + (tx.length > shown.length ? `<button class="jv-add" id="txMore">Show all ${tx.length} transactions</button>` : '') : emptyHTML('wallet','No transactions. Say “Paid 15 dollars for groceries”, or tap Add.');
   if ($('txMore')) $('txMore').onclick = ()=>{ txAll = true; renderBudget(); };
 }
 function renderVoices(){
   const el = $('voiceList'); if (!el) return;
   const v = currentVoice();
   $('voiceTip').innerHTML = /iphone|ipad|mac/i.test(navigator.userAgent)
-    ? '💡 <b>Want a much better voice, free?</b> On iPhone: Settings → Accessibility → Spoken Content → Voices → English → pick <b>Ava</b>, <b>Zoe</b> or <b>Evan</b> and download the <b>Premium</b> version. Then reopen Jarvis and choose it below.'
-    : '💡 <b>Tip:</b> voices marked ★ sound the most human. On Android, you can add better voices in Settings → Accessibility → Text-to-speech → Google → Install voice data.';
-  if (!voices.length){ el.innerHTML = '<div class="vrow"><div class="nm">No voices found on this device yet.</div></div>'; return; }
+    ? (IC ? IC.bulb : '')+'<span><b>Want a much better voice, free?</b> On iPhone: Settings → Accessibility → Spoken Content → Voices → English → pick <b>Ava</b>, <b>Zoe</b> or <b>Evan</b> and download the <b>Premium</b> version. Then reopen Jarvis and choose it below.</span>'
+    : (IC ? IC.bulb : '')+'<span><b>Tip:</b> voices marked ★ sound the most human. On Android, you can add better voices in Settings → Accessibility → Text-to-speech → Google → Install voice data.</span>';
+  if (!voices.length){ el.innerHTML = '<div class="vrow" style="cursor:default"><div class="nm" style="color:var(--muted)">No voices found on this device yet.</div></div>'; return; }
   el.innerHTML = voices.slice(0,30).map(x=>`<div class="vrow ${v&&x.name===v.name?'on':''}" data-voice="${esc(x.name)}"><div class="radio"></div><div class="nm">${esc(x.name.replace(/Microsoft |Google /,''))}<small>${x.lang}${x.localService?'':' · online'}</small></div>${isNatural(x)?'<span class="star">★ natural</span>':''}</div>`).join('');
 }
 let renderHold = 0, renderWanted = false;
@@ -1162,45 +1453,102 @@ function renderView(name){
   else { const v = plugins.views.find(x=>x.id===name); if (v) try { v.render(v.el); } catch(e){ console.error(v.id, e); } }
 }
 
-/* ---------- navigation ---------- */
+/* ---------- navigation: a real history stack ----------
+   Tabs (Home, Today, Money, More) are roots. Anything opened from a screen is pushed on top,
+   and the back chevron (or the phone's Back / swipe) returns to exactly where you came from.
+   Sheets and pop-ups close with Back first. */
 let current = 'home';
-function go(name){
-  const changed = current !== name; current = name;
+let navStack = [{v:'home', tab:true}], navDir = 'tab';
+const VIEW_TITLES = {home:'Home', today:'Today', budget:'Money', apps:'More', notes:'Notes', reminders:'Reminders', settings:'Settings'};
+function viewTitle(v){ if (VIEW_TITLES[v]) return VIEW_TITLES[v]; const p = plugins.views.find(x=>x.id===v); return p ? (p.title || p.label || 'Back') : 'Back'; }
+function haptic(ms){ try { navigator.vibrate && navigator.vibrate(ms||8); } catch(e){} }
+function go(name, opts){
+  if (!name) return; opts = opts || {};
+  const changed = current !== name;
+  if (opts.fromBack) navDir = 'back';
+  else if (changed){
+    if (opts.tab || name==='home'){ navStack = name==='home' ? [{v:'home', tab:true}] : [{v:'home', tab:true}, {v:name, tab:true}]; navDir = 'tab'; }
+    else {
+      const i = navStack.map(x=>x.v).lastIndexOf(name);
+      if (i >= 0){ navStack = navStack.slice(0, i+1); navDir = 'back'; }
+      else { navStack.push({v:name}); if (navStack.length > 16) navStack.splice(1, 1); navDir = 'push'; }
+    }
+  } else if (opts.tab){ navStack = name==='home' ? [{v:'home', tab:true}] : [{v:'home', tab:true}, {v:name, tab:true}]; }
+  current = name;
   if (changed && !renderHold) renderView(name);
-  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active', v.id==='v-'+name));
+  document.querySelectorAll('.view').forEach(v=>{
+    const on = v.id==='v-'+name;
+    if (on && changed){ v.classList.remove('v-push','v-back'); if (navDir!=='tab') v.classList.add('v-'+navDir); }
+    v.classList.toggle('active', on);
+  });
   // each screen lights up the tab it lives under; on Home the nav mic tucks away (the big mic is on the page)
   const tab = name==='home'||name==='today' ? name : /^(budget|receipts|finance)$/.test(name) ? 'budget' : 'apps';
   document.querySelectorAll('.nav .tab').forEach(b=>{ const on = b.dataset.go===tab; b.classList.toggle('active', on); if (on) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
   $('nav').classList.toggle('on-home', name==='home'); document.body.classList.toggle('at-home', name==='home');
-  if (!$('sheet').classList.contains('open')) window.scrollTo({top:0, behavior:'smooth'});
-  if (changed && !popping) navHistory(name);
+  updateBar();
+  if (!$('sheet').classList.contains('open')){ if (changed) window.scrollTo(0, 0); else window.scrollTo({top:0, behavior:'smooth'}); }
+  onScroll(); syncTrap();
 }
-/* the phone's Back button / gesture: from any screen it returns Home (one level deep, so Back on Home leaves the app as usual) */
-var popping = false, selfBack = false;
-function navHistory(name){
-  try {
-    const inner = history.state && history.state.jv;
-    if (name === 'home'){ if (inner){ selfBack = true; history.back(); } }
-    else if (inner) history.replaceState({jv:name}, '');
-    else history.pushState({jv:name}, '');
-  } catch(e){}
+function updateBar(){
+  const top = navStack[navStack.length-1], prev = navStack[navStack.length-2];
+  const show = !!prev && !top.tab;
+  $('jvBack').hidden = !show;
+  if (show){ $('jvBackTxt').textContent = viewTitle(prev.v); $('jvBack').setAttribute('aria-label', 'Back to '+viewTitle(prev.v)); }
+  $('jvTitle').textContent = current==='home' ? '' : viewTitle(current);
 }
-window.addEventListener('popstate', e=>{
-  if (selfBack){ selfBack = false; return; }
-  const v = (e.state && e.state.jv) || 'home';
-  if ($('modal').classList.contains('open')) closeModal();
-  if ($('sheet').classList.contains('open')) closeSheet();
-  popping = true; try { go(v); } finally { popping = false; }
+function goBack(){
+  if (navStack.length <= 1) return false;
+  navStack.pop(); go(navStack[navStack.length-1].v, {fromBack:true}); return true;
+}
+$('jvBack').onclick = ()=>{ haptic(); goBack(); };
+/* the large title scrolls away and a compact one appears in the bar, like iPhone apps */
+let scrollRaf = 0;
+function onScroll(){ if (scrollRaf) return; scrollRaf = requestAnimationFrame(()=>{ scrollRaf = 0; document.body.classList.toggle('scrolled', current!=='home' && window.scrollY > 40); }); }
+window.addEventListener('scroll', onScroll, {passive:true});
+/* keep sheets above the iPhone keyboard: size pop-ups to the visible area */
+function vvSync(){ const vv = window.visualViewport; if (!vv) return; const r = document.documentElement.style; r.setProperty('--vv-h', Math.round(vv.height)+'px'); r.setProperty('--vv-top', Math.round(vv.offsetTop)+'px'); }
+if (window.visualViewport){ visualViewport.addEventListener('resize', vvSync); visualViewport.addEventListener('scroll', vvSync); vvSync(); }
+/* Back gesture / button: one "trap" history entry while there is somewhere to go back to (a screen or an open sheet) */
+const OVERLAYS = [
+  ['.fd-sheet.open', el=>{ const b = el.querySelector('.fd-sx'); if (b) b.click(); }],
+  ['.fd-scan.open', el=>{ const b = el.querySelector('[data-a="close"]'); if (b) b.click(); }],
+  ['[data-jv-overlay].open', el=>{ const b = el.querySelector('[data-jv-close]'); if (b) b.click(); else el.classList.remove('open'); }],
+  ['#modal.open:not(.closing)', ()=>closeModal()],
+  ['.cal-sheet-wrap.open', el=>{ const b = el.querySelector('[data-cal-close]'); if (b) b.click(); }],
+  ['#sheet.open', ()=>closeSheet()]
+];
+function topOverlay(){ for (const [sel, fn] of OVERLAYS){ const el = document.querySelector(sel); if (el) return [el, fn]; } return null; }
+let trapped = false, selfBack = 0, trapT = 0;
+try { if (history.state && history.state.jv) history.replaceState(null, ''); } catch(e){}
+function syncTrap(){
+  clearTimeout(trapT);
+  trapT = setTimeout(()=>{ try {
+    const need = navStack.length > 1 || !!topOverlay();
+    if (need && !trapped){ history.pushState({jv:1}, ''); trapped = true; }
+    else if (!need && trapped){ trapped = false; selfBack++; history.back(); }
+  } catch(e){} }, 40);
+}
+window.addEventListener('popstate', ()=>{
+  if (selfBack > 0){ selfBack--; return; }
+  trapped = false;
+  const o = topOverlay();
+  if (o){ try { o[1](o[0]); } catch(e){} } else goBack();
+  syncTrap();
 });
+document.addEventListener('keydown', e=>{ if (e.key !== 'Escape') return; const o = topOverlay(); if (o){ try { o[1](o[0]); } catch(x){} } else if (!/^(INPUT|TEXTAREA|SELECT)$/.test((e.target||{}).tagName||'')) goBack(); });
+/* features' own sheets (food, calendar) open and close by class: keep the Back trap in step */
+try { new MutationObserver(()=>syncTrap()).observe(document.body, {subtree:true, attributes:true, attributeFilter:['class']}); } catch(e){}
 document.addEventListener('click', e=>{
-  const g = e.target.closest('[data-go]'); if (g){ go(g.dataset.go); return; }
-  if (e.target.closest('#setBudgetBtn')){ openBudgetModal(); return; }
+  const g = e.target.closest('[data-go]'); if (g){ const tab = !!g.closest('.nav'); if (tab) haptic(); go(g.dataset.go, {tab}); return; }
+  if (e.target.closest('[data-set-budget]')){ openBudgetModal(); return; }
   const d = e.target.closest('[data-del]'); if (d){ e.stopPropagation(); const [col,id] = d.dataset.del.split(':'); const idx = db[col].findIndex(x=>x.id===id); if (idx<0) return; const item = db[col][idx]; db[col].splice(idx,1); if (col==='expenses') expenseEvent('removed', item); save(); renderAll(); toast('Deleted', ()=>{ db[col].splice(idx,0,item); if (col==='expenses') expenseEvent('restored', item); save(); renderAll(); }); return; }
   const p = e.target.closest('[data-pin]'); if (p){ e.stopPropagation(); const n = db.notes.find(x=>x.id===p.dataset.pin); n.pinned = !n.pinned; save(); renderAll(); toast(n.pinned?'Pinned':'Unpinned'); return; }
   const sy = e.target.closest('[data-say]'); if (sy){ e.stopPropagation(); const was = S.speak; S.speak = true; speak(sy.dataset.say); S.speak = was; return; }
-  const dn = e.target.closest('[data-done]'); if (dn){ completeReminder(dn.dataset.done); return; }
+  const dn = e.target.closest('[data-done]'); if (dn){ haptic(12); completeReminder(dn.dataset.done); return; }
   const sn = e.target.closest('[data-snooze]'); if (sn){ const r = db.reminders.find(x=>x.id===sn.dataset.snooze); r.at = Math.max(Date.now(), r.at) + 6e5; r.done=false; r.fired=false; save(); renderAll(); toast('Snoozed 10 minutes'); return; }
   const en = e.target.closest('[data-edit-note]'); if (en){ openNoteModal(db.notes.find(x=>x.id===en.dataset.editNote)); return; }
+  const ee = e.target.closest('[data-edit-exp]'); if (ee){ const x = db.expenses.find(z=>z.id===ee.dataset.editExp); if (x) openExpModal(x); return; }
+  const er = e.target.closest('[data-edit-rem]'); if (er){ const x = db.reminders.find(z=>z.id===er.dataset.editRem); if (x) openRemModal(x); return; }
   const vv = e.target.closest('[data-voice]'); if (vv){ S.voice = vv.dataset.voice; save(); renderVoices(); const was=S.speak; S.speak=true; speak(`Hi ${S.name}, I'm Jarvis. This is how I sound.`); S.speak=was; return; }
   const ch = e.target.closest('[data-cmd]'); if (ch){ openSheet(false); handle(ch.dataset.cmd); return; }
 });
@@ -1222,16 +1570,16 @@ function renderChips(){
   // quick actions: open the right form or screen (never log made-up data)
   const has = id => plugins.views.some(v=>v.id===id);
   const chips = [
-    ['💸','Add expense', 'exp'], ['📝','New note', 'note'], ['⏰','New reminder', 'rem'],
-    has('food') && ['💧','Glass of water', 'cmd:I drank a glass of water'],
-    has('food') && ['🥗','Log food', 'go:food'],
-    has('receipts') && ['🧾','Scan receipt', 'go:receipts'],
-    has('habits') && ['🔥','Habits', 'go:habits'],
-    has('finance') && ['📈','Markets', 'go:finance']
+    [IC.wallet,'Add expense', 'exp'], [IC.notes,'New note', 'note'], [IC.checklist,'New reminder', 'rem'],
+    has('food') && [IC.drop,'Glass of water', 'cmd:I drank a glass of water'],
+    has('food') && [IC.apple,'Log food', 'go:food'],
+    has('receipts') && [IC.receipt,'Scan receipt', 'go:receipts'],
+    has('habits') && [IC.flame,'Habits', 'go:habits'],
+    has('finance') && [IC.chart,'Markets', 'go:finance']
   ].filter(Boolean);
   if (!$('homeChips').childElementCount) {
     $('homeChips').innerHTML = chips.map(([i,l,a])=> a.startsWith('cmd:') ? `<button class="chip" data-cmd="${esc(a.slice(4))}">${i} ${l}</button>` : a.startsWith('go:') ? `<button class="chip" data-go="${a.slice(3)}">${i} ${l}</button>` : `<button class="chip" data-chip="${a}">${i} ${l}</button>`).join('');
-    $('homeChips').querySelectorAll('[data-chip]').forEach(b=>b.onclick = ()=>({exp:openExpModal, note:()=>openNoteModal(), rem:openRemModal})[b.dataset.chip]());
+    $('homeChips').querySelectorAll('[data-chip]').forEach(b=>b.onclick = ()=>({exp:()=>openExpModal(), note:()=>openNoteModal(), rem:()=>openRemModal()})[b.dataset.chip]());
   }
   // assistant suggestions: a short curated set, one per thing Jarvis does
   const want = ['Brief me', 'How much did I spend this month?', 'What are my reminders?', 'How are my habits?', 'How many calories today?', 'Give me my market brief', 'Scan a receipt', 'Undo last expense'];
@@ -1239,49 +1587,186 @@ function renderChips(){
   if ($('suggest').dataset.n !== String(list.length)) { $('suggest').dataset.n = list.length; $('suggest').innerHTML = list.map(c=>`<button class="chip" data-cmd="${esc(c)}">${c}</button>`).join(''); }
 }
 
-/* ---------- toast + modals ---------- */
+/* ---------- toast + sheets ---------- */
 let toastTimer, undoFn;
-function toast(text, undo){ $('toastText').textContent = text; undoFn = undo; $('toastUndo').style.display = undo?'':'none'; $('toast').classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(()=>$('toast').classList.remove('show'), 3500); }
+function toast(text, undo){ $('toastText').textContent = text; undoFn = undo; $('toastUndo').style.display = undo?'':'none'; $('toast').classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(()=>$('toast').classList.remove('show'), undo ? 5000 : 3000); }
 $('toastUndo').onclick = ()=>{ if (undoFn) undoFn(); $('toast').classList.remove('show'); };
-function modal(html){ $('modalBox').innerHTML = html; $('modal').classList.add('open'); }
-function closeModal(){ $('modal').classList.remove('open'); }
+/* modal(html): a bottom sheet that slides up (features pass h4 + inputs + .row buttons) */
+let modalT = 0;
+function modal(html, cls){
+  clearTimeout(modalT); const m = $('modal'), b = $('modalBox');
+  m.classList.remove('closing'); b.oninput = b.onclick = b.onkeydown = null; b.className = 'box' + (cls ? ' '+cls : ''); b.innerHTML = html; b.scrollTop = 0;
+  m.classList.add('open'); syncTrap();
+}
+function closeModal(){
+  const m = $('modal'); if (!m.classList.contains('open') || m.classList.contains('closing')) return;
+  try { const a = document.activeElement; if (a && m.contains(a)) a.blur(); } catch(e){}
+  m.classList.add('closing'); clearTimeout(modalT);
+  modalT = setTimeout(()=>{ m.classList.remove('open','closing'); syncTrap(); }, 210);
+}
 $('modal').onclick = e=>{ if (e.target.id==='modal') closeModal(); };
+/* formSheet: iPhone-style edit sheet with Cancel · Title · Save */
+function formSheet(o){
+  modal(`<div class="fs-head"><button class="fs-hb" data-fs="cancel">Cancel</button><b>${esc(o.title)}</b><button class="fs-hb save" data-fs="save">${esc(o.save||'Save')}</button></div><div class="fs-body">${o.body}</div>`, 'fs');
+  const box = $('modalBox'), sb = box.querySelector('[data-fs="save"]');
+  const check = ()=>{ if (!sb.isConnected) return; try { sb.disabled = o.valid ? !o.valid() : false; } catch(e){} };
+  box.querySelector('[data-fs="cancel"]').onclick = closeModal;
+  box.oninput = check; box.onclick = ()=>setTimeout(check);
+  box.onkeydown = (e=>{ if (e.key==='Enter' && e.target.tagName==='INPUT' && !/date|time/.test(e.target.type)){ e.preventDefault(); sb.click(); } });
+  sb.onclick = ()=>{ if (sb.disabled) return; haptic(10); if (o.onSave() !== false) closeModal(); };
+  check(); return box;
+}
+const toLocalInput = ts => { const d = new Date(ts); return new Date(d.getTime()-d.getTimezoneOffset()*6e4).toISOString().slice(0,16); };
+const fromLocalInput = v => { const t = new Date(v).getTime(); return isFinite(t) ? t : null; };
+const parseAmount = v => { const n = parseFloat(String(v||'').replace(/[^\d.,-]/g,'').replace(/,(?=\d{3}\b)/g,'').replace(',', '.')); return isFinite(n) ? Math.round(Math.abs(n)*100)/100 : 0; };
+function seg(id, opts, val, cls){ return `<div class="seg ${cls||''}" id="${id}">${opts.map(([v,l])=>`<button type="button" data-v="${v}" class="${v===val?'active':''}">${l}</button>`).join('')}</div>`; }
+function segVal(box, id, fn){ box.querySelectorAll('#'+id+' button').forEach(b=>b.onclick = ()=>{ box.querySelectorAll('#'+id+' button').forEach(x=>x.classList.toggle('active', x===b)); haptic(5); fn(b.dataset.v); }); }
+
+/* ---------- edit a payment (or add one) ---------- */
+function openExpModal(e){
+  if (e && e.target) e = null;   // called from a click handler
+  const isNew = !e; let type = e ? e.type : 'expense', cat = e && e.cat!=='Income' ? e.cat : 'Other', catSet = !isNew && e.type!=='income';
+  const cur = S.currency, pre = cur.length>1 ? '' : cur, post = cur.length>1 ? cur : '';
+  const box = formSheet({title: isNew ? 'New transaction' : 'Edit transaction', save: isNew ? 'Add' : 'Save',
+    body: `${seg('fsType', [['expense','Expense'],['income','Income']], type, 'fs-seg')}
+      <div class="fs-amt ${type==='income'?'in':''}" id="fsAmtW"><span>${esc(pre)}</span><input id="fsAmt" type="text" inputmode="decimal" placeholder="0" autocomplete="off" aria-label="Amount" value="${e ? String(e.amount) : ''}"><span>${esc(post)}</span></div>
+      <p class="fs-sub" id="fsAmtSub">${isNew ? 'Type the amount' : 'Tap the amount to change it'}</p>
+      <div class="fs-group"><div class="fs-field"><label for="fsDesc">Description</label><input id="fsDesc" type="text" placeholder="${type==='income'?'Salary, freelance…':'Lunch, groceries…'}" autocomplete="off" autocapitalize="sentences" value="${e ? esc(e.desc) : ''}"></div>
+        <div class="fs-field"><label for="fsWhen">Date</label><input id="fsWhen" type="datetime-local" value="${toLocalInput(e ? e.at : Date.now())}"></div></div>
+      <div id="fsCatW" ${type==='income'?'hidden':''}><div class="fs-lbl">Category</div><div class="fs-cats" id="fsCats">${Object.keys(CATS).map(c=>`<button type="button" class="fs-cat ${c===cat?'on':''}" data-cat="${esc(c)}" style="--c:${CATS[c].c}">${catIco(c,'expense')}<span>${c==='Food & drink'?'Food':esc(c)}</span></button>`).join('')}</div></div>
+      ${isNew ? '' : `<div class="fs-group fs-acts"><button type="button" class="fs-act danger" id="fsDel">${IC.trash}Delete transaction</button></div>`}`,
+    valid: ()=>parseAmount($('fsAmt').value) > 0,
+    onSave: ()=>{
+      const amount = parseAmount($('fsAmt').value); if (!(amount > 0)) return false;
+      const desc = cap($('fsDesc').value.trim() || (type==='income' ? 'Income' : (e && e.type==='expense' ? e.desc : 'Expense')));
+      const at = fromLocalInput($('fsWhen').value) || (e ? e.at : Date.now());
+      const next = {type, amount, desc, at, cat: type==='income' ? 'Income' : cat};
+      if (isNew){ const x = Object.assign({id:uid()}, next); db.expenses.unshift(x); save(); renderAll(); toast(`${type==='income'?'Income':'Expense'} added`, ()=>{ db.expenses = db.expenses.filter(z=>z!==x); save(); renderAll(); }); if (monthKey(at)!==monthKey(viewMonth)) { viewMonth = new Date(at); viewMonth.setDate(1); renderBudget(); } return; }
+      const before = {type:e.type, amount:e.amount, desc:e.desc, at:e.at, cat:e.cat};
+      if (JSON.stringify(before) === JSON.stringify(Object.assign({}, before, next))) return;
+      Object.assign(e, next); save(); expenseEvent('updated', e); renderAll();
+      toast('Saved', ()=>{ Object.assign(e, before); save(); expenseEvent('updated', e); renderAll(); });
+    }});
+  const amt = $('fsAmt');
+  const size = ()=>{ amt.style.width = Math.max(1, (amt.value||amt.placeholder).length) * .62 + .25 + 'em'; };
+  amt.addEventListener('input', size); size();
+  segVal(box, 'fsType', v=>{ type = v; $('fsCatW').hidden = v==='income'; $('fsAmtW').classList.toggle('in', v==='income'); $('fsDesc').placeholder = v==='income'?'Salary, freelance…':'Lunch, groceries…'; });
+  $('fsDesc').oninput = ()=>{ if (!catSet && type==='expense'){ const c = categorize($('fsDesc').value); if (c!=='Other' || cat==='Other'){ cat = c; box.querySelectorAll('.fs-cat').forEach(b=>b.classList.toggle('on', b.dataset.cat===cat)); } } };
+  box.querySelectorAll('.fs-cat').forEach(b=>b.onclick = ()=>{ cat = b.dataset.cat; catSet = true; haptic(5); box.querySelectorAll('.fs-cat').forEach(x=>x.classList.toggle('on', x===b)); });
+  if (!isNew) $('fsDel').onclick = ()=>{ closeModal(); const idx = db.expenses.indexOf(e); if (idx<0) return; db.expenses.splice(idx,1); expenseEvent('removed', e); save(); renderAll(); toast(`Deleted ${e.desc}`, ()=>{ db.expenses.splice(idx,0,e); expenseEvent('restored', e); save(); renderAll(); }); };
+  if (isNew) setTimeout(()=>{ try { amt.focus(); } catch(x){} }, 80);
+}
+/* ---------- edit a reminder (or add one) ---------- */
+function openRemModal(r){
+  if (r && r.target) r = null;
+  const isNew = !r; let rep = r ? (r.repeat||'none') : 'none';
+  const d0 = new Date(Date.now()+36e5); d0.setMinutes(0,0,0);
+  const when = r ? r.at : d0.getTime();
+  const quick = [['In 1 hour', ()=>{ const d = new Date(Date.now()+36e5); d.setSeconds(0,0); return d; }], ['Tonight 8 PM', ()=>{ const d = new Date(); d.setHours(20,0,0,0); if (d < new Date()) d.setDate(d.getDate()+1); return d; }], ['Tomorrow 9 AM', ()=>{ const d = new Date(); d.setDate(d.getDate()+1); d.setHours(9,0,0,0); return d; }], ['Next week', ()=>{ const d = new Date(when); d.setDate(d.getDate()+7); return d; }]];
+  const box = formSheet({title: isNew ? 'New reminder' : 'Edit reminder', save: isNew ? 'Add' : 'Save',
+    body: `<div class="fs-group" style="margin-top:8px"><div class="fs-field"><input id="fsText" type="text" placeholder="What should I remind you about?" autocomplete="off" autocapitalize="sentences" style="text-align:left" aria-label="Reminder" value="${r ? esc(r.text) : ''}"></div></div>
+      <div class="fs-group"><div class="fs-field"><label for="fsWhen">When</label><input id="fsWhen" type="datetime-local" value="${toLocalInput(when)}"></div></div>
+      <div class="fs-chips" id="fsQuick">${quick.map(([l],i)=>`<button type="button" data-q="${i}">${l}</button>`).join('')}</div>
+      <div class="fs-lbl">Repeat</div>${seg('fsRep', [['none','Never'],['daily','Daily'],['weekly','Weekly'],['monthly','Monthly']], rep, 'fs-seg')}
+      ${isNew ? '' : `<div class="fs-group fs-acts"><button type="button" class="fs-act" id="fsDone">${r.done ? IC.undo+'Mark as not done' : IC.done+'Mark as done'}</button><button type="button" class="fs-act danger" id="fsDel">${IC.trash}Delete reminder</button></div>`}`,
+    valid: ()=>!!$('fsText').value.trim() && !!fromLocalInput($('fsWhen').value),
+    onSave: ()=>{
+      const text = cap($('fsText').value.trim()), at = fromLocalInput($('fsWhen').value); if (!text || !at) return false;
+      if (isNew){ const nr = {id:uid(), text, at, done:false, repeat:rep, created:Date.now()}; db.reminders.push(nr); save(); reminderAdded(nr); renderAll(); askNotify(); toast('Reminder set · '+whenText(at)); return; }
+      const before = {text:r.text, at:r.at, repeat:r.repeat, done:r.done, fired:r.fired};
+      Object.assign(r, {text, at, repeat:rep}); if (at !== before.at){ r.fired = false; if (at > Date.now()) r.done = false; }
+      save(); try { window.dispatchEvent(new CustomEvent('jarvis:reminder-updated', {detail:r})); } catch(x){} renderAll();
+      toast('Saved · '+whenText(r.at), ()=>{ Object.assign(r, before); save(); renderAll(); });
+    }});
+  segVal(box, 'fsRep', v=>{ rep = v; });
+  $('fsQuick').onclick = ev=>{ const b = ev.target.closest('[data-q]'); if (!b) return; $('fsWhen').value = toLocalInput(quick[+b.dataset.q][1]().getTime()); haptic(5); $('fsWhen').dispatchEvent(new Event('input', {bubbles:true})); };
+  if (!isNew){
+    $('fsDone').onclick = ()=>{ closeModal(); completeReminder(r.id); };
+    $('fsDel').onclick = ()=>{ closeModal(); const idx = db.reminders.indexOf(r); if (idx<0) return; db.reminders.splice(idx,1); save(); renderAll(); toast('Reminder deleted', ()=>{ db.reminders.splice(idx,0,r); save(); renderAll(); }); };
+  } else setTimeout(()=>{ try { $('fsText').focus(); } catch(x){} }, 80);
+}
+/* ---------- edit a note (or write one) ---------- */
 function openNoteModal(n){
-  modal(`<h4>${n?'Edit note':'New note'}</h4><textarea id="mText" placeholder="Write your note…">${n?esc(n.text):''}</textarea>
-  <select id="mTag">${Object.keys(TAGS).map(k=>`<option value="${k}" ${n&&n.tag===k?'selected':''}>${TAGS[k].ic} ${k}</option>`).join('')}</select>
-  <div class="row"><button class="btn ghost" id="mCancel">Cancel</button><button class="btn" id="mSave">Save</button></div>`);
-  $('mCancel').onclick = closeModal;
-  $('mSave').onclick = ()=>{ const t = $('mText').value.trim(); if (!t) return closeModal();
-    if (n){ n.text = t; n.tag = $('mTag').value; } else db.notes.unshift({id:uid(), text:cap(t), tag:$('mTag').value, pinned:false, at:Date.now()});
-    save(); renderAll(); closeModal(); toast('Note saved'); };
-  setTimeout(()=>$('mText').focus(), 50);
-}
-function openRemModal(){
-  const d = new Date(Date.now()+36e5); d.setMinutes(0,0,0);
-  const local = new Date(d.getTime()-d.getTimezoneOffset()*6e4).toISOString().slice(0,16);
-  modal(`<h4>New reminder</h4><input id="mText" placeholder="What should I remind you about?"><input id="mWhen" type="datetime-local" value="${local}">
-  <select id="mRep"><option value="none">Doesn't repeat</option><option value="daily">Every day</option><option value="weekly">Every week</option><option value="monthly">Every month</option></select>
-  <div class="row"><button class="btn ghost" id="mCancel">Cancel</button><button class="btn" id="mSave">Save</button></div>`);
-  $('mCancel').onclick = closeModal;
-  $('mSave').onclick = ()=>{ const t = $('mText').value.trim(); if (!t) return; const newRem = {id:uid(), text:cap(t), at:new Date($('mWhen').value).getTime(), done:false, repeat:$('mRep').value, created:Date.now()}; db.reminders.push(newRem); save(); reminderAdded(newRem); renderAll(); closeModal(); askNotify(); toast('Reminder set'); };
-}
-function openExpModal(){
-  modal(`<h4>Add transaction</h4><select id="mType"><option value="expense">Expense</option><option value="income">Income</option></select>
-  <input id="mAmt" type="number" inputmode="decimal" placeholder="Amount"><input id="mDesc" placeholder="What for?">
-  <select id="mCat">${Object.keys(CATS).map(c=>`<option>${c}</option>`).join('')}</select>
-  <div class="row"><button class="btn ghost" id="mCancel">Cancel</button><button class="btn" id="mSave">Save</button></div>`);
-  $('mDesc').oninput = ()=>{ $('mCat').value = categorize($('mDesc').value); };
-  $('mCancel').onclick = closeModal;
-  $('mSave').onclick = ()=>{ const a = parseFloat($('mAmt').value); if (!a) return; const type = $('mType').value; db.expenses.unshift({id:uid(), type, amount:a, desc:cap($('mDesc').value||(type==='income'?'Income':'Expense')), cat:type==='income'?'Income':$('mCat').value, at:Date.now()}); save(); renderAll(); closeModal(); toast('Saved'); };
+  if (n && n.target) n = null;
+  const isNew = !n; let tag = n ? (n.tag||'personal') : 'personal', tagSet = !isNew;
+  const box = formSheet({title: isNew ? 'New note' : 'Edit note', save: isNew ? 'Add' : 'Save',
+    body: `<div class="fs-group" style="margin-top:8px"><div class="fs-field tall"><textarea id="mText" placeholder="Write your note…" aria-label="Note" autocapitalize="sentences">${n ? esc(n.text) : ''}</textarea></div></div>
+      <div class="fs-lbl">Type</div>${seg('fsTag', [['personal','Personal'],['work','Work'],['idea','Idea']], tag, 'fs-seg')}
+      ${isNew ? '' : `<p class="fs-note">Saved ${esc(whenText(n.at))}</p><div class="fs-group fs-acts"><button type="button" class="fs-act" id="fsPin">${IC.pinO}${n.pinned?'Unpin':'Pin to the top'}</button><button type="button" class="fs-act" id="fsSay">${IC.play}Read it aloud</button><button type="button" class="fs-act danger" id="fsDel">${IC.trash}Delete note</button></div>`}`,
+    valid: ()=>!!$('mText').value.trim(),
+    onSave: ()=>{
+      const t = $('mText').value.trim(); if (!t) return false;
+      if (isNew){ db.notes.unshift({id:uid(), text:cap(t), tag, pinned:false, at:Date.now()}); save(); renderAll(); toast('Note saved'); return; }
+      if (n.text === t && n.tag === tag) return;
+      const before = {text:n.text, tag:n.tag}; n.text = t; n.tag = tag; save(); renderAll();
+      toast('Note saved', ()=>{ Object.assign(n, before); save(); renderAll(); });
+    }});
+  segVal(box, 'fsTag', v=>{ tag = v; tagSet = true; });
+  $('mText').addEventListener('input', ()=>{ if (!tagSet){ tag = guessTag($('mText').value); box.querySelectorAll('#fsTag button').forEach(b=>b.classList.toggle('active', b.dataset.v===tag)); } });
+  if (!isNew){
+    $('fsPin').onclick = ()=>{ n.pinned = !n.pinned; save(); renderAll(); closeModal(); toast(n.pinned?'Pinned':'Unpinned'); };
+    $('fsSay').onclick = ()=>{ const was = S.speak; S.speak = true; speak(n.text); S.speak = was; };
+    $('fsDel').onclick = ()=>{ closeModal(); const idx = db.notes.indexOf(n); if (idx<0) return; db.notes.splice(idx,1); save(); renderAll(); toast('Note deleted', ()=>{ db.notes.splice(idx,0,n); save(); renderAll(); }); };
+  } else setTimeout(()=>{ try { $('mText').focus(); } catch(x){} }, 80);
 }
 function openBudgetModal(){
-  modal(`<h4>Monthly budget</h4><input id="mAmt" type="number" inputmode="decimal" placeholder="e.g. 1500" value="${S.budget||''}"><div class="row"><button class="btn ghost" id="mCancel">Cancel</button><button class="btn" id="mSave">Save</button></div>`);
-  $('mCancel').onclick = closeModal;
-  $('mSave').onclick = ()=>{ S.budget = parseFloat($('mAmt').value)||0; save(); syncSettings(); renderAll(); closeModal(); toast('Budget saved'); };
+  const cur = S.currency, pre = cur.length>1 ? '' : cur, post = cur.length>1 ? cur : '';
+  formSheet({title:'Monthly budget', body:`<div class="fs-amt"><span>${esc(pre)}</span><input id="mAmt" type="text" inputmode="decimal" placeholder="1500" autocomplete="off" aria-label="Monthly budget" value="${S.budget||''}"><span>${esc(post)}</span></div><p class="fs-sub">How much you want to spend each month. Leave it empty for no budget.</p>`,
+    onSave: ()=>{ S.budget = parseAmount($('mAmt').value); save(); syncSettings(); renderAll(); toast(S.budget ? 'Budget saved' : 'Budget removed'); }});
+  const a = $('mAmt'), size = ()=>{ a.style.width = Math.max(1, (a.value||a.placeholder).length) * .62 + .25 + 'em'; }; a.addEventListener('input', size); size();
+  setTimeout(()=>{ try { a.focus(); a.select(); } catch(x){} }, 80);
 }
 $('addNoteBtn').onclick = ()=>openNoteModal();
-$('addRemBtn').onclick = openRemModal;
-$('addExpBtn').onclick = openExpModal;
+$('addRemBtn').onclick = ()=>openRemModal();
+$('addExpBtn').onclick = ()=>openExpModal();
+Object.assign(Jarvis, {
+  back: ()=>goBack(), formSheet,
+  editExpense: id=>{ const x = db.expenses.find(z=>z.id===id); if (x) openExpModal(x); return !!x; },
+  editReminder: id=>{ const x = db.reminders.find(z=>z.id===id); if (x) openRemModal(x); return !!x; },
+  editNote: id=>{ const x = db.notes.find(z=>z.id===id); if (x) openNoteModal(x); return !!x; },
+  haptic
+});
+
+/* ---------- More: every feature, grouped and explained (like iPhone Settings) ---------- */
+const MENU = {
+  calendar: {g:0, ic:'cal', c:'#ff3b30', d:'Your iPhone calendar and alarms'},
+  reminders:{g:0, ic:'checklist', c:'#0a84ff', d:'Things to do, with alerts'},
+  notes:    {g:0, ic:'notes', c:'#f5b400', d:'Ideas, lists and things to remember'},
+  habits:   {g:0, ic:'flame', c:'#ff8a00', d:'Daily habits, streaks and goals', t:'Habits & goals'},
+  budget:   {g:1, ic:'wallet', c:'#5e5ce6', d:'Spending, income, budget', t:'Money & budget'},
+  receipts: {g:1, ic:'receipt', c:'#14b8a6', d:'Snap a receipt to log it'},
+  finance:  {g:1, ic:'chart', c:'#af52de', d:'Stocks, crypto and market news'},
+  food:     {g:2, ic:'apple', c:'#34c759', d:'Calories, meals and water', t:'Food & water'},
+  health:   {g:2, ic:'heart', c:'#ff2d55', d:'Steps, sleep and heart rate'},
+  settings: {g:3, ic:'gear', c:'#8e8e93', d:'Voice, name, currency, theme, backup'}
+};
+const MENU_GROUPS = ['Your day', 'Money', 'Health', 'Jarvis'];
+function renderMore(){
+  const el = $('moreMenu'); if (!el) return;
+  const views = [{id:'notes', label:'Notes'}, {id:'reminders', label:'Reminders'}, {id:'budget', label:'Budget'}, ...plugins.views.filter(v=>v.tile!==false), {id:'settings', label:'Settings'}];
+  const groups = MENU_GROUPS.map(()=>[]); const extra = [];
+  const badge = id=>{
+    try {
+      if (id==='reminders'){ const o = overdue().length, u = upcoming().length; return o ? `<span class="tag red">${o} overdue</span>` : u ? String(u) : ''; }
+      if (id==='notes') return db.notes.length ? String(db.notes.length) : '';
+      if (id==='budget'){ const s = sum(inMonth(monthKey(Date.now()))); return s ? fmt(Math.round(s)) : ''; }
+    } catch(e){} return '';
+  };
+  views.forEach(v=>{
+    const m = MENU[v.id], b = badge(v.id);
+    const icon = m ? ico(m.ic, m.c) : `<span class="jv-ico" style="--c:${esc(v.color||'#8e8e93')};font-size:19px">${v.icon||''}</span>`;
+    const row = `<button class="jv-row" data-go="${esc(v.id)}">${icon}<span class="jv-rb"><span class="jv-rt">${esc(m && m.t || v.label)}</span>${m||v.desc?`<span class="jv-rs">${esc(m ? m.d : v.desc)}</span>`:''}</span><span class="jv-rr">${b}${IC.chev.replace('<svg ', '<svg class="jv-chev" ')}</span></button>`;
+    (m ? groups[m.g] : extra).push(row);
+  });
+  groups[3].unshift(`<button class="jv-row" data-cmd="What can you do?">${ico('help', 'var(--accent)')}<span class="jv-rb"><span class="jv-rt">What can I say?</span><span class="jv-rs">Examples of things to ask Jarvis</span></span><span class="jv-rr">${IC.chev.replace('<svg ', '<svg class="jv-chev" ')}</span></button>`);
+  if (extra.length) groups.splice(3, 0, extra);
+  const names = extra.length ? ['Your day', 'Money', 'Health', 'More', 'Jarvis'] : MENU_GROUPS;
+  const first = String(S.name||'').trim(), init = (first[0]||'J').toUpperCase();
+  const html = `<button class="jv-me" data-go="settings"><span class="jv-av">${esc(init)}</span><span style="flex:1;min-width:0"><b>${esc(first||'You')}</b><small>Name, voice, theme and backup</small></span>${IC.chev.replace('<svg ', '<svg class="jv-chev" ')}</button>`
+    + groups.map((g,i)=>g.length ? `<div class="section-h"><h3>${names[i]}</h3></div><div class="jv-group">${g.join('')}</div>` : '').join('')
+    + `<p class="jv-foot">Jarvis 2.0 · your data stays on this device</p>`;
+  if (el.dataset.h !== html){ el.innerHTML = html; el.dataset.h = html; }
+}
 
 /* ---------- assistant sheet + microphone ---------- */
 const chatLog = [];
@@ -1312,23 +1797,95 @@ $('heroBrief').onclick = ()=>{ if (!Jarvis.brief) return; try { Jarvis.brief.pla
 window.addEventListener('jarvis:brief-state', ()=>{ try { renderHome(); } catch(e){} });
 $('closeSheet').onclick = closeSheet; $('sheetBg').onclick = closeSheet;
 
+/* ---------- the microphone (speech recognition) ----------
+   iPhone Safari keeps its orange/red "mic in use" dot on while a recognizer is still alive or still finishing,
+   and sometimes never sends "end" at all. So every way of stopping goes through one place, finish():
+   end of speech, tapping stop, closing the sheet, errors, a silence watchdog, and leaving the app
+   (visibilitychange / pagehide / freeze). It clears the timers, drops every handler, calls abort() as the last
+   cut, forgets the object, and moves the audio session off "record" (navigator.audioSession, Safari 17+).
+   A graceful stop() gets 1.2 s to hand back the words, then abort() runs anyway.
+   Jarvis never opens a getUserMedia stream for voice; recognition owns the mic. */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-let rec = null, listening = false, finalText = '';
+let rec = null, listening = false, finalText = '', interimText = '', recTimers = {};
 if (!SR) $('noSpeech').style.display = 'block';
+const REC_EVENTS = ['onstart','onaudiostart','onsoundstart','onspeechstart','onresult','onnomatch','onerror','onspeechend','onsoundend','onaudioend','onend'];
+function micUI(on){
+  listening = on;
+  document.body.classList.toggle('is-listening', on); $('micBtn').classList.toggle('rec', on); $('stage').classList.toggle('listening', on);
+  $('micBtn').setAttribute('aria-label', on ? 'Stop listening' : 'Talk');
+}
+function recTimer(name, ms, fn){ clearTimeout(recTimers[name]); recTimers[name] = setTimeout(fn, ms); }
+function clearRecTimers(){ Object.keys(recTimers).forEach(k=>clearTimeout(recTimers[k])); recTimers = {}; }
+function setAudioSession(type){ try { if (navigator.audioSession && navigator.audioSession.type !== type) navigator.audioSession.type = type; } catch(e){} }
+/** the final cut for one recognizer: no more events, abort, forget it */
+function releaseRec(r){
+  if (!r) return;
+  REC_EVENTS.forEach(k=>{ try { r[k] = null; } catch(e){} });
+  try { r.abort(); } catch(e){}
+  if (rec === r) rec = null;
+}
+/** ends a session exactly once. deliver: true = act on what was heard, false = throw it away */
+function finish(r, deliver){
+  if (!r || r._jvDone) return; r._jvDone = true;
+  const text = (finalText || interimText || '').replace(/\s+/g,' ').trim();
+  clearRecTimers(); releaseRec(r); micUI(false);
+  // after the mic, leave the "play and record" audio session so Safari lets go of the microphone (and the volume is normal again)
+  setAudioSession('playback');   // back to 'auto' when the mic starts again
+  finalText = interimText = '';
+  if (deliver && text){ $('live').textContent = 'Tap the mic to talk again.'; handle(text); }
+  else if (!deliver && /^(Listening|Finishing)/.test($('live').textContent)) $('live').textContent = 'Tap the mic and talk, or type below.';
+}
 function startListening(){
   if (!SR){ $('live').textContent = 'Voice is not supported in this browser. Type below instead.'; return; }
-  if (listening) return;
+  if (rec && !rec._jvStopping) return;        // already listening (or about to start)
+  if (rec) finish(rec, true);                  // a stop still finishing: wrap it up first, then start fresh
   try { speechSynthesis.cancel(); } catch(e){}
-  rec = new SR(); rec.lang = navigator.language || 'en-US'; rec.interimResults = true; rec.continuous = false;
-  finalText = '';
-  rec.onstart = ()=>{ listening = true; document.body.classList.add('is-listening'); $('micBtn').classList.add('rec'); $('stage').classList.add('listening'); $('live').textContent = 'Listening…'; };
-  rec.onresult = ev=>{ let interim=''; for (let i=ev.resultIndex;i<ev.results.length;i++){ const r = ev.results[i]; if (r.isFinal) finalText += r[0].transcript; else interim += r[0].transcript; } $('live').textContent = (finalText+interim) || 'Listening…'; };
-  rec.onerror = ev=>{ if (ev.error==='not-allowed'||ev.error==='service-not-allowed') $('live').textContent = 'Please allow the microphone for this page, then tap the mic again.'; else if (ev.error==='no-speech') $('live').textContent = "I didn't catch that. Tap the mic and try again."; };
-  rec.onend = ()=>{ listening = false; document.body.classList.remove('is-listening'); $('micBtn').classList.remove('rec'); $('stage').classList.remove('listening'); if (finalText.trim()){ $('live').textContent = 'Tap the mic to talk again.'; handle(finalText); } };
-  try { rec.start(); } catch(e){}
+  clearRecTimers(); setAudioSession('auto');
+  let r;
+  try { r = new SR(); } catch(e){ $('live').textContent = 'Voice is not available right now. Type below instead.'; return; }
+  rec = r; finalText = ''; interimText = '';
+  r.lang = navigator.language || 'en-US'; r.interimResults = true; r.continuous = false; r.maxAlternatives = 1;
+  const mine = ()=> rec === r && !r._jvDone;  // events from an old recognizer are ignored
+  r.onstart = ()=>{ if (!mine()) return; clearTimeout(recTimers.nostart); micUI(true); if (!interimText) $('live').textContent = 'Listening…';
+    recTimer('quiet', 8000, ()=>{ if (mine() && !(finalText || interimText)) { $('live').textContent = "I didn't catch that. Tap the mic and try again."; finish(r, false); } }); // nothing heard
+    recTimer('max', 25000, ()=>{ if (mine()) stopListening(); }); };                    // never more than 25 s
+  r.onresult = ev=>{ if (!mine()) return; let fin = '', interim = '';
+    for (let i = 0; i < ev.results.length; i++){ const x = ev.results[i]; if (x.isFinal) fin += x[0].transcript; else interim += x[0].transcript; }
+    finalText = fin; interimText = fin + interim;
+    $('live').textContent = interimText || 'Listening…';
+    clearTimeout(recTimers.quiet);
+    // iPhone sometimes keeps the mic open after you stop talking: 2.5 s of silence ends it
+    recTimer('pause', fin && !interim ? 1500 : 2500, ()=>{ if (mine()) stopListening(); }); };
+  r.onerror = ev=>{ if (!mine()) return; const e = ev && ev.error;
+    if (e === 'not-allowed' || e === 'service-not-allowed') $('live').textContent = 'Please allow the microphone for this page, then tap the mic again.';
+    else if (e === 'no-speech') $('live').textContent = "I didn't catch that. Tap the mic and try again.";
+    else if (e === 'audio-capture') $('live').textContent = 'Another app is using the microphone. Close it and tap the mic again.';
+    else if (e === 'network') $('live').textContent = 'Voice needs the internet right now. Type below instead.';
+    if (e === 'aborted') return;
+    finish(r, !/not-allowed|service-not-allowed|audio-capture/.test(e || '')); };
+  r.onend = ()=>{ if (!mine()) return; finish(r, true); };
+  try { r.start(); } catch(e){ finish(r, false); $('live').textContent = 'Tap the mic again to talk.'; return; }
+  micUI(true); $('live').textContent = 'Listening…';   // show it right away; onstart confirms
+  recTimer('nostart', 6000, ()=>{ if (mine() && !finalText && !interimText) finish(r, false); }); // never started (iPhone glitch)
 }
-function stopListening(){ if (rec && listening) try { rec.stop(); } catch(e){} }
-$('micBtn').onclick = ()=> listening ? stopListening() : startListening();
+/** stop listening and use what was heard. If the sheet was closed, or nothing was heard, just cut the mic. */
+function stopListening(){
+  const r = rec; if (!r || r._jvDone) return;
+  const sheetOpen = $('sheet').classList.contains('open');
+  if (!sheetOpen){ finish(r, false); return; }
+  if (r._jvStopping) return;
+  r._jvStopping = true; micUI(false); if (finalText || interimText) $('live').textContent = 'Finishing…';
+  try { r.stop(); } catch(e){ finish(r, true); return; }
+  recTimer('stop', 1200, ()=>finish(r, true));    // Safari didn't let go in time: abort and use what we have
+}
+/** cut the mic right now and throw away anything half-heard */
+function cancelListening(){ if (rec) finish(rec, false); }
+$('micBtn').onclick = ()=> rec && !rec._jvStopping ? stopListening() : startListening();
+// leaving the app (home screen, another app, lock, tab switch, closing): the mic goes off at once
+document.addEventListener('visibilitychange', ()=>{ if (document.visibilityState === 'hidden') cancelListening(); });
+window.addEventListener('pagehide', cancelListening);
+document.addEventListener('freeze', cancelListening);
+Jarvis.mic = { start: startListening, stop: stopListening, cancel: cancelListening, get listening(){ return !!rec && !rec._jvDone && !rec._jvStopping; }, get active(){ return !!rec; } };
 function sendTyped(){ const v = $('textIn').value; $('textIn').value=''; handle(v); }
 $('sendBtn').onclick = sendTyped;
 $('textIn').addEventListener('keydown', e=>{ if (e.key==='Enter') sendTyped(); });
@@ -1370,7 +1927,7 @@ function applyTheme(){
 }
 function syncSettings(){
   $('sSpeak').checked = S.speak; $('sRate').value = S.rate; $('sPitch').value = S.pitch; $('sName').value = S.name; $('sCur').value = S.currency; $('sBudget').value = S.budget||''; $('sTheme').value = S.theme;
-  $('swatches').innerHTML = ACCENTS.map(c=>`<button style="background:${c}" class="${c===S.accent?'on':''}" data-accent="${c}" aria-label="Accent color ${['purple','blue','green','orange','red','pink'][ACCENTS.indexOf(c)]}"></button>`).join('');
+  $('swatches').innerHTML = ACCENTS.map(c=>`<button style="background:${c};color:${c}" class="${c===S.accent?'on':''}" data-accent="${c}" aria-label="Accent color ${['purple','blue','green','orange','red','pink'][ACCENTS.indexOf(c)]}"></button>`).join('');
   document.querySelectorAll('[data-accent]').forEach(b=>b.onclick=()=>{ S.accent=b.dataset.accent; save(); applyTheme(); syncSettings(); });
   const p = ('Notification' in window) ? Notification.permission : 'unsupported';
   $('notifState').textContent = p==='granted'?'On. You will get pop-up alerts.':p==='denied'?'Blocked in your browser settings.':p==='unsupported'?'Add Jarvis to your home screen to get alerts.':'Pop-up alerts on this device';
@@ -1406,5 +1963,7 @@ window.jarvisHandle = handle; window.jarvisDB = ()=>db; // for testing
 <script src="features/receipt.js"></script>
 <script src="features/food.js"></script>
 <script src="features/calendar.js"></script>
+<script src="features/health.js"></script>
+<script src="features/brain.js"></script>
 </body>
 </html>

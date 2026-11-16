@@ -503,6 +503,9 @@
   .fd-cta{width:100%;border:0;border-radius:16px;padding:16px;font-weight:800;font-size:16px;cursor:pointer;color:#fff;background:linear-gradient(135deg,var(--accent),#0ea5e9);box-shadow:0 10px 24px rgba(79,70,229,.3)}
   .fd-cta:disabled{opacity:.45}
   .fd-row2{display:flex;gap:10px;margin-top:10px}
+  .fd-det{margin-bottom:12px}
+  .fd-det .fs-field input{padding-right:2px}
+  .fd-du{flex:none;width:30px;color:var(--muted);font-size:14px}
   .fd-row2 > *{flex:1}
   .fd-field{display:block;margin-bottom:10px}
   .fd-field span{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin:0 2px 5px}
@@ -659,6 +662,7 @@
       <div class="fd-quick" id="fdQuick"></div>
       <div class="fd-lbl">Meal</div>
       <div class="seg fd-seg" id="fdMealSeg">${MEALS.map(m=>`<button data-m="${m.id}">${m.id==='snack'?'Snack':m.label}</button>`).join('')}</div>
+      ${editing ? `<div class="fd-lbl">Details</div><div class="fs-group fd-det"><label class="fs-field"><span class="fl">Name</span><input id="fdEN" type="text" autocomplete="off" autocapitalize="sentences" value="${esc(editing.name)}"></label>${[['kcal','Calories','kcal'],['p','Protein','g'],['c','Carbs','g'],['f','Fat','g']].map(([k,l,u])=>`<label class="fs-field"><span class="fl">${l}</span><input data-en="${k}" type="text" inputmode="decimal" autocomplete="off" aria-label="${l} (${u})"><span class="fd-du">${u}</span></label>`).join('')}</div><p class="fd-note" style="margin:-4px 4px 12px">Fix the name, calories or macros if the label says something different. Numbers are for the amount above.</p>` : ''}
       <div class="fd-total"><b id="fdTotK">0<span>kcal</span></b><small id="fdTotM"></small></div>
       <button class="fd-cta" id="fdAdd">${editing ? 'Save changes' : 'Add to '+esc(dayTxt)}</button>
       ${editing ? `<div class="fd-row2"><button class="btn danger" id="fdDel">Delete</button></div>` : ''}
@@ -670,6 +674,7 @@
     function quickVals(){ return unit().u==='g' ? [50,100,150,200,250] : [.5,1,1.5,2,3]; }
     function upd(fromInput){
       const u = unit();
+      if (editing) body.querySelectorAll('[data-en]').forEach(i=>{ if (!i.dataset.t){ const v = ntot({units, ui:st.ui, qty:st.qty})[i.dataset.en]; i.value = String(i.dataset.en==='kcal' ? Math.round(v) : Math.round(v*10)/10); } });
       if (!fromInput) qIn.value = String(Math.round(st.qty*100)/100);
       $('#fdUnitTxt').textContent = u.u==='g' ? (wu(u)==='ml'?'ml':'grams') : `${plural(u.u, st.qty)}${u.g ? ` · ${N(u.g*st.qty)} ${wu(u)}` : ''}`;
       body.querySelectorAll('#fdUnitSeg button').forEach(b=>b.classList.toggle('active', +b.dataset.u===st.ui));
@@ -686,6 +691,7 @@
       else { st.qty = dir>0 ? (st.qty<1 ? 1 : Math.floor(st.qty)+1) : (st.qty<=1 ? .5 : Math.ceil(st.qty)-1); }
       upd();
     }
+    body.querySelectorAll('[data-en]').forEach(i=>i.addEventListener('input', ()=>{ i.dataset.t = '1'; }));
     $('#fdMinus').onclick = ()=>step(-1); $('#fdPlus').onclick = ()=>step(1);
     qIn.oninput = ()=>{ const v = parseFloat(qIn.value); st.qty = v>0 ? v : 0; upd(true); };
     $('#fdQuick').onclick = e=>{ const b = e.target.closest('[data-q]'); if (b){ st.qty = +b.dataset.q; upd(); } };
@@ -702,6 +708,15 @@
       if (!(st.qty>0)) return;
       if (food.noKcal){ food.units = [{u:'serving', n:{kcal:st.manualKcal, p:0, c:0, f:0}}]; food.noKcal = false; st.ui = 0; }
       if (editing){
+        // typed details: a new name, and calories / macros for this amount (every portion size is scaled to match)
+        const nm = ($('#fdEN') && $('#fdEN').value.trim()) || ''; if (nm) editing.name = cap(nm);
+        body.querySelectorAll('[data-en]').forEach(i=>{
+          if (!i.dataset.t) return; const k = i.dataset.en, v = parseFloat(String(i.value).replace(',', '.'));
+          if (!(v >= 0)) return; const now = ntot({units, ui:st.ui, qty:st.qty})[k];
+          if (Math.abs(v - now) < (k==='kcal' ? .5 : .05)) return;
+          if (now > 0) units.forEach(x=>{ x.n[k] = (x.n[k]||0) * v/now; });
+          else { const cu = units[st.ui] || units[0]; units.forEach(x=>{ x.n[k] = x===cu ? v/st.qty : (x.g && cu.g ? v/st.qty * x.g/cu.g : (x.n[k]||0)); }); }
+        });
         Object.assign(editing, {ui:st.ui, qty:st.qty, meal:st.meal}); J.save(); closeSheet(); J.renderAll(); J.toast('Saved');
         return;
       }
@@ -2039,7 +2054,7 @@ Keep names short (at most 4 words) in plain English. portion is a short everyday
       return `${cap(names)} ${one && (p.items[0].qty===1 || p.items[0].grams)?'has':'have'} about ${N(tot.kcal)} calories${one?'':' in total'}: ${gramsSay(tot.p)} of protein, ${N(tot.c)} of carbs and ${N(tot.f)} of fat.${p.unknown.length?` I don't know ${p.unknown.join(' or ')} yet.`:''}`;
     }
     // ---- today summary
-    if (/\b(?:how many|how much) (?:calories|calorie|kcal|cals)\b/.test(t) || /\b(?:calories|calorie count|kcal) (?:today|so far|left|remaining|eaten)\b/.test(t) || /\bwhat (?:did|have) i (?:eat|eaten|had)\b|^what did i have (?:for|at|today|this|so far)\b/.test(t) || /\bhow (?:am i|i'm) doing (?:on|with) (?:my )?(?:calories|food|diet)\b/.test(t) || /\bhow much (?:protein|carbs|fat)\b/.test(t) || /^(?:my )?calories$/.test(t)) return summaryReply(t);
+    if (/\b(?:how many|how much) (?:calories|calorie|kcal|cals)\b/.test(t) || /\b(?:calories|calorie count|kcal) (?:today|so far|left|remaining|eaten)\b/.test(t) || /\bwhat (?:did|have) i (?:eat|eaten|had)\b|^what did i have (?:for|at|today|this|so far)\b/.test(t) || /\bhow (?:am i|i'm) doing (?:on|with) (?:my )?(?:calories|food|diet)\b/.test(t) || /\bhow much (?:protein|carbs|fat)\b/.test(t) || /^(?:my )?calories$/.test(t)) { if (!/\bburn/.test(t)) return summaryReply(t); }
     function summaryReply(t){
       const key = /\byesterday\b/.test(t) ? shiftKey(todayKey(), -1) : todayKey();
       viewKey = key; J.go('food');

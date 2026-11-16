@@ -690,8 +690,10 @@ function alarmMgmt(t){
   if (/^(?:what|which) alarms? (?:do i have|are set|have i got)|^(?:what time is|when is) my (?:next )?alarm|^(?:do i have|is there|have i set) an? alarm|^(?:show|list|read)(?: me)? my alarms?$|^my alarms$/.test(t)){
     const list = (J.db.reminders||[]).filter(r=>r.kind==='alarm' && !r.done && r.at > Date.now()).sort((a,b)=>a.at-b.at);
     st.tab = 'alarms'; J.save(); J.go('calendar');
-    if (!list.length) return 'You have no alarms set. Say: wake me up at 6:30.';
-    return list.length === 1 ? `Your alarm is set for ${tsay(list[0].at)} ${daySay(list[0].at)}: ${list[0].text}.` : `You have ${list.length} alarms. Next: ${tsay(list[0].at)} ${daySay(list[0].at)}, ${list[0].text}.`;
+    // alarms in the iPhone Clock app, if the Action Button shortcut sends them (features/health.js)
+    let clock = null; try { clock = J.health && J.health.store.alarms ? J.health.alarmAnswer() : null; } catch(e){}
+    if (!list.length) return clock ? 'You have no alarms set in Jarvis. ' + clock : 'You have no alarms set. Say: wake me up at 6:30.';
+    return (list.length === 1 ? `Your alarm is set for ${tsay(list[0].at)} ${daySay(list[0].at)}: ${list[0].text}.` : `You have ${list.length} alarms. Next: ${tsay(list[0].at)} ${daySay(list[0].at)}, ${list[0].text}.`) + (clock ? ' ' + clock : '');
   }
   if (/^(?:cancel|delete|remove|turn off|stop|clear|disable)(?: my| the| all| all my)? (?:next |last )?alarms?$/.test(t)){
     const all = /\ball\b/.test(t);
@@ -991,6 +993,10 @@ function alarmsHTML(){
     return `<div class="cal-ev rem"><div class="tm">${esc(tfmt(r.at))}<small>${esc(dayLabel(r.at).split(',')[0].replace(/^(\w{3})\w*day$/,'$1'))}</small></div><div class="bar"></div><div class="bd"><b>${r.kind==='alarm'?'⏰ ':'🔔 '}${esc(r.text)}</b><small>${ok ? (st.alarmed[r.id] ? '✓ iPhone alarm set' : '✓ Added to iPhone calendar') : 'Only rings while Jarvis is open'}${r.repeat && r.repeat!=='none' ? ' · repeats ' + esc(r.repeat) : ''}</small>
       <div class="cal-acts"><button class="cal-btn sm${ok?' ghost':''}" data-cal-ring="${esc(r.id)}">${ok ? 'Add again' : '📲 Make it ring'}</button></div></div></div>`;
   }).join('');
+  // alarms in the iPhone Clock app, from the Action Button shortcut (features/health.js)
+  try { const ca = J.health && J.health.store.alarms; if (ca){ const cl = J.health.iphoneAlarms();
+    h += `<div class="section-h"><h3>In your iPhone Clock</h3><span style="color:var(--muted);font-size:12.5px">synced ${esc(sinceText(ca.at))}</span></div>` + (cl.length ? cl.map(a=>{ const d = new Date(); d.setHours(a.h, a.m, 0, 0);
+      return `<div class="cal-ev rem"><div class="tm">${esc(tfmt(d.getTime()))}<small>${a.on == null ? 'Clock' : a.on ? 'On' : 'Off'}</small></div><div class="bar"></div><div class="bd"><b>⏰ ${esc(a.label || 'Alarm')}</b><small>${a.on === false ? 'Switched off in the Clock app' : 'Rings from your iPhone Clock app'}</small></div></div>`; }).join('') : `<div class="empty" style="padding:16px">No alarms in your Clock app at the last sync.</div>`); } } catch(e){}
   const perm = ('Notification' in window) ? Notification.permission : 'unsupported';
   h += `<div class="section-h"><h3>While Jarvis is open</h3></div>
   <div class="set-group">
@@ -1003,8 +1009,120 @@ function alarmsHTML(){
 }
 function copyRow(text, label){ return `<div class="cal-copy"><span>${esc(label || text)}</span><button class="cal-btn sm" data-cal-copy="${esc(text)}">Copy</button></div>`; }
 function stepHTML(n, html){ return `<div class="cal-step"><div class="n">${n}</div><div class="tx">${html}</div></div>`; }
+/* ---------- Part 3: one Shortcut brings calendar, Health and Clock alarms (#sync=…) ---------- */
+J.css(`
+.cal-blk{border:1px solid var(--card-border,var(--line));border-radius:16px;margin:10px 0;background:var(--fill,var(--bg2));overflow:hidden}
+.cal-blk>summary{list-style:none;display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;font-weight:700;font-size:14.5px;min-height:48px}
+.cal-blk>summary::-webkit-details-marker{display:none}
+.cal-blk>summary .tg{margin-left:auto;font-size:11px;font-weight:800;padding:3px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+.cal-blk>summary .tg.opt{background:var(--line);color:var(--muted)}
+.cal-blk>summary .tg.ok{background:rgba(34,197,94,.14);color:var(--good)}
+.cal-blk>summary::after{content:"";width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);margin:-4px 2px 0 4px;transition:transform .2s var(--ease);flex:none}
+.cal-blk[open]>summary::after{transform:rotate(-135deg);margin-top:4px}
+.cal-blk>summary .e{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;flex:none;color:#fff;font-size:16px}
+.cal-blk>summary .e svg{width:18px;height:18px}
+.cal-blk .in{padding:0 14px 6px;border-top:1px solid var(--sep,var(--line));background:var(--card-solid,var(--card))}
+.cal-blk .in>p{margin:10px 0 2px}
+.cal-diag{display:grid;gap:2px;margin-top:8px}
+.cal-diag div{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:13.5px}
+.cal-diag div:first-child{border-top:0}
+.cal-diag b{flex:1;min-width:0;font-weight:650}
+.cal-diag span{color:var(--muted);font-size:12.5px;text-align:right}
+.cal-diag i{font-style:normal;width:20px;text-align:center;flex:none}
+`);
+function syncRecipeHTML(){
+  const base = /^https?:/.test(location.protocol) && !/localhost|127\.0\.0\.1/.test(location.host) ? location.origin + location.pathname : APP_URL;
+  const syncPrefix = base + '#sync=';
+  const H = J.health, last = H && H.lastSync, got = (last && last.got) || {};
+  const names = ['Jarvis', 'Open Jarvis', 'Jarvis 2.0'];
+  if (!names.includes(st.syncName)) names.push(st.syncName);
+  const bi = (name, color) => { const svg = (H && H.icons && H.icons[name]) || (J.icons && J.icons[name]) || ''; return `<span class="e" style="background:${color}">${svg}</span>`; };
+  const tag = k => got[k] && got[k].ok ? '<span class="tg ok">✓ Arrived</span>' : '';
+  const hdr = (k, extra) => copyRow(`[${k}]\n`, `[${k}] ↵`) + (extra || '');
+  const addVar = n => stepHTML(n, 'Search and add <b>Add to Variable</b>. Tap <b>Variable Name</b>, type <code>Jarvis</code>, and tap <b>Done</b>. It should read <b>Add Text to Jarvis</b>.' + copyRow('Jarvis'));
+  const textHdr = (n, k, bubble) => stepHTML(n, `Search and add <b>Text</b> under it. In the box, paste this (it ends with a new line), then tap <b>${bubble}</b> in the bar above the keyboard:` + hdr(k));
+  const iso = n => stepHTML(n, 'Tap the <b>Start Date</b> bubble: set <b>Date Format</b> to <b>ISO 8601</b> and turn on <b>Include ISO 8601 Time</b>. Do the same for <b>End Date</b>.');
+  const healthBlock = (id, emoji, title, k, type, filter, extra, optional) => `<details class="cal-blk" id="${id}"><summary>${bi(...emoji)}${title}${tag(k) || `<span class="tg${optional ? ' opt' : ''}">${optional ? 'Optional' : '3 actions'}</span>`}</summary><div class="in">
+      ${stepHTML(1, `Search and add <b>Find Health Samples</b>. Tap <b>Type</b> and choose <b>${type}</b>. ${filter}` + copyRow('Find Health Samples'))}
+      ${extra ? stepHTML(2, extra) : ''}
+      ${textHdr(extra ? 3 : 2, k, 'Health Samples')}
+      ${addVar(extra ? 4 : 3)}</div></details>`;
+  let h = `<div class="card cal-part" id="cal-step-cal"><div class="cal-part-h"><div class="ic" style="background:rgba(244,63,94,.15)">🔄</div><div><b>3 · Connect your iPhone</b><small>Calendar, Health and alarms · one time · 5 to 10 minutes</small></div></div>
+    <p>You add a few small blocks to the shortcut your <b>Action Button</b> runs. Each block collects one thing (your calendar, steps, sleep…) and adds it to a list called <b>Jarvis</b>. The last block opens Jarvis with that list. Do the blocks you want and skip the others.</p>
+    <p><b>Did the calendar steps before?</b> They keep working as they are. To add Health, do the blocks below and swap your last two actions for the <b>Send to Jarvis</b> block.</p>
+    <details class="cal-blk" open><summary>${bi('gear','#8e8e93')}Start: open your shortcut</summary><div class="in">
+      ${stepHTML(1, 'Open the <b>Shortcuts</b> app. Find the shortcut your Action Button runs (iPhone <b>Settings → Action Button</b> shows its name) and tap <b>•••</b> on its tile to edit it.')}
+      ${stepHTML(2, 'No shortcut yet? On the <b>Shortcuts</b> tab tap <b>+</b>, tap the name at the top, choose <b>Rename</b>, paste <code>Jarvis</code>. Then in <b>Settings → Action Button</b>, swipe to <b>Shortcut</b> and pick it.' + copyRow('Jarvis'))}
+      ${stepHTML(3, 'Add every block below <b>in order, from top to bottom</b>. New actions go to the bottom on their own: tap <b>Search Actions</b> (the bar at the bottom), paste the name, tap the action.')}
+      <div class="set-row" style="padding:12px 0 6px;border:0;flex-wrap:wrap"><div class="lbl" style="min-width:100%"><b>Your shortcut's name</b><small>So the “Sync now” and “Test it” buttons can run it. Tap the one that matches, or type it.</small>
+        <div class="cal-chips">${names.map(n=>`<button class="${n===st.syncName?'on':''}" data-cal-name="${esc(n)}">${esc(n)}</button>`).join('')}</div>
+        <input class="cal-field" data-cal-namefield value="${esc(st.syncName)}" placeholder="Shortcut name" autocomplete="off" autocapitalize="words"></div></div>
+    </div></details>
+    <details class="cal-blk"><summary>${bi('cal','#ff3b30')}Calendar · next 7 days${tag('calendar') || '<span class="tg">7 actions</span>'}</summary><div class="in">
+      ${stepHTML(1, 'Search and add <b>Find Calendar Events</b>. Tap <b>Add Filter</b> and tap each part until it reads <b>End Date · is in the next · 7 · days</b>. Set <b>Sort by</b> to <b>Start Date</b> and <b>Order</b> to <b>Oldest First</b>. Leave <b>Limit</b> off.' + copyRow('Find Calendar Events'))}
+      ${stepHTML(2, 'Add <b>Repeat with Each</b>. It should say <b>Repeat with each item in Calendar Events</b>.' + copyRow('Repeat with Each'))}
+      ${stepHTML(3, 'Add <b>Text</b> and drag it <b>inside</b> the repeat (between <b>Repeat with each</b> and <b>End Repeat</b>). Tap in the box, tap <b>Repeat Item</b> in the bar, tap that bubble and choose <b>Title</b>. Paste <code>|</code>. Do the same for <b>Start Date</b>, <b>End Date</b> and <b>Location</b>, so it reads <b>Title|Start Date|End Date|Location</b>.' + copyRow('Text') + copyRow('|', '|  (the line character)'))}
+      ${iso(4)}
+      ${stepHTML(5, 'Under <b>End Repeat</b>, add <b>Combine Text</b>. Tap <b>Spaces</b> and choose <b>New Lines</b>.' + copyRow('Combine Text'))}
+      ${textHdr(6, 'calendar', 'Combined Text')}
+      ${addVar(7)}</div></details>
+    <div id="cal-step-health"></div>
+    ${healthBlock('cal-blk-steps', ['steps','#34c759'], 'Steps today', 'steps', 'Steps', 'Tap the date filter until it reads <b>Start Date · is today</b>.', 'Tap <b>Group by</b> and choose <b>Day</b>, so you get one total for today.')}
+    ${healthBlock('cal-blk-energy', ['flame','#ff6b2c'], 'Active calories today', 'energy', 'Active Energy', 'Set it to <b>Start Date · is today</b>.', 'Tap <b>Group by</b> and choose <b>Day</b>.')}
+    ${healthBlock('cal-blk-heart', ['heart','#ff2d55'], 'Resting heart rate', 'heart', 'Resting Heart Rate', 'Set the date filter to <b>Start Date · is in the last · 7 · days</b>.', 'Set <b>Sort by</b> to <b>Start Date</b>, <b>Order</b> to <b>Latest First</b>, turn on <b>Limit</b> and set it to <b>1</b>.')}
+    ${healthBlock('cal-blk-weight', ['scale','#0a84ff'], 'Weight', 'weight', 'Weight', 'Set the date filter to <b>Start Date · is in the last · 3 · months</b>.', 'Set <b>Sort by</b> to <b>Start Date</b>, <b>Order</b> to <b>Latest First</b>, turn on <b>Limit</b> and set it to <b>1</b>.', true)}
+    <details class="cal-blk" id="cal-blk-sleep"><summary>${bi('moon','#5e5ce6')}Sleep · last night${tag('sleep') || '<span class="tg">6 actions</span>'}</summary><div class="in">
+      <p>Needs sleep in your Health app: an Apple Watch worn to bed, or <b>Sleep Schedule</b> turned on in Health.</p>
+      ${stepHTML(1, 'Add <b>Find Health Samples</b>. Tap <b>Type</b> and choose <b>Sleep</b> (some iPhones call it <b>Sleep Analysis</b>). Set the date filter to <b>Start Date · is in the last · 1 · days</b>, <b>Sort by Start Date</b>, <b>Oldest First</b>. No grouping, no limit.' + copyRow('Find Health Samples'))}
+      ${stepHTML(2, 'Add <b>Repeat with Each</b> (it should say <b>Repeat with each item in Health Samples</b>).' + copyRow('Repeat with Each'))}
+      ${stepHTML(3, 'Add <b>Text</b> and drag it inside the repeat. Make it read <b>Value|Start Date|End Date</b>: tap <b>Repeat Item</b>, tap the bubble, choose <b>Value</b>; paste <code>|</code>; then the same for <b>Start Date</b> and <b>End Date</b>.' + copyRow('|', '|  (the line character)'))}
+      ${iso(4)}
+      ${stepHTML(5, 'Under <b>End Repeat</b>, add <b>Combine Text</b> and change <b>Spaces</b> to <b>New Lines</b>. Then add <b>Text</b>, paste this, and tap <b>Combined Text</b>:' + hdr('sleep'))}
+      ${addVar(6)}</div></details>
+    <details class="cal-blk" id="cal-blk-workouts"><summary>${bi('run','#30d158')}Workouts today${tag('workouts') || '<span class="tg opt">Optional</span>'}</summary><div class="in">
+      ${stepHTML(1, 'Add <b>Find Health Samples</b>, <b>Type: Workouts</b>, <b>Start Date · is today</b>.')}
+      ${stepHTML(2, 'Add <b>Repeat with Each</b>, and a <b>Text</b> inside it that reads <b>Type|Start Date|End Date|Active Energy</b> (each from the <b>Repeat Item</b> bubble; <b>Type</b> may be called <b>Workout Activity Type</b>). Dates: ISO 8601 with time, as above.')}
+      ${stepHTML(3, 'Under <b>End Repeat</b>: <b>Combine Text</b> with <b>New Lines</b>, then <b>Text</b> with this and the <b>Combined Text</b> bubble:' + hdr('workouts'))}
+      ${addVar(4)}</div></details>
+    <details class="cal-blk" id="cal-blk-alarms"><summary>${bi('clock','#ff9500')}Alarms in your Clock app${tag('alarms') || '<span class="tg opt">Optional</span>'}</summary><div class="in">
+      <p>Lets you ask “what alarms are on my iPhone?”. Needs iOS 17 or newer.</p>
+      ${stepHTML(1, 'Search and add <b>Get All Alarms</b> (orange Clock icon).' + copyRow('Get All Alarms'))}
+      ${stepHTML(2, 'Add <b>Repeat with Each</b>, and a <b>Text</b> inside it. Tap <b>Repeat Item</b>, tap the bubble, choose <b>Label</b> (or <b>Name</b>). Paste <code>|</code>, add <b>Repeat Item</b> again and choose <b>Time</b>. If the list also shows <b>Is Enabled</b>, add <code>|</code> and that too.' + copyRow('|', '|  (the line character)'))}
+      ${stepHTML(3, 'If tapping the <b>Time</b> bubble shows <b>Date Format</b>, set it to <b>None</b> and <b>Time Format</b> to <b>Short</b>.')}
+      ${stepHTML(4, 'Under <b>End Repeat</b>: <b>Combine Text</b> with <b>New Lines</b>, then <b>Text</b> with this and the <b>Combined Text</b> bubble:' + hdr('alarms'))}
+      ${addVar(5)}</div></details>
+    <details class="cal-blk" id="cal-blk-send" open><summary>${bi('sync','#0a84ff')}Send to Jarvis · last block<span class="tg">Required</span></summary><div class="in">
+      ${stepHTML(1, 'At the very bottom, add <b>Combine Text</b>. It should say <b>Combine Jarvis with New Lines</b>. If the first blue word is not <b>Jarvis</b>, tap it and pick <b>Jarvis</b>; tap <b>Spaces</b> and choose <b>New Lines</b>.' + copyRow('Combine Text'))}
+      ${stepHTML(2, 'Add <b>URL Encode</b>. It should say <b>Encode Combined Text</b>.' + copyRow('URL Encode'))}
+      ${stepHTML(3, 'Add <b>Open URLs</b> (or use the one you have, dragged to the very bottom). Tap its link, delete it, paste this, then tap <b>URL Encoded Text</b> in the bar above the keyboard:' + copyRow(syncPrefix))}
+      ${stepHTML(4, 'If an older <b>URL Encode</b> or <b>Open URLs</b> with <code>#cal=</code> is still there, delete it: touch and hold it, then <b>Delete</b>.')}
+      ${stepHTML(5, 'Tap <b>Done</b>, then press your Action Button. The first time, iPhone asks to read your Calendar, Health and Clock: tap <b>Allow</b>, and in the Health screen tap <b>Turn On All</b>. Jarvis opens and tells you what arrived.')}
+    </div></details>
+    <div class="cal-acts"><a class="cal-btn" href="${esc(syncLink())}">Test it: run my shortcut</a><span style="color:var(--muted);font-size:12.5px;align-self:center">${st.syncedAt || (H && H.syncedAt) ? 'Last synced ' + esc(sinceText(Math.max(st.syncedAt || 0, (H && H.syncedAt) || 0))) : 'Not synced yet'}</span></div>`;
+  // what arrived last time
+  if (last){
+    const rows = [['calendar','📅','Calendar', g => `${plural(g.n,'event')}`], ['steps','👟','Steps', g => J.health && g.v != null ? Number(g.v).toLocaleString('en-US') : ''], ['energy','🔥','Active energy', g => g.v + ' kcal'], ['heart','❤️','Resting heart rate', g => g.v + ' bpm'], ['weight','⚖️','Weight', g => g.unit === 'lb' ? (g.v/0.45359237).toFixed(1) + ' lb' : g.v + ' kg'], ['sleep','😴','Sleep', g => g.none ? 'nothing for last night' : `${Math.floor(g.v/60)}h ${String(Math.round(g.v)%60).padStart(2,'0')}m`], ['workouts','🏃','Workouts', g => `${g.n} today`], ['alarms','⏰','Clock alarms', g => plural(g.n,'alarm')]];
+    const why = g => g.why === 'unreadable dates' ? 'dates unreadable: use ISO 8601' : g.why === 'empty' ? 'sent, but empty' : g.why === 'unreadable' ? 'could not read it' : g.why || 'could not read it';
+    h += `<div class="section-h" style="margin-top:16px"><h3>What arrived last time</h3><span style="color:var(--muted);font-size:12.5px">${esc(sinceText(last.at))}${last.size ? ` · ${(last.size/1024).toFixed(1)} KB` : ''}</span></div><div class="cal-diag">` +
+      rows.map(([k, e, l, f]) => { const g = got[k]; return `<div><i>${g ? (g.ok ? '✅' : '⚠️') : '·'}</i><b>${e} ${l}</b><span>${g ? (g.ok ? esc(f(g)) : esc(why(g))) : 'not sent'}</span></div>`; }).join('') + `</div>`;
+    if (last.size > 8000) h += `<p style="margin-top:8px">That link is long. If syncing gets slow, change the calendar filter from 7 days to 3.</p>`;
+    if (last.empty) h += `<p style="margin-top:8px">Jarvis opened, but nothing came with it. Check that <b>Open URLs</b> ends with the <b>URL Encoded Text</b> bubble.</p>`;
+  }
+  h += `</div>`;
+  // automatic: when the shortcut runs by itself
+  h += `<div class="card cal-part" id="cal-step-auto"><div class="cal-part-h"><div class="ic" style="background:rgba(34,197,94,.15)">⚡</div><div><b>4 · Make it automatic</b><small>Optional · one minute</small></div></div>
+    <p>iPhone can run your shortcut for you, so Jarvis is up to date without pressing anything.</p>
+    ${stepHTML(1, 'In <b>Shortcuts</b>, open the <b>Automation</b> tab and tap <b>+</b> (or <b>New Automation</b>).')}
+    ${stepHTML(2, 'Pick <b>Alarm</b> → <b>Is Stopped</b> → your wake-up alarm (or <b>Any</b>). Choose <b>Run Immediately</b>, tap <b>Next</b>, and pick your shortcut. Now stopping your morning alarm opens Jarvis with last night\'s sleep and today\'s calendar.')}
+    ${stepHTML(3, 'Want more? Add another automation with <b>Time of Day</b> (for example 1:00 PM and 7:00 PM, <b>Daily</b>, <b>Run Immediately</b>).')}
+    <div class="cal-truth" style="margin-top:10px">
+      <i>✅</i><span><b>Automatic:</b> every time the shortcut runs, from the Action Button or an automation.</span>
+      <i>ℹ️</i><span><b>Not automatic:</b> Jarvis can't read Health, Clock or Calendar in the background. Between runs it shows the last numbers, with the time they came in.</span>
+      <i>🔒</i><span>If your iPhone is locked, it may ask you to unlock first. Don't use <b>App → Safari</b> as the trigger: it would open Jarvis again and again.</span>
+    </div></div>`;
+  return h;
+}
 function connectHTML(){
-  const syncPrefix = (/^https?:/.test(location.protocol) && !/localhost|127\.0\.0\.1/.test(location.host) ? location.origin + location.pathname : APP_URL) + '#cal=';
   let h = '';
   if (isIOS && standalone) h += `<div class="card cal-part cal-where warn"><div class="cal-part-h"><div class="ic">⚠️</div><div><b>You opened Jarvis from its Home Screen icon</b><small>Read this first</small></div></div>
     <p>On iPhone, the Home Screen icon and Safari keep <b>separate</b> copies of Jarvis. Your Action Button opens Jarvis in <b>Safari</b>, so calendar sync (step 3) arrives there, not here.</p>
@@ -1035,27 +1153,8 @@ function connectHTML(){
     ${stepHTML(8, 'Come back to Jarvis and tap <b>Test it</b> below. The Shortcuts app opens for a second. If iPhone asks for permission, tap <b>Allow</b> (or <b>Always Allow</b>). Then open the <b>Clock</b> app: a new alarm 2 minutes from now should be there.' + (standalone ? ' To come back, tap <b>◀ Jarvis</b> at the top left, or open Jarvis again.' : ''))}
     <div class="cal-acts"><a class="cal-btn" data-cal-test="alarm" href="${esc(alarmLink({id:'test', at:Math.ceil((Date.now()+2*MIN)/MIN)*MIN}))}">Test it: alarm in 2 minutes</a></div>
     <div class="set-row" style="padding:14px 0 2px;border:0"><div class="lbl"><b>The test alarm worked</b><small>Turn on to show “Set iPhone alarm”. Delete the test alarm in Clock.</small></div><label class="switch"><input type="checkbox" data-cal-set="alarmReady" ${st.alarmReady?'checked':''}><span></span></label></div></div>`;
-  // Part 3
-  const names = ['Jarvis', 'Open Jarvis', 'Jarvis 2.0'];
-  if (!names.includes(st.syncName)) names.push(st.syncName);
-  h += `<div class="card cal-part" id="cal-step-cal"><div class="cal-part-h"><div class="ic" style="background:rgba(244,63,94,.15)">🔄</div><div><b>3 · Show your iPhone calendar in Jarvis</b><small>One time · about 3 minutes · then it syncs every time you open Jarvis</small></div></div>
-    <p>You will add a few steps to the shortcut your Action Button already runs, so every press brings your next 7 days into Jarvis.</p>
-    ${stepHTML(1, 'Open <b>Shortcuts</b>. Find the shortcut your Action Button runs and tap the <b>•••</b> on its tile to edit it.')}
-    ${stepHTML(2, 'Tap <b>Search Actions</b>, paste this, and tap <b>Find Calendar Events</b>:' + copyRow('Find Calendar Events') + 'Touch and hold it and drag it to the very top.')}
-    ${stepHTML(3, 'It says <b>Find All Calendar Events</b>. Tap <b>Add Filter</b>, then tap each part of the new filter until it reads <b>End Date</b> · <b>is in the next</b> · <b>7</b> · <b>days</b>. Set <b>Sort by</b> to <b>Start Date</b> and <b>Order</b> to <b>Oldest First</b>. Leave <b>Limit</b> off.')}
-    ${stepHTML(4, 'Search, paste, and add <b>Repeat with Each</b> right under it. It should say <b>Repeat with each item in Calendar Events</b>.' + copyRow('Repeat with Each'))}
-    ${stepHTML(5, 'Search, paste, and add a <b>Text</b> action. Drag it <b>inside</b> the repeat, between <b>Repeat with each</b> and <b>End Repeat</b>.' + copyRow('Text'))}
-    ${stepHTML(6, 'Tap inside the Text box. In the bar above the keyboard tap <b>Repeat Item</b>, then tap that new bubble and choose <b>Title</b>. Paste <code>|</code>. Do the same three more times so the box reads: <b>Title | Start Date | End Date | Location</b> (each one a <b>Repeat Item</b> bubble, with <code>|</code> between them and no spaces).' + copyRow('|', '|  (the line character)'))}
-    ${stepHTML(7, 'Tap the <b>Start Date</b> bubble. Set <b>Date Format</b> to <b>ISO 8601</b> and turn on <b>Include ISO 8601 Time</b>. Do the same for <b>End Date</b>.')}
-    ${stepHTML(8, 'Under <b>End Repeat</b>, add <b>Combine Text</b>. It says <b>Combine Repeat Results with Spaces</b>: tap <b>Spaces</b> and choose <b>New Lines</b>.' + copyRow('Combine Text'))}
-    ${stepHTML(9, 'Then add <b>URL Encode</b>. It should say <b>Encode Combined Text</b>.' + copyRow('URL Encode'))}
-    ${stepHTML(10, 'Drag the action that opens Jarvis (<b>Open URLs</b>) to the very bottom. Tap its link, delete it, and paste this. Then, with the cursor at the end, tap <b>URL Encoded Text</b> in the bar above the keyboard:' + copyRow(syncPrefix))}
-    ${stepHTML(11, 'Tap <b>Done</b> and press your Action Button. The first time, tap <b>Allow</b> so it can read your calendar.')}
-    <div class="set-row" style="padding:12px 0 4px;border:0;flex-wrap:wrap"><div class="lbl" style="min-width:100%"><b>Your Action Button shortcut's name</b><small>Used by the “Sync now” button. Tap the one that matches, or paste it.</small>
-      <div class="cal-chips">${names.map(n=>`<button class="${n===st.syncName?'on':''}" data-cal-name="${esc(n)}">${esc(n)}</button>`).join('')}</div>
-      <input class="cal-field" data-cal-namefield value="${esc(st.syncName)}" placeholder="Shortcut name" autocomplete="off" autocapitalize="words"></div></div>
-    <div class="cal-acts"><a class="cal-btn" href="${esc(syncLink())}">Test it: sync now</a><span style="color:var(--muted);font-size:12.5px;align-self:center">${st.syncedAt ? 'Last synced ' + esc(sinceText(st.syncedAt)) : 'Not synced yet'}</span></div>
-    <p style="margin-top:12px">Good to know: the shortcut always opens Jarvis in <b>Safari</b>. A Jarvis icon on your Home Screen keeps its own separate notes, reminders and calendar. So open Jarvis with the <b>Action Button</b> every time.</p></div>`;
+  // Part 3 + 4: one shortcut brings calendar, Health and Clock alarms (see syncRecipeHTML)
+  h += syncRecipeHTML();
   // settings
   h += `<div class="section-h"><h3>Preferences</h3></div><div class="set-group">
     <div class="set-row"><div class="set-ic" style="background:rgba(109,93,252,.15)">📲</div><div class="lbl"><b>After a new reminder</b><small>Show “Make it ring on your iPhone”</small></div><label class="switch"><input type="checkbox" data-cal-set="sheetAfter" ${st.sheetAfter?'checked':''}><span></span></label></div>
@@ -1145,10 +1244,11 @@ function settingsRow(){
     const head = document.createElement('div'); head.className = 'section-h'; head.innerHTML = '<h3>iPhone calendar &amp; alarms</h3>';
     g = document.createElement('div'); g.className = 'set-group'; g.id = 'cal-settings';
     if (before){ v.insertBefore(head, before); v.insertBefore(g, before); } else { v.appendChild(head); v.appendChild(g); }
-    g.addEventListener('click', e=>{ const b = e.target.closest('[data-cal-open]'); if (b){ st.tab = b.dataset.calOpen; J.save(); J.go('calendar'); } });
+    g.addEventListener('click', e=>{ if (e.target.closest('[data-cal-health]')){ if (J.health && J.health.syncedAt) J.go('health'); else if (J.health) J.health.openConnect(); return; } const b = e.target.closest('[data-cal-open]'); if (b){ st.tab = b.dataset.calOpen; J.save(); J.go('calendar'); } });
   }
-  const html = `<div class="set-row"><div class="set-ic" style="background:rgba(244,63,94,.15)">📅</div><div class="lbl"><b>Calendar sync</b><small>${st.syncedAt ? 'Synced ' + esc(sinceText(st.syncedAt)) + ' · shortcut “' + esc(st.syncName) + '”' : 'Not connected yet'}</small></div><button class="btn ghost cal-set-btn" data-cal-open="connect">${st.syncedAt ? 'Manage' : 'Connect'}</button></div>
-    <div class="set-row"><div class="set-ic" style="background:rgba(249,115,22,.15)">⏰</div><div class="lbl"><b>Make reminders ring</b><small>${st.alarmReady ? 'Calendar alerts + iPhone alarms (“' + esc(st.alarmName) + '”)' : 'Calendar alerts · iPhone alarms not set up'}</small></div><button class="btn ghost cal-set-btn" data-cal-open="${st.alarmReady ? 'alarms' : 'connect'}">${st.alarmReady ? 'Open' : 'Set up'}</button></div>`;
+  const html = `<div class="set-row"><div class="set-ic" style="background:#ff3b30">${(J.icons && J.icons.cal) || '📅'}</div><div class="lbl"><b>Calendar sync</b><small>${st.syncedAt ? 'Synced ' + esc(sinceText(st.syncedAt)) + ' · shortcut “' + esc(st.syncName) + '”' : 'Not connected yet'}</small></div><button class="btn ghost cal-set-btn" data-cal-open="connect">${st.syncedAt ? 'Manage' : 'Connect'}</button></div>
+    <div class="set-row"><div class="set-ic" style="background:#ff9500">${(J.icons && J.icons.clock) || '⏰'}</div><div class="lbl"><b>Make reminders ring</b><small>${st.alarmReady ? 'Calendar alerts + iPhone alarms (“' + esc(st.alarmName) + '”)' : 'Calendar alerts · iPhone alarms not set up'}</small></div><button class="btn ghost cal-set-btn" data-cal-open="${st.alarmReady ? 'alarms' : 'connect'}">${st.alarmReady ? 'Open' : 'Set up'}</button></div>`
+    + (J.health ? `<div class="set-row"><div class="set-ic" style="background:#ff2d55">${(J.icons && J.icons.heart) || '❤️'}</div><div class="lbl"><b>iPhone Health</b><small>${J.health.syncedAt ? 'Steps, sleep, heart · synced ' + esc(sinceText(J.health.syncedAt)) : 'Steps, sleep and heart rate · not connected'}</small></div><button class="btn ghost cal-set-btn" data-cal-health>${J.health.syncedAt ? 'Open' : 'Connect'}</button></div>` : '');
   if (g._sig !== html){ g._sig = html; g.innerHTML = html; }
 }
 
@@ -1160,7 +1260,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
 setInterval(()=>{ try { if (J.current === 'calendar'){ const v = document.getElementById('v-calendar'); v && paint(v); } } catch(e){} }, 30000);
 
 /* for tests and other features */
-J.calendar = { buildICS, reminderItem, eventItem, parseCalPayload, applySync, parseAlarm, spokenTimes, alarmText, alarmLink, syncLink, openSheet, closeSheet, showAlarm, stopAlarm, snoozeAlarm, checkSnoozes, nightstand, get ring(){ return ring; }, get audio(){ return actx; }, store: st };
+J.calendar = { parseDate, buildICS, reminderItem, eventItem, parseCalPayload, applySync, parseAlarm, spokenTimes, alarmText, alarmLink, syncLink, openSheet, closeSheet, showAlarm, stopAlarm, snoozeAlarm, checkSnoozes, nightstand, get ring(){ return ring; }, get audio(){ return actx; }, store: st };
 
 } catch(e){ console.error('calendar feature failed to load', e); }
 })();
