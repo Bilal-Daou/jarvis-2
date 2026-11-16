@@ -299,7 +299,17 @@ function allEvents(){ return st.events.concat(st.local.map(l=>Object.assign({min
 function eventsBetween(from, to){ return allEvents().filter(e => e.start < to && e.end > from); }
 function upcomingEvents(){ const now = Date.now(); return allEvents().filter(e => e.end > now); }
 function nextTimed(){ const now = Date.now(); return allEvents().find(e => !e.allDay && e.end > now) || null; }
-function remindersBetween(from, to){ return (J.db.reminders||[]).filter(r => !r.done && r.at >= from && r.at < to).sort((a,b)=>a.at-b.at); }
+/** reminders in [from, to): a daily, weekly or monthly one also counts on the days it repeats (even if Jarvis was closed when it last rang) */
+function remindersBetween(from, to){
+  const out = [];
+  (J.db.reminders||[]).forEach(r => {
+    if (!r || r.done || !isFinite(+r.at)) return;
+    let at = +r.at, g = 0;
+    if (r.repeat && r.repeat !== 'none') while (at < from && g++ < 800){ if (r.repeat === 'daily') at += DAY; else if (r.repeat === 'weekly') at += 7*DAY; else if (r.repeat === 'monthly'){ const d = new Date(at); d.setMonth(d.getMonth()+1); at = +d; } else break; }
+    if (at >= from && at < to) out.push(at === +r.at ? r : Object.assign({}, r, {at}));
+  });
+  return out.sort((a,b)=>a.at-b.at);
+}
 const stale = () => st.syncedAt && Date.now() - st.syncedAt > 26*HOUR;
 
 /* =========================================================
@@ -354,12 +364,12 @@ function startSound(kind){
     ring.stopAt = Date.now() + (kind === 'alarm' ? 10*MIN : 90*1000);
     fill(); ring.timer = setInterval(fill, 350);
   } catch(e){ return false; }
-  try { if (navigator.vibrate){ navigator.vibrate([400,200,400,200,400]); ring.vib = setInterval(()=>navigator.vibrate([400,200,400,200,400]), 2400); } } catch(e){}
+  try { const ua = navigator.userActivation; if (navigator.vibrate && (!ua || ua.hasBeenActive)){ navigator.vibrate([400,200,400,200,400]); ring.vib = setInterval(()=>navigator.vibrate([400,200,400,200,400]), 2400); } } catch(e){}
   return c.state === 'running';
 }
 function silence(){
   clearInterval(ring.timer); ring.timer = null; clearInterval(ring.vib); ring.vib = null;
-  try { navigator.vibrate && navigator.vibrate(0); } catch(e){}
+  try { const ua = navigator.userActivation; if (navigator.vibrate && (!ua || ua.hasBeenActive)) navigator.vibrate(0); } catch(e){}
   if (ring.master){ try { const c = ctx(); ring.master.gain.cancelScheduledValues(c.currentTime); ring.master.gain.setTargetAtTime(0.0001, c.currentTime, 0.05); const m = ring.master; setTimeout(()=>{ try { m.disconnect(); } catch(e){} }, 400); } catch(e){} }
   ring.master = null;
 }
@@ -698,6 +708,15 @@ function alarmMgmt(t){
     if (!list.length) return clock ? 'You have no alarms set in Jarvis. ' + clock : 'You have no alarms set. Say: wake me up at 6:30.';
     return (list.length === 1 ? `Your alarm is set for ${tsay(list[0].at)} ${daySay(list[0].at)}: ${list[0].text}.` : `You have ${list.length} alarms. Next: ${tsay(list[0].at)} ${daySay(list[0].at)}, ${list[0].text}.`) + (clock ? ' ' + clock : '');
   }
+  // "stop the timer", "cancel my timer": the one ringing, else the next timer
+  if (/^(?:cancel|delete|remove|turn off|stop|clear|kill|end)(?: my| the| this| that)? timers?$/.test(t)){
+    if (ring.active){ closeOverlay(); J.renderAll(); return 'Timer stopped.'; }
+    const list = (J.db.reminders||[]).filter(r=>r.kind==='alarm' && !r.done && r.at > Date.now() && /\btimer\b/i.test(r.text || '')).sort((a,b)=>a.at-b.at);
+    const x = list[0] || (J.db.reminders||[]).filter(r=>r.kind==='alarm' && !r.done && r.at > Date.now() && r.at - Date.now() < 3*HOUR && (!r.repeat || r.repeat === 'none') && (r.created||0) > Date.now() - 3*HOUR).sort((a,b)=>a.at-b.at)[0];
+    if (!x) return "You don't have a timer running.";
+    J.db.reminders = J.db.reminders.filter(r=>r !== x); J.save(); J.renderAll();
+    return `Cancelled your timer for ${tsay(x.at)}.`;
+  }
   if (/^(?:cancel|delete|remove|turn off|stop|clear|disable)(?: my| the| all| all my)? (?:next |last )?alarms?$/.test(t)){
     const all = /\ball\b/.test(t);
     const list = (J.db.reminders||[]).filter(r=>r.kind==='alarm' && !r.done && r.at > Date.now()).sort((a,b)=>a.at-b.at);
@@ -750,6 +769,8 @@ function periodOf(t){
 }
 function evSay(e){ return e.allDay ? `${e.title}, all day` : `${e.title} at ${tsay(e.start)}`; }
 function listSay(arr, max){ max = max || 5; const a = arr.slice(0, max); let s = a.length <= 1 ? a.join('') : a.slice(0,-1).join(', ') + ' and ' + a[a.length-1]; if (arr.length > max) s += `, plus ${arr.length - max} more`; return s; }
+/** a reminder's words as Jarvis says them back: "Call my mom" -> "call your mom" */
+function spokenText(x){ x = String(x||''); x = /^[A-Z][a-z]/.test(x) ? x.charAt(0).toLowerCase() + x.slice(1) : x; return J.youify ? J.youify(x) : x; }
 function scheduleAnswer(p){
   const now = Date.now(), from = Math.max(p.from, p.week ? now : p.from);
   let evs = eventsBetween(from, p.to).filter(e => e.end > now || p.from < startOfDay(now));
@@ -757,7 +778,7 @@ function scheduleAnswer(p){
   const rems = remindersBetween(Math.max(p.from, now), p.to);
   const parts = [];
   if (!st.syncedAt){
-    const r = rems.length ? `Reminders ${p.label}: ${listSay(rems.map(x=>`${x.text} at ${tsay(x.at)}`))}.` : `No reminders ${p.label}.`;
+    const r = rems.length ? `Reminders ${p.label}: ${listSay(rems.map(x=>`${spokenText(x.text)} at ${tsay(x.at)}`))}.` : `No reminders ${p.label}.`;
     return `Your iPhone calendar isn't connected yet. ${r} To connect it, open Calendar, then Connect.`;
   }
   if (p.week){
@@ -769,7 +790,7 @@ function scheduleAnswer(p){
   } else if (!evs.length) parts.push(`Your calendar is clear ${p.label}.`);
   else parts.push(`${cap(p.label)} you have ${evs.length === 1 ? 'one event' : plural(evs.length,'event')}: ${listSay(evs.map(evSay))}.`);
   if (!p.week && !evs.length && p.bare){ const nx = upcomingEvents()[0]; if (nx) parts.push(`Next up: ${nx.title}, ${daySay(nx.start)}${nx.allDay ? '' : ' at ' + tsay(nx.start)}.`); }
-  if (rems.length) parts.push(`${rems.length === 1 ? 'And one reminder' : `And ${rems.length} reminders`}: ${listSay(rems.map(x=>`${x.text} at ${tsay(x.at)}`), 3)}.`);
+  if (rems.length) parts.push(`${rems.length === 1 ? 'And one reminder' : `And ${rems.length} reminders`}: ${listSay(rems.map(x=>`${spokenText(x.text)} at ${tsay(x.at)}`), 3)}.`);
   if (stale()) parts.push(`This is from your last calendar sync, ${sinceText(st.syncedAt)}.`);
   return parts.join(' ');
 }
@@ -966,7 +987,8 @@ function remRow(r){
 }
 function agendaHTML(){
   const now = Date.now(), t0 = startOfDay(now);
-  let h = syncBar();
+  // not connected yet: one clear call to action (the big card), not a status bar and a card saying the same thing
+  let h = !st.syncedAt && !st.local.length ? '' : syncBar();
   if (!st.syncedAt && !st.local.length){
     h += `<div class="card cal-hero-empty"><div class="big">${gi('cal')}</div><h3>See your iPhone calendar here</h3><p>Jarvis reads your calendar each time you open it with the Action Button. Then just ask “What's on my schedule?”</p><button class="cal-btn" data-cal-tab="connect">Show me how</button></div>`;
   } else {

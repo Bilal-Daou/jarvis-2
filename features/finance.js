@@ -282,8 +282,8 @@ function bigChart(sym, range, h){
 
 /* -------------------------------------------------------- styles */
 J.css(`
-:root{--fin-up:#22c55e;--fin-dn:#fb7185;--fin-pill-up:#16a34a;--fin-pill-dn:#e11d48}
-:root[data-theme="light"]{--fin-up:#15803d;--fin-dn:#e11d48;--fin-pill-up:#16a34a;--fin-pill-dn:#e11d48}
+:root{--fin-up:#22c55e;--fin-dn:#fb7185;--fin-pill-up:#15803d;--fin-pill-dn:#e11d48}
+:root[data-theme="light"]{--fin-up:#15803d;--fin-dn:#e11d48;--fin-pill-up:#15803d;--fin-pill-dn:#e11d48}
 .fin-up{color:var(--fin-up)}.fin-dn{color:var(--fin-dn)}.fin-flat{color:var(--muted)}
 .fin-svg{display:block;width:100%;height:100%;overflow:visible}
 .fin-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
@@ -358,7 +358,7 @@ J.css(`
 .fin-nums span{font-size:11.5px;color:var(--muted);background:var(--line);border-radius:7px;padding:3px 7px;font-weight:600}
 .fin-nums span b{color:var(--text)}
 .fin-imp{flex:none;font-size:10.5px;font-weight:800;padding:3px 7px;border-radius:999px;text-transform:uppercase;letter-spacing:.4px}
-.fin-imp.High{background:rgba(244,63,94,.15);color:var(--bad-ink)}
+.fin-imp.High{background:rgba(244,63,94,.15);color:var(--bad-ink)}:root[data-theme="light"] .fin-imp.High{color:#b4123a}
 .fin-imp.Medium{background:rgba(245,158,11,.16);color:var(--warn-ink)}
 .fin-imp.Holiday{background:var(--accent-soft);color:var(--accent-ink)}
 .fin-news{display:block;padding:13px 14px;border-bottom:1px solid var(--line);color:inherit;text-decoration:none}

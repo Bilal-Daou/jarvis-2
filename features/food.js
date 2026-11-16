@@ -356,11 +356,12 @@
   .fd-kv{flex:1;min-width:0;display:flex;flex-direction:column;gap:10px}
   .fd-kv .r{display:flex;align-items:center;gap:10px}
   .fd-kv .ic{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;font-size:16px;flex:none}
+  .fd-kv .ic svg{width:19px;height:19px}
   .fd-kv .v{line-height:1.2;min-width:0}
   .fd-kv small{display:block;color:var(--muted);font-size:11.5px;font-weight:600}
   .fd-kv b{font-size:17px;font-weight:800;letter-spacing:-.3px}
   .fd-kv i{font-style:normal;font-size:11.5px;color:var(--muted);font-weight:600;margin-left:3px}
-  .fd-goalbtn{border:0;background:none;padding:0;cursor:pointer;text-align:left;color:var(--text)}
+  .fd-goalbtn{position:relative;border:0;background:none;padding:0;cursor:pointer;text-align:left;color:var(--text)}.fd-goalbtn::after{content:"";position:absolute;inset:-5px -4px}
   .fd-goalbtn svg{width:13px;height:13px;color:var(--muted);margin-left:2px;vertical-align:-1px}
   .fd-macros{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
   .fd-macro .l{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;font-weight:600;color:var(--muted);gap:4px}
@@ -419,6 +420,7 @@
   .fd-water{display:flex;align-items:center;gap:12px}
   .fd-glasses{display:flex;gap:4px;flex:1;min-width:0;flex-wrap:wrap}
   .fd-glass{flex:1 1 0;min-width:16px;max-width:26px;aspect-ratio:3/4;border:0;padding:0;background:none;cursor:pointer}
+  .fd-glass{position:relative}.fd-glass::after{content:"";position:absolute;inset:-4px -10px}
   .fd-glasses.many .fd-glass{flex:0 0 20px}
   .fd-glass svg{width:100%;height:100%}
   .fd-wbtn{width:44px;height:44px;border-radius:14px;border:0;background:#0ea5e9;color:#fff;display:grid;place-items:center;cursor:pointer;flex:none;box-shadow:0 8px 18px rgba(14,165,233,.35)}
@@ -492,7 +494,7 @@
   .fd-step input:focus{border-color:var(--accent)}
   .fd-unit{font-size:13px;color:var(--muted);text-align:center;margin-top:6px;font-weight:600}
   .fd-quick{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
-  .fd-quick button{flex:1;min-width:52px;border:1px solid var(--line);background:var(--card);border-radius:11px;padding:8px 4px;font-weight:700;font-size:13px;cursor:pointer;color:var(--text)}
+  .fd-quick button{flex:1;min-width:52px;min-height:44px;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:8px 4px;font-weight:700;font-size:13px;cursor:pointer;color:var(--text)}
   .fd-quick button.on{border-color:var(--accent);color:var(--accent-ink);background:var(--accent-soft)}
   .fd-seg{margin-bottom:0}
   .fd-seg button{padding:10px 4px}
@@ -1780,7 +1782,10 @@ Keep names short (at most 4 words) in plain English. portion is a short everyday
       if ((b = t.closest('#fdGoalBtn'))) return showGoal();
       if ((b = t.closest('[data-ai]'))) return aiCardClick(b);
       if ((b = t.closest('[data-water]'))){ addWater(+b.dataset.water, viewKey); return; }
-      if ((b = t.closest('[data-glass]'))){ const d = ensureDay(viewKey); const i = +b.dataset.glass; const before = d.water||0; d.water = (i+1===before) ? i : i+1; syncHabitWater(d.water-before, viewKey); J.save(); J.renderAll(); return; }
+      if ((b = t.closest('[data-glass]'))){ const d = ensureDay(viewKey);
+        // the touch areas overlap a little (44 px wide for a 24 px glass): the glass nearest the finger wins
+        if (e.clientX){ let best = null, bd = 1e9; b.parentNode.querySelectorAll('[data-glass]').forEach(g=>{ const r = g.getBoundingClientRect(), dd = Math.abs(r.left + r.width/2 - e.clientX) + (e.clientY < r.top || e.clientY > r.bottom ? Math.min(Math.abs(r.top - e.clientY), Math.abs(r.bottom - e.clientY)) : 0); if (dd < bd){ bd = dd; best = g; } }); if (best) b = best; }
+        const i = +b.dataset.glass; const before = d.water||0; d.water = (i+1===before) ? i : i+1; syncHabitWater(d.water-before, viewKey); J.save(); J.renderAll(); return; }
       if ((b = t.closest('[data-day]'))){ viewKey = b.dataset.day; renderDynamic(el); return; }
     });
     el.dataset.built = '1';
@@ -1815,9 +1820,9 @@ Keep names short (at most 4 words) in plain English. portion is a short everyday
     q('#fdSum').innerHTML = `<div class="fd-sum">
         <div class="fd-ring" style="width:150px;height:150px">${ringSVG(t.kcal, goal, 150, 14, 'fdgV')}<div class="fd-rc"><div><b style="${over?'color:var(--warn-ink)':''}">${N(Math.abs(left))}</b><span>${over?'kcal over':'kcal left'}</span></div></div></div>
         <div class="fd-kv">
-          <div class="r"><div class="ic" style="background:rgba(245,158,11,.15)">🔥</div><div class="v"><small>Eaten</small><b>${N(t.kcal)}</b><i>kcal</i></div></div>
-          <button class="r fd-goalbtn" id="fdGoalBtn" aria-label="Edit calorie goal"><div class="ic" style="background:var(--accent-soft)">🎯</div><div class="v"><small>Goal ${I.edit}</small><b>${N(goal)}</b><i>kcal</i></div></button>
-          <div class="r"><div class="ic" style="background:${over?'rgba(244,63,94,.14)':'rgba(34,197,94,.14)'}">${over?'⚠️':'✅'}</div><div class="v"><small>${over?'Over by':'Left'}</small><b style="color:${over?'var(--bad-ink)':'var(--good-ink)'}">${N(Math.abs(left))}</b><i>kcal</i></div></div>
+          <div class="r"><div class="ic" style="background:rgba(245,158,11,.15);color:#f59e0b">${J.icons.flame||'🔥'}</div><div class="v"><small>Eaten</small><b>${N(t.kcal)}</b><i>kcal</i></div></div>
+          <button class="r fd-goalbtn" id="fdGoalBtn" aria-label="Edit calorie goal"><div class="ic" style="background:var(--accent-soft);color:var(--accent-ink)">${J.icons.target||'🎯'}</div><div class="v"><small>Goal ${I.edit}</small><b>${N(goal)}</b><i>kcal</i></div></button>
+          <div class="r"><div class="ic" style="background:${over?'rgba(244,63,94,.14)':'rgba(34,197,94,.14)'};color:${over?'var(--bad-ink)':'var(--good-ink)'}">${over?(J.icons.info||'⚠️'):(J.icons.done||'✅')}</div><div class="v"><small>${over?'Over by':'Left'}</small><b style="color:${over?'var(--bad-ink)':'var(--good-ink)'}">${N(Math.abs(left))}</b><i>kcal</i></div></div>
         </div></div>
       <div class="fd-macros">${MACROS.map(m=>{ const v = t[m.k], tg = macroTarget(m); return `<div class="fd-macro"><div class="l">${m.label}<b>${N(v)}g</b></div><div class="bar"><i style="width:${Math.min(v/tg*100,100)}%;background:${m.color}"></i></div><div class="t">of ${tg} g</div></div>`; }).join('')}</div>`;
     // meals
@@ -1877,7 +1882,8 @@ Keep names short (at most 4 words) in plain English. portion is a short everyday
   try { if (J.addBriefLine) J.addBriefLine(yesterdayLine); } catch(e){}
   /** other features (e.g. a water habit) can add glasses here without being echoed back */
   J.food = {
-    addWater(n){ n = +n||0; if (n>0) addWater(n, todayKey(), {noHabit:true}); return getDay(todayKey()).water||0; },
+    addWater(n){ n = +n||0; if (n) addWater(n, todayKey(), {noHabit:true}); return getDay(todayKey()).water||0; },
+    snap(){ openPhoto(); },
     today(){ const t = dayTotals(todayKey()); return {kcal:t.kcal, p:t.p, c:t.c, f:t.f, goal:F().goal, water:getDay(todayKey()).water||0, waterGoal:F().waterGoal}; }
   };
 
@@ -1985,7 +1991,9 @@ Keep names short (at most 4 words) in plain English. portion is a short everyday
   }
   // things people "finish", "have" or "add" that are not food ("I finished the book", "add milk to my shopping list")
   const NOT_EATEN = /\b(?:workout|work ?out|training|gym|run|walk|book|books|chapter|chapters|pages?|novel|reading|meeting|meetings|work|job|shift|homework|project|projects|task|tasks|assignment|report|exam|test|class|course|lesson|lecture|game|match|movie|film|show|series|episode|season|call|calls|appointment|chores?|laundry|cleaning|email|emails|presentation|interview|nap|shower|bath|haircut|day|week|weekend|night|time|fun|fight|argument|chat|talk|date with|list|shopping list|grocery list|cart|basket|calendar|schedule|todo|to do)\b/;
-  const NOT_FOOD = /\b(remind|reminder|note|notes|paid|pay|spent|spend|bought|buy|cost|costs|dollars?|bucks|usd|lira|lbp|euros?|budget|salary|income|habit|habits|receipt)\b|\$/;
+  // "how many carbs did I eat today", "how much fat today", "what's my protein", "carbs today"
+  const MACRO_Q = /\b(?:how (?:much|many)(?: grams of)?|what(?:'s| is| are| was| were) my) (protein|carbs?|carbohydrates?|fats?)\b(?! (?:is |are )?(?:in|does|do|for|of) )|^(?:my )?(protein|carbs?|carbohydrates|fats?)(?: intake| count)?(?: today| so far| yesterday)?$|^(?:and |what about |how about )(protein|carbs?|fats?)$/;
+  const NOT_FOOD = /\b(remind|reminder|note|notes|paid|pay|spent|spend|bought|buy|cost|costs|dollars?|bucks|usd|lira|lbp|euros?|budget|salary|income|habit|habits|receipt|expense|expenses|payment|purchase)\b|\$/;
 
   J.addIntent(function(said, t){
     t = t.replace(/[.]+$/,'').replace(/\s+\./g,' ').trim();
@@ -2054,7 +2062,7 @@ Keep names short (at most 4 words) in plain English. portion is a short everyday
       return `${cap(names)} ${one && (p.items[0].qty===1 || p.items[0].grams)?'has':'have'} about ${N(tot.kcal)} calories${one?'':' in total'}: ${gramsSay(tot.p)} of protein, ${N(tot.c)} of carbs and ${N(tot.f)} of fat.${p.unknown.length?` I don't know ${p.unknown.join(' or ')} yet.`:''}`;
     }
     // ---- today summary
-    if (/\b(?:how many|how much) (?:calories|calorie|kcal|cals)\b/.test(t) || /\b(?:calories|calorie count|kcal) (?:today|so far|left|remaining|eaten)\b/.test(t) || /\bwhat (?:did|have) i (?:eat|eaten|had)\b|^what did i have (?:for|at|today|this|so far)\b/.test(t) || /\bhow (?:am i|i'm) doing (?:on|with) (?:my )?(?:calories|food|diet)\b/.test(t) || /\bhow much (?:protein|carbs|fat)\b/.test(t) || /^(?:my )?calories$/.test(t)) { if (!/\bburn/.test(t)) return summaryReply(t); }
+    if (/\b(?:how many|how much) (?:calories|calorie|kcal|cals)\b/.test(t) || /\b(?:calories|calorie count|kcal) (?:today|so far|left|remaining|eaten)\b/.test(t) || /\bwhat (?:did|have) i (?:eat|eaten|had)\b|^what did i have (?:for|at|today|this|so far)\b/.test(t) || /\bhow (?:am i|i'm) doing (?:on|with) (?:my )?(?:calories|food|diet)\b/.test(t) || MACRO_Q.test(t) || /^(?:my )?calories$/.test(t)) { if (!/\bburn/.test(t)) return summaryReply(t); }
     function summaryReply(t){
       const key = /\byesterday\b/.test(t) ? shiftKey(todayKey(), -1) : todayKey();
       viewKey = key; J.go('food');
@@ -2066,9 +2074,11 @@ Keep names short (at most 4 words) in plain English. portion is a short everyday
         const byMeal = MEALS.map(mm=>{ const it = d.items.filter(x=>x.meal===mm.id); if (!it.length) return null; const cnt = {}; it.forEach(x=>{ const n = String(x.name||'food').toLowerCase().replace(/\s*\(.*?\)/g,''); cnt[n] = (cnt[n]||0) + 1; }); return `${mm.id==='snack'?'Snacks':mm.label}: ${listJoin(Object.entries(cnt).map(([n,c])=>c>1?`${n} ${c===2?"twice":c+" times"}`:n))}`; }).filter(Boolean);
         return `${byMeal.join('. ')}. ${summarySay(key)}`;
       }
-      const mq = t.match(/\bhow much (protein|carbs?|fat)\b/);
-      if (mq){
-        const mm = MACROS.find(x=>x.label.toLowerCase().startsWith(mq[1].slice(0,4))), v = tt[mm.k], tg = macroTarget(mm);
+      const mq = t.match(MACRO_Q);
+      const mw = mq && (mq[1] || mq[2] || mq[3]);
+      const mm = mw && MACROS.find(x=>x.label.toLowerCase().slice(0,3) === mw.slice(0,3));
+      if (mm){
+        const v = tt[mm.k], tg = macroTarget(mm);
         return `${key===todayKey()?"You've had":'You had'} ${gramsSay(v)} of ${mm.label.toLowerCase()} ${key===todayKey()?'today':'yesterday'}, ${v<tg?`out of about ${tg} grams`:mm.k==='p'?`which meets your ${tg} gram target`:`above the ${tg} grams that fits your goal`}. ${summarySay(key)}`;
       }
       return `${summarySay(key)} Protein ${N(tt.p)} grams, carbs ${N(tt.c)}, fat ${N(tt.f)}.`;
@@ -2106,6 +2116,8 @@ Keep names short (at most 4 words) in plain English. portion is a short everyday
       verb = 'drank'; body = t;
     }
     if (!body) return null;
+    // money, not food: "log 30 for gas", "lunch was 18", "add 12 for coffee"
+    if (/^\$?\d+(?:\.\d+)?\s*(?:dollars?|bucks|usd|lira|\$)?(?:\s*(?:and\s+)?\d{1,2}\s*cents?)?(?:\s+(?:for|on|at)\s+.+)?$/.test(body) && (/^(?:log|logged|add|track|record|count)$/.test(verb) || /[.$]|dollars?|bucks|usd|lira|cents?/.test(body) || !/^\d+\s+(?:for|on)\s+(?:breakfast|brunch|lunch|dinner|supper|snacks?|dessert)$/.test(body))) return null;
     let dropUnknown = false;
     if (NOT_EATEN.test(body) && !(verb==='drank' || verb==='drink' || verb==='drunk')){
       // still log real food mentioned alongside ("I had pizza after the game") — but never guess from the leftovers

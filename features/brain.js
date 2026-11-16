@@ -47,6 +47,7 @@ const toN = s => { s = lc(s||'').trim(); if (!s || /^(an?|one)$/.test(s)) return
    ========================================================= */
 const mem = [];               // [{said, reply, at, domain}]
 let lastEntity = null;        // {kind:'expense'|'reminder'|'note', id, at}
+let lastRemoved = null;       // the entry removed last by voice: {kind, item, at, said, restore}
 let lastDomain = null;        // {domain, at, said, place}
 let pre = null;
 function ids(list){ const s = new Set(); (list||[]).forEach(x=>x && s.add(x.id)); return s; }
@@ -64,7 +65,7 @@ function after(turn){
   if (lastEntity && lastEntity.at < turnStart) lastEntity.idle = (lastEntity.idle||0) + 1;
   if (!turn) return;
   const dom = turn.kind === 'fallback' || turn.kind === 'chat' ? null : (domainOf(lc(turn.said)) || turn.domain || null);
-  mem.push({said:turn.said, reply:turn.reply, at:now(), domain:dom, kind:turn.kind}); while (mem.length > 8) mem.shift();
+  mem.push({said:turn.said, reply:turn.reply, at:now(), domain:dom, kind:turn.kind, entity: !!(lastEntity && lastEntity.at >= turnStart)}); while (mem.length > 8) mem.shift();
   if (dom) lastDomain = {domain:dom, at:now(), said:lc(turn.said)};
 }
 /** which area a request is about (used for follow-ups like "what about tomorrow?") */
@@ -187,6 +188,16 @@ function edits(t, said){
   const IT = '(?:it|that|this|that one|this one)';
   const kindWord = /\b(reminders?|alarms?|timers?)\b/.test(T) ? 'reminder' : new RegExp('\\b'+NOTE_N+'\\b').test(T) ? 'note' : new RegExp('\\b(?:'+EXP_N+'|income|salary)\\b').test(T) ? 'expense' : null;
   const target = kindWord || (recent && recent.kind) || null;
+  /* ---------- just removed by voice: "undo that" brings it back; "move it", "make it 30" must not hit another entry ---------- */
+  const rm = lastRemoved && now() - lastRemoved.at < 10*MIN && !(lastEntity && lastEntity.at > lastRemoved.at) ? lastRemoved : null;
+  if (rm && !depthEdit){
+    if (/^(?:undo|undo (?:that|it|this|the delete|the last one)|scratch that|cancel that|reverse that|take (?:that|it) back|bring (?:it|that|this) back|put (?:it|that|this) back|restore (?:it|that|this)|undelete(?: it| that)?|don't delete (?:it|that)|i didn't mean (?:that|to(?: delete (?:it|that))?)|keep (?:it|that))$/.test(T)){
+      const what = rm.said; return rm.restore() ? `Okay, I brought back ${what}.` : 'That one is already back.';
+    }
+    if (/^(?:(?:make|change|put|set|move|push|shift|call|name|label|rename|file|switch|update|edit|fix|correct|categori[sz]e|recategori[sz]e|snooze|delay|postpone|reschedule|mark|pin)\s+)(?:it|that|this)\b|^(?:it|that|this)\s+(?:was|is|should|cost|came)\b/.test(T))
+      return `You just removed ${rm.said}. Say undo to bring it back, then change it.`;
+  }
+
   // "it", "that", "this" only mean something right after an entry was added or changed
   if (!recent && !depthEdit){
     // an edit that names no entry, long after the last one: ask which, rather than changing the wrong thing
@@ -221,11 +232,17 @@ function edits(t, said){
     return deleteExpense(e);
   }
   if ((m = T.match(/^(?:delete|remove|cancel|get rid of)\s+(?:the|my)\s+(?:reminder|alarm)\s+(?:about|for|to)\s+(.+)$/)) || (m = T.match(/^(?:delete|remove|cancel|get rid of)\s+(?:the|my)\s+(.+?)\s+reminder$/))){
-    if (/^(last|latest|next|previous|recent)$/.test(m[1])) return null;
-    const r = lastReminder(m[1]); if (!r) return `I couldn't find a reminder about ${m[1]}.`;
-    return deleteReminder(r);
+    if (!/^(last|latest|newest|most recent|next|previous|recent)$/.test(m[1])){
+      const r = lastReminder(m[1]); if (!r) return `I couldn't find a reminder about ${m[1]}.`;
+      return deleteReminder(r);
+    }
   }
-  if ((m = T.match(/^(?:delete|remove|get rid of|erase)\s+(?:the|my)\s+(?:latest|newest|most recent|previous|last)\s+(expense|payment|purchase|transaction|entry)$/))){ const e = lastExpense('expense'); return e ? deleteExpense(e) : "There's no expense to remove."; }
+  if ((m = T.match(/^(?:delete|remove|get rid of|erase|cancel|scratch|undo)\s+(?:the|my)\s+(?:latest|newest|most recent|previous|last|(next))\s+(reminder|note)$/)) && !(m[1] && m[2] === 'note')){
+    if (m[1]){ const nx = (db().reminders||[]).filter(r=>!r.done && r.at >= now() - MIN).sort((a,b)=>a.at-b.at)[0]; return nx ? deleteReminder(nx) : 'You have no upcoming reminders.'; }
+    if (m[2] === 'note'){ const n = lastNote(); return n ? deleteNote(n) : 'No notes to delete.'; }
+    const r = lastReminder(); return r ? deleteReminder(r) : 'No reminders to remove.';
+  }
+  if ((m = T.match(/^(?:delete|remove|get rid of|erase|cancel|scratch|undo)\s+(?:the|my)\s+(?:latest|newest|most recent|previous|last)\s+(expense|payment|purchase|entry)$/))){ const e = lastExpense('expense'); return e ? deleteExpense(e) : "There's no expense to remove."; }
 
   /* ---------- expenses: amount ---------- */
   const expAmount = () => {
@@ -362,7 +379,7 @@ function edits(t, said){
     if (d.getTime() < now() - MIN) return 'That time has already passed. Try a time later today or another day.';
     const old = snapshot(r); r.at = d.getTime(); r.done = false;
     commitReminder(r, old, 'Reminder moved');
-    return `Done. I'll remind you to ${lower1(r.text)}, ${J.whenSpoken ? J.whenSpoken(r.at) : J.whenText(r.at)}.`;
+    return `Done. I'll remind you to ${J.youify ? J.youify(lower1(r.text)) : lower1(r.text)} ${J.whenSpoken ? J.whenSpoken(r.at) : J.whenText(r.at)}.`;
   };
 
   /* ---------- notes ---------- */
@@ -403,25 +420,32 @@ function deleteEntity(kind){
   if (kind === 'note'){ const n = lastNote(); return n ? deleteNote(n) : 'Nothing to remove.'; }
   return null;
 }
+/* the entry removed last by voice, so "undo that" / "bring it back" can restore it (and "move it to X" does not hit another entry) */
+function removedNow(kind, key, item, i, said, after){
+  const restore = ()=>{ const d = db(), list = d[key] || (d[key] = []); if (list.includes(item)) return false; list.splice(Math.min(i, list.length), 0, item); J.save(); J.renderAll(); try { after && after(); } catch(_){} lastEntity = {kind, id:item.id, at:now()}; lastRemoved = null; return true; };
+  lastRemoved = {kind, item, at:now(), said, restore};
+  return restore;
+}
 function deleteExpense(e){
   const d = db(); const i = d.expenses.indexOf(e); if (i < 0) return 'Nothing to remove.';
   d.expenses.splice(i, 1); J.save(); J.renderAll(); lastEntity = null;
   try { window.dispatchEvent(new CustomEvent('jarvis:expense-removed', {detail:{id:e.id, expense:e}})); } catch(_){}
-  J.toast(`Removed ${money(e.amount)} ${e.desc}`, ()=>{ d.expenses.splice(Math.min(i, d.expenses.length), 0, e); J.save(); J.renderAll(); try { window.dispatchEvent(new CustomEvent('jarvis:expense-restored', {detail:{id:e.id, expense:e}})); } catch(_){} });
+  const back = removedNow('expense', 'expenses', e, i, `${money(e.amount)} for ${lc(e.desc)}`, ()=>{ window.dispatchEvent(new CustomEvent('jarvis:expense-restored', {detail:{id:e.id, expense:e}})); });
+  J.toast(`Removed ${money(e.amount)} ${e.desc}`, back);
   try { J.go('budget'); } catch(_){}
-  return `Removed ${money(e.amount)} for ${e.desc}.`;
+  return `Removed ${money(e.amount)} for ${lc(e.desc)}.`;
 }
 function deleteReminder(r){
   const d = db(); const i = d.reminders.indexOf(r); if (i < 0) return 'Nothing to remove.';
   d.reminders.splice(i, 1); J.save(); J.renderAll(); lastEntity = null;
-  J.toast(`Removed: ${r.text}`, ()=>{ d.reminders.splice(Math.min(i, d.reminders.length), 0, r); J.save(); J.renderAll(); });
+  J.toast(`Removed: ${r.text}`, removedNow('reminder', 'reminders', r, i, `your reminder to ${lower1(r.text)}`));
   try { J.go('reminders'); } catch(_){}
   return `Removed your reminder to ${lower1(r.text)}.`;
 }
 function deleteNote(n){
   const d = db(); const i = d.notes.indexOf(n); if (i < 0) return 'Nothing to remove.';
   d.notes.splice(i, 1); J.save(); J.renderAll(); lastEntity = null;
-  J.toast('Note deleted', ()=>{ d.notes.splice(Math.min(i, d.notes.length), 0, n); J.save(); J.renderAll(); });
+  J.toast('Note deleted', removedNow('note', 'notes', n, i, 'your note'));
   return 'Deleted that note.';
 }
 
@@ -442,7 +466,7 @@ function calc(t){
     if (!(times > 0) || times > 1e6) return null;
     return `Saving ${money(+m[1])} a ${m[2]} gives you ${money(+m[1] * times)} after ${k} ${unit}${k === 1 ? '' : 's'}, before any interest.`;
   }
-  if ((m = s.match(/^(?:what(?:'s| is) )?(?:(?:a|an|the) )?(?:(\d+(?:\.\d+)?)\s*(?:%|percent) )?tip (?:on|for) (?:a |an )?\$?(\d+(?:\.\d+)?)(?: dollars?| bucks)?(?: bill| check| dinner| meal)?$|^how much (?:should i |do i )?tip (?:on|for) (?:a |an )?\$?(\d+(?:\.\d+)?)(?: dollars?| bucks)?(?: bill| check)?$/))){
+  if ((m = s.match(/^(?:what(?:'s| is| would be)|how much (?:is|would be|should be)|calculate|work out)? ?(?:(?:a|an|the|my) )?(?:(\d+(?:\.\d+)?)\s*(?:%|percent|per cent) )?tip (?:on|for) (?:a |an )?\$?(\d+(?:\.\d+)?)(?: dollars?| bucks)?(?: bill| check| dinner| meal)?$|^how much (?:should i |do i )?tip (?:on|for) (?:a |an )?\$?(\d+(?:\.\d+)?)(?: dollars?| bucks)?(?: bill| check)?$/))){
     const bill = parseFloat(m[2] || m[3]); const p = m[1] ? parseFloat(m[1]) : null;
     if (p != null) return `A ${num(p)}% tip on ${money(bill)} is ${money(bill*p/100)}, so ${money(bill*(1+p/100))} in total.`;
     return `On ${money(bill)}: a 10% tip is ${money(bill*.1)}, 15% is ${money(bill*.15)}, and 20% is ${money(bill*.2)}.`;
@@ -463,7 +487,7 @@ function calc(t){
     [/(\d+(?:\.\d+)?)\s*(?:%|percent|per cent)/g, ' $1 % '],
     [/\bhalf of\b/g, ' 0.5 * '], [/\ba third of\b|\bone third of\b/g, ' ( 1 / 3 ) * '], [/\ba quarter of\b|\bone quarter of\b/g, ' 0.25 * '],
     [/\bdouble\b|\btwice\b/g, ' 2 * '], [/\btriple\b/g, ' 3 * '],
-    [/\badd (\d+(?:\.\d+)?) to (\d+(?:\.\d+)?)\b/g, ' $2 + $1 '], [/\bsubtract (\d+(?:\.\d+)?) from (\d+(?:\.\d+)?)\b/g, ' $2 - $1 '], [/\btake (\d+(?:\.\d+)?) (?:away )?from (\d+(?:\.\d+)?)\b/g, ' $2 - $1 '],
+    [/\badd (\d+(?:\.\d+)?) to (\d+(?:\.\d+)?)\b/g, ' $2 + $1 '], [/\badd (?:up )?(\d+(?:\.\d+)?) and (\d+(?:\.\d+)?)\b/g, ' $1 + $2 '], [/\bsum of (\d+(?:\.\d+)?) and (\d+(?:\.\d+)?)\b/g, ' $1 + $2 '], [/\bsubtract (\d+(?:\.\d+)?) from (\d+(?:\.\d+)?)\b/g, ' $2 - $1 '], [/\btake (\d+(?:\.\d+)?) (?:away )?from (\d+(?:\.\d+)?)\b/g, ' $2 - $1 '],
     [/\bdivide (\d+(?:\.\d+)?) by (\d+(?:\.\d+)?)\b/g, ' $1 / $2 '], [/\bmultiply (\d+(?:\.\d+)?) (?:by|times|and) (\d+(?:\.\d+)?)\b/g, ' $1 * $2 '],
     [/\bplus\b|\band\b(?= \d)|\badded to\b|\+/g, ' + '], [/\bminus\b|\bless\b|\btake away\b|−/g, ' - '],
     [/\bmultiplied by\b|\btimes\b|\bx\b|×|\*/g, ' * '], [/\bdivided by\b|\bdivided into\b|\bover\b|÷|\//g, ' / '],
@@ -474,7 +498,7 @@ function calc(t){
   if (!/^[\d\s.+\-*/^()%sqrt]+$/.test(e)) return null;
   if (!/[+\-*/^%]|sqrt/.test(e)) return null;
   const v = evalExpr(e); if (v == null || !isFinite(v)) return v === Infinity || v === -Infinity ? "You can't divide by zero, even with my help." : null;
-  if (/^(?:multiply|divide|add|subtract|take)\b/.test(s)) return `That's ${num(+v.toPrecision(12))}.`;
+  if (/^(?:multiply|divide|add|subtract|take|sum)\b/.test(s)) return `That's ${num(+v.toPrecision(12))}.`;
   let said = s.replace(/\bpercent\b|\bper cent\b/g, '%').replace(/\s+%/g, '%').replace(/\s+/g,' ').trim();
   said = said.replace(/^\(|\)$/g, '');
   return `${cap(said)} is ${num(+v.toPrecision(12))}.`;
@@ -906,12 +930,27 @@ function preRoute(t){
   if (/\b(?:weather|forecast)\b/.test(t) && /\b(?:this |the |for the )?weekend\b/.test(t) && /^(?:what|how|is|will|any)\b/.test(t) && !/\b(?:in|at) [a-z]/.test(t.replace(/\b(?:in|at) the weekend\b/, ''))) return "how's the weather looking this weekend";
   return null;
 }
+/** "undo that" right after logging food, water or a habit (expenses, reminders and notes are handled by edits()) */
+function undoRecent(t){
+  if (!/^(?:undo|scratch|cancel|delete|remove|take back|take away)(?: that| it| this| the last (?:one|thing))?(?: please)?$/.test(t) || !/\b(?:that|it|this|one|thing)\b|^undo$/.test(t)) return null;
+  // the last thing logged, looking back past questions asked since ("did I read today?" ... "undo that")
+  let last = null;
+  for (let k = mem.length - 1; k >= Math.max(0, mem.length - 4); k--){ const x = mem[k]; if (!x || now() - x.at > 5*MIN) break; if (/^(?:did|have|how|what|what's|whats|is|are|when|where|who|which|do|does|show|read|open)\b/i.test(x.said || '') || x.kind === 'chat' || x.kind === 'fallback') continue; last = x; break; }
+  if (!last) return null;
+  if (mem.slice(mem.indexOf(last)).some(x=>x.entity)) return null;     // an expense, reminder or note came after: edits() handles "undo that"
+  const s = lc(last.said||''), rep = lc(last.reply||'');
+  if (/\bwater\b/.test(s) && /\b(?:glass|glasses|water)\b/.test(rep) && /^(?:i |log |add |\d|a |one |had |drank )/.test(s)) return J.rethink('remove a glass of water');
+  if (/^logged .* calories/.test(rep)) return J.rethink('undo last food');
+  if (/\b(?:streak|done for today|of \d+(?:\.\d+)? \w+\. |to go\.|all done)\b/.test(rep) && /^i |^mark |^check off |^tick off /.test(s)) return J.rethink('undo last habit');
+  return null;
+}
 function early(said, t, depth){
   if (!t) return null;
   const turnId = J.turnInfo ? J.turnInfo().seq : null;
   let r;
   if (!depth && (r = compound(t))) return r;
   if (!depth && (r = preRoute(t))){ const out = J.rethink(r); if (out) return out; }
+  if (!depth && (r = undoRecent(t))) return r;
   if ((r = edits(t, said))) return r;
   if ((r = setBirthday(t))) return r;
   if ((r = tomorrowDate(t))) return r;
@@ -943,15 +982,25 @@ function period(t){
   if (/\byesterday\b|\blast night\b/.test(t)) return 'yesterday';
   if (/\blast week\b/.test(t)) return 'last week';
   if (/\b(this|the|past|last) (week|7 days|seven days)\b|\bthis past week\b|\bweekly\b/.test(t)) return 'this week';
+  if (/\b(?:last|previous|past) month\b/.test(t)) return 'last month';
+  if (/\bthis year\b/.test(t)) return 'this year';
   if (/\b(this|the) month\b|\bmonthly\b|\bso far\b/.test(t)) return 'this month';
   return '';
 }
 const SPEND_VERB = '(?:spent|spend|spending|blown|blew|blow|burned|burnt|burn|dropped|drop|splurged|splurge|wasted|waste|forked out|shelled out|paid out|paid|pay|gone through|went through|go through|dished out|put out|laid out|used|lost|thrown away|threw away|chucked|parted with|let go of|done|did)';
 const MONEY_N = '(?:money|cash|dollars|bucks|\\$|budget|funds|dough)';
+const CAT_WORD = /^(?:food|foods|food and drinks?|food & drinks?|drinks?|eating out|dining(?: out)?|restaurants?|takeaway|groceries|grocery|supermarket|transport|transportation|travel|commute|bills?|utilities|subscriptions?|shopping|clothes|clothing|health|medical|healthcare|fun|entertainment|leisure|going out|other|misc|miscellaneous)$/;
 function rewrite(t){
   let m;
   const p = period(t);
   const R = [];
+  /* --- one thing's price: "how much did I pay for the coffee" (before the spending totals below) --- */
+  if ((m = t.match(/^(?:how much|what) did i pay for (?:the |my |a |an )?([a-z][a-z &']{2,24}?)(?: today| yesterday)?$/)) && findExpense(m[1]) && !CAT_WORD.test(m[1])) return 'item:' + m[1];
+  if ((m = t.match(/^(?:how much|what) did i pay for (?:the |my |a |an )?([a-z][a-z &']{2,24}?)( today| yesterday| this week| last week| this month| last month)?$/))) return `how much did I spend on ${m[1]}${m[2] || ''}`;
+  /* --- "how much went on coffee last month", "how much money on transport" --- */
+  if ((m = t.match(/^how much (?:money |cash )?(?:went|goes|has gone|have i put|did i put|did i drop|is going)? ?on (?:the |my )?([a-z][a-z &']{2,24}?)( today| yesterday| this week| last week| this month| last month| this year| so far)?$/))) return `how much did I spend on ${m[1]}${m[2] || ''}`;
+  /* --- logging said as "log 30 for gas", "add 12 dollars for coffee" --- */
+  if ((m = t.match(/^(?:log|add|record|enter|put down|note down|track)(?: an?)?(?: expense| payment| purchase)?(?: of)? (\$?\d+(?:\.\d{1,2})?\s*(?:dollars?|bucks|usd|\$)?(?:\s*(?:and\s+)?\d{1,2}\s*cents?)?)\s+(?:for|on|at)\s+(.+)$/))) return `I spent ${m[1]} on ${m[2]}`;
   /* --- spending (keeps the period and the category) --- */
   if ((m = t.match(new RegExp('^(?:how much|what)(?: money| cash)?(?: have| did| do| had)? (?:i|we)(?: really| actually| already)? '+SPEND_VERB+'(?: so far)?(?: on| for| at) (.+?)(?: '+['today','yesterday','this week','last week','this month','so far','lately','recently','in total','the week','the month'].join('| ')+')*$')))) return `how much did I spend on ${m[1].replace(/^(?:the|my)\s+/,'')}${p ? ' ' + p : ''}`;
   if (new RegExp('^(?:so )?(?:how much|how much money|how much cash|what)(?: money| cash)? (?:(?:have|did|do|had|has) )?(?:i|we)(?:\\x27ve| have)? '+SPEND_VERB+'\\b').test(t) || new RegExp('^how much (?:have|did) i '+SPEND_VERB+'$').test(t)) return `how much have I spent${p ? ' ' + p : ''}`;
@@ -970,11 +1019,11 @@ function rewrite(t){
   if (/^(?:what(?:'s| is| was) )?my (?:net|net balance|net income|cash flow|cashflow|savings|balance|bottom line)(?: this month| so far| for the month)?$|^(?:how much )?(?:did|have) i (?:save|saved)(?: anything| any money| money)?(?: this month| so far)?$|^what(?:'s| is) (?:left )?after (?:my )?expenses$|^am i (?:saving|in profit|positive|net positive|cash ?flow positive)\b/.test(t)) return "what's my balance";
   if (/^(?:show|open|pull up|bring up|take me to|go to|let me see|let's see|lemme see|can i see|i want to see|display) (?:me )?(?:my |the )?(?:money|finances|spending|expenses|transactions|payments|wallet|purchases|budget|money page|money screen|money tab|budget page|budget screen)(?: page| screen| tab| list)?$/.test(t)) return 'show me my budget';
   if (/^(?:what|which) (?:did i buy|have i bought|purchases did i make|payments did i make|were my (?:last|latest|recent) (?:purchases|expenses|payments))\b|^(?:what(?:'s| was| were| are) )?my (?:last|latest|recent|most recent) (?:expense|purchase|payment|transaction|expenses|purchases|payments|transactions)$|^(?:list|read|tell me|read me|show|show me|give me) (?:my |the )?(?:recent |last |latest |newest )(?:few )?(?:expenses|purchases|payments|transactions|spending)$|^(?:list|read|tell me|read me) my (?:expenses|purchases|payments|transactions)$/.test(t)) return 'recent';
-  if ((m = t.match(/^(?:how much (?:was|were|did|is)|what did|what was) (?:the |my )?([a-z][a-z &']{2,24}?)(?: cost| come to| set me back)?(?: me)?( today| yesterday| this week| last week| this month| so far)?$/)) && !/^(?:it|that|this|budget|balance|income|salary|spending|total|bill)$/.test(m[1]) && (catOf(m[1]) || findExpense(m[1]))){ const c = findExpense(m[1]) ? null : catOf(m[1]); return `how much did I spend on ${c ? lc(c) : m[1]}${m[2] || ''}`; }
-  if ((m = t.match(/^how much (?:did|has|have) (the |my )?([a-z][a-z &']{2,24}?) (?:cost|costed|set|come to)( me)?(?: back)?( today| yesterday| this week| last week| this month| so far)?$/)) && (m[3] || m[1] === 'my ' || catOf(m[2]) || findExpense(m[2]))){ m = [m[0], m[2], m[4]]; const c = catOf(m[1]); return `how much did I spend on ${c ? lc(c) : m[1]}${m[2] || ''}`; }
+  if ((m = t.match(/^(?:how much (?:was|were|did|is)|what did|what was) (?:the |my )?([a-z][a-z &']{2,24}?)(?: cost| come to| set me back)?(?: me)?( today| yesterday| this week| last week| this month| so far)?$/)) && !/^(?:it|that|this|budget|balance|income|salary|spending|total|bill)$/.test(m[1]) && (catOf(m[1]) || findExpense(m[1]))){ const c = findExpense(m[1]) ? null : catOf(m[1]); if (!c && !m[2]) return 'item:' + m[1]; return `how much did I spend on ${c ? lc(c) : m[1]}${m[2] || ''}`; }
+  if ((m = t.match(/^how much (?:did|has|have) (the |my )?([a-z][a-z &']{2,24}?) (?:cost|costed|set|come to)( me)?(?: back)?( today| yesterday| this week| last week| this month| so far)?$/)) && (m[3] || m[1] === 'my ' || catOf(m[2]) || findExpense(m[2]))){ m = [m[0], m[2], m[4]]; const c = catOf(m[1]); if (!c && !m[2] && findExpense(m[1])) return 'item:' + m[1]; return `how much did I spend on ${c ? lc(c) : m[1]}${m[2] || ''}`; }
   /* --- logging spending said another way: "I blew 20 bucks on shawarma", "lunch was 18 dollars" --- */
-  if ((m = t.match(/^(?:so |and |yeah )?(?:i |we )?(?:just )?(?:blew|blown|dropped|splurged|wasted|forked out|shelled out|dished out|threw down|laid out|put down|burned|burnt|dropped|lost|gave|handed over|tipped)\s+(\$?\d+(?:\.\d{1,2})?\s*(?:dollars?|bucks|usd|\$)?\s+(?:on|for|at)\s+.+)$/))) return `I spent ${m[1]}`;
-  if ((m = t.match(/^(?:the |my |a |an |our )?([a-z][a-z' ]{1,30}?) (?:was|cost|cost me|came to|came out to|set me back|ran me|was like|were) (?:about |around |like )?\$?(\d+(?:\.\d{1,2})?)\s*(dollars?|bucks|usd|\$)?$/)) && (m[3] || /\$/.test(t) || (J.categorize && J.categorize(m[1]) !== 'Other')) && !/\b(it|that|this|temperature|weather|score|time|meeting|flight|age|he|she|they)\b/.test(m[1])) return {confirm:`I spent ${m[2]} on ${m[1]}`, ask:`Should I log ${money(parseFloat(m[2]))} for ${m[1]}? Say yes and I'll add it.`};
+  if ((m = t.match(/^(?:so |and |yeah )?(?:i |we )?(?:just )?(?:blew|blown|dropped|splurged|wasted|forked out|shelled out|dished out|threw down|laid out|put down|burned|burnt|dropped|lost|gave|handed over|tipped)\s+(\$?\d+(?:\.\d{1,2})?\s*(?:dollars?|bucks|usd|\$)?(?:\s*(?:and\s+)?\d{1,2}\s*cents?)?\s+(?:on|for|at)\s+.+)$/))) return `I spent ${m[1]}`;
+  if ((m = t.match(/^(?:the |my |a |an |our )?([a-z][a-z' ]{1,30}?) (?:was|cost|cost me|came to|came out to|set me back|ran me|was like|were) (?:about |around |like )?\$?(\d+(?:\.\d{1,2})?)\s*(dollars?|bucks|usd|\$)?((?:\s*(?:and\s+)?\d{1,2}\s*cents?)?)$/)) && (m[3] || /\$/.test(t) || (J.categorize && J.categorize(m[1]) !== 'Other')) && !/\b(it|that|this|temperature|weather|score|time|meeting|flight|age|he|she|they)\b/.test(m[1])) return {confirm:`I spent ${m[2]}${m[4] ? ' dollars' + m[4] : ''} on ${m[1]}`, ask:`Should I log ${money(parseFloat(m[2]) + (m[4] ? (parseInt((m[4].match(/\d+/)||['0'])[0])/100) : 0))} for ${m[1]}? Say yes and I'll add it.`};
   if ((m = t.match(/^(?:what(?:'s| is) )?(?:the )?(?:exchange|conversion|fx) rate (?:for |of |from |between )?(?:the )?([a-z]+(?: [a-z]+)?) (?:to|vs|versus|against|and|in) (?:the )?([a-z]+(?: [a-z]+)?)$/))) return `how much is 1 ${m[1]} in ${m[2]}`;
   if (/^(?:should i|do i need to|can i|is it ok to) wear (?:a |an |my )?(?:shorts|jacket|coat|sweater|hoodie|t-shirt|tshirt|scarf|boots|sandals|something warm|layers)\b/.test(t)) return /tomorrow/.test(t) ? 'do I need a jacket tomorrow' : 'do I need a jacket';
   /* --- weather --- */
@@ -1003,7 +1052,7 @@ function rewrite(t){
   if (/^(?:how many|how much) (?:more )?(?:calories|cals) (?:can i (?:still )?(?:eat|have)|are left|left|remaining|do i have left|to go)(?: today| for today)?$|^(?:can i (?:still )?(?:eat|have) (?:more|something|a snack|dessert|anything))(?: today| tonight)?$|^(?:am i|have i gone) over (?:my )?(?:calories|calorie goal|calorie limit)\b/.test(t)) return 'how many calories do I have left';
   if (/^(?:what|what all) (?:have i|did i) (?:eaten|eat|had|have)(?: so far)?(?: today| for (?:breakfast|lunch|dinner))?$|^(?:what(?:'s| is)) in my (?:food )?(?:diary|log)(?: today)?$|^(?:show|read|list) (?:me )?(?:what i ate|my meals|my food log|today'?s meals)(?: today)?$/.test(t)) return 'what did I eat today';
   if (/^(?:how much|how many (?:glasses|cups|bottles|liters|litres)(?: of)?) (?:water )?(?:have i|did i) (?:drink|drunk|drank|had|have)(?: water)?(?: so far)?(?: today)?$|^(?:am i|have i been) (?:drinking enough|hydrated|staying hydrated|dehydrated)\b|^(?:how(?:'s| is)) my (?:water|hydration)(?: intake| today| goal| doing)*$|^(?:what(?:'s| is)) my water(?: intake| count| total)?(?: today)?$/.test(t)) return 'how much water have I had';
-  if (/^(?:how much|how many grams of) (protein|carbs|carbohydrates|fat|fats|fiber|fibre|sugar)(?: have i| did i)(?: had| eaten| have| eat| got)?(?: so far)?(?: today)?$|^(?:what(?:'s| is| are)|how(?:'s| is| are)) my (protein|carbs|fat|fiber|sugar|macros)(?: intake| count| today| at| looking)*$/.test(t)) return 'how much protein have I had';
+  if (/^(?:how much|how many grams of) (protein|carbs|carbohydrates|fat|fats|fiber|fibre|sugar)(?: have i| did i)(?: had| eaten| have| eat| got)?(?: so far)?(?: today)?$|^(?:what(?:'s| is| are)|how(?:'s| is| are)) my (protein|carbs|fat|fiber|sugar|macros)(?: intake| count| today| at| looking)*$/.test(t)){ const w = (t.match(/\b(protein|carbs|carbohydrates|fats?|fiber|fibre|sugar|macros)\b/)||[])[1] || 'protein'; return /^(?:fiber|fibre|sugar|macros)$/.test(w) ? 'how many calories today' : `how much ${w === 'carbohydrates' ? 'carbs' : /^fat/.test(w) ? 'fat' : w} have I had`; }
   if (/^(?:what|wat) (?:should|can|could|do) i (?:eat|have|cook|make|grab|order)(?: for| now| tonight| today|$)|^(?:what(?:'s| is)|any) (?:good )?(?:idea|ideas|suggestion|suggestions) for (?:lunch|dinner|breakfast|a snack|food|a meal)\b|^(?:suggest|recommend) (?:a |me a |some |me some )?(?:meal|food|snack|dinner|lunch|breakfast|something to eat)\b|^(?:i(?:'m| am) )?(?:hungry|starving|peckish) (?:what|any) (?:should|ideas?|suggestions?)\b|^(?:what(?:'s| is) )?(?:for )?(?:dinner|lunch) (?:tonight|today)$|^(?:what(?:'s| is)|what are) (?:a |some )?(?:healthy|good|light|quick|easy|low ?cal(?:orie)?) (?:option|options|idea|ideas|thing|things|food|meal|choice|choices)?\s*(?:for|to eat for|to have for|to make for) (?:breakfast|lunch|dinner|a snack)$|^(?:what(?:'s| is)) (?:a )?(?:healthy|good|light|quick) (?:breakfast|lunch|dinner|snack)$/.test(t)){ const meal = (t.match(/\b(breakfast|lunch|dinner)\b/) || [])[1]; return meal ? `what should I eat for ${meal}` : 'what should I eat'; }
   /* --- habits and goals --- */
   if (/^(?:how(?:'s| is| are| am i)) (?:my |i )?(?:habits|habit tracker|routines?|streaks?|daily habits)(?: doing| going| looking| holding up| today| this week)*$|^(?:how am i doing|am i doing (?:ok|okay|good|well)|am i on track) (?:on|with) (?:my )?(?:habits|routines?|streaks?)(?: today| this week)?$|^(?:did i|have i) (?:do|done|did|finish|finished|complete|completed|miss|missed) (?:all )?(?:my |any )?(?:habits|routines?)(?: today| yet)?$|^(?:what|which) habits? (?:do i (?:still )?have(?: left)?|are (?:left|remaining|still left|done|due)|did i (?:miss|skip|do))(?: today| for today)?$|^(?:what(?:'s| is)) left (?:to do )?(?:on|in|for) my habits(?: today)?$/.test(t)) return /\b(left|remaining|still|due)\b/.test(t) ? 'what habits are left today' : 'how are my habits going';
@@ -1047,7 +1096,7 @@ const AREAS = [
   {id:'income', w:[[/\b(?:income|earn|earned|earnings|salary|paycheck|pay ?check|made|got paid|came in)\b/, 2]], cmd:()=>'how much did I make this month'},
   {id:'reminders', w:[[/\b(?:reminders?|remind|due|to ?do|to-do|todos|tasks?|errands?|supposed to|need to do|have to do|got to do|chores)\b/, 2], [/\b(?:today|later|tonight|anything|something|pending)\b/, 0.5]], cmd:()=>'what are my reminders'},
   {id:'calendar', w:[[/\b(?:meetings?|appointments?|calendar|schedule|events?|busy|calls)\b/, 2], [/\b(?:today|tomorrow|this week|afternoon|morning)\b/, 0.5]], cmd:(t)=>/\bnext\b/.test(t) ? 'when is my next meeting' : `what's on my calendar ${/\btomorrow\b/.test(t) ? 'tomorrow' : /\bweek\b/.test(t) ? 'this week' : 'today'}`},
-  {id:'protein', w:[[/\b(?:protein|carbs?|carbohydrates|fats?|fibre|fiber|sugar|macros?)\b/, 3]], cmd:()=>'how much protein have I had'},
+  {id:'protein', w:[[/\b(?:protein|carbs?|carbohydrates|fats?|fibre|fiber|sugar|macros?)\b/, 3]], cmd:t=>{ const w = (t.match(/\b(protein|carbs?|carbohydrates|fats?)\b/)||[])[1]; return w ? `how much ${/^carb/.test(w) ? 'carbs' : /^fat/.test(w) ? 'fat' : 'protein'} have I had` : 'how many calories today'; }},
   {id:'water', w:[[/\b(?:water|hydrated|hydration|glasses)\b/, 2.5], [/\b(?:drink|drank|drunk|enough)\b/, 0.5]], cmd:()=>'how much water have I had'},
   {id:'food', w:[[/\b(?:calories|cals|kcal|calorie|diet|food|meals?|eaten|ate|eat|eating|nutrition)\b/, 2]], cmd:()=>'how many calories today'},
   {id:'goals', w:[[/\b(?:goals?|savings goal|savings|targets?|saving for)\b/, 2.5], [/\b(?:progress|track|close|far)\b/, 0.5]], cmd:()=>'how are my goals going'},
@@ -1078,6 +1127,10 @@ function followUp(t){
       const cands = /^\$?\d/.test(x) ? [`how much is ${x}${/[a-z]/.test(x.replace(/^\$?[\d.,]+\s*/, '')) ? '' : ' ' + pq.from} in ${pq.to}`] : [`how much is ${pq.n} ${pq.from} in ${x}`];
       for (const c of cands){ try { if (fxParse(lc(c))) return c; } catch(e){} }
     }
+  }
+  if (lm && now() - lm.at < 4*MIN && /\btime\b.*\bin [a-z]/.test(lc(lm.said))){
+    const fm2 = t.match(/^(?:and |but |ok |okay |so )?(?:what about|how about|and|and what about|same for|now)\s+(?:in |for )?([a-z][a-z .'-]{1,30})$/);
+    if (fm2 && !/\b(?:tomorrow|today|tonight|week|month|it|that|this)\b/.test(fm2[1])) return `what time is it in ${fm2[1].trim()}`;
   }
   if (!fresh(lastDomain, 4*MIN)) return null;
   const m = t.match(/^(?:and |but |ok |okay |so )?(?:what about|how about|and|what of|and for|and what about|same for|and how about|now|ok and|okay and)\s+(.+?)$/) || t.match(/^(tomorrow|today|tonight|this week|last week|yesterday|this weekend|next week|this month)$/);
@@ -1120,18 +1173,29 @@ function compound(t){
   for (const p of parts){
     let r = null;
     try { r = J.rethink(p); } catch(e){ r = null; }
-    if (!r){ let rw = rewrite(p); if (rw && typeof rw === 'object') rw = null; if (rw === 'recent') r = recentExpenses(); else if (rw === 'biggest') r = biggestExpense(p); else if (rw) try { r = J.rethink(rw); } catch(e){} }
+    if (!r){ let rw = rewrite(p); if (rw && typeof rw === 'object') rw = null; if (rw === 'recent' || rw === 'biggest' || /^item:/.test(rw||'')) r = special(rw, p); else if (rw) try { r = J.rethink(rw); } catch(e){} }
     if (!r){ if (!out.length) return null; missed = p; continue; }
     out.push(r);
   }
   setKind('feature');
   return out.join(' ') + (missed ? ` I didn't catch the part about ${missed.split(' ').slice(0, 6).join(' ')}.` : '');
 }
+/** what a cost question said about one thing: "how much was my coffee" -> the last coffee, and this month's coffee total */
+function itemCost(word){
+  const e = findExpense(word); if (!e) return null;
+  try { J.go('budget'); } catch(_){}
+  const w = lc(word).replace(/^(?:the|my|a|an)\s+/, '').replace(/(?:es|s)$/, '');
+  const m0 = new Date(); m0.setDate(1); m0.setHours(0,0,0,0);
+  const same = (db().expenses||[]).filter(x=>x.type==='expense' && x.at >= +m0 && lc(x.desc).includes(w));
+  const when = J.whenSpoken ? J.whenSpoken(e.at) : J.whenText(e.at), d = lc(e.desc), pl = /[^s]s$/.test(d);
+  return `Your last ${d} ${pl ? 'were' : 'was'} ${money(e.amount)}, ${when}.` + (same.length > 1 ? ` This month ${d} ${pl ? 'add' : 'adds'} up to ${money(same.reduce((s,x)=>s+x.amount,0))} over ${same.length} payments.` : '');
+}
+function special(c, t){ if (c === 'recent') return recentExpenses(); if (c === 'biggest') return biggestExpense(t); if (typeof c === 'string' && c.indexOf('item:') === 0) return itemCost(c.slice(5)); return null; }
 function recentExpenses(){
   const list = (db().expenses||[]).filter(e=>e.type==='expense').sort((a,b)=>b.at-a.at).slice(0,3);
   try { J.go('budget'); } catch(e){}
   if (!list.length) return 'No expenses logged yet. Say, for example: I spent 20 on lunch.';
-  return 'Your latest: ' + list.map(e=>`${money(e.amount)} for ${e.desc}, ${J.whenText(e.at).replace(/^(Today|Yesterday), /, (m, d)=>d.toLowerCase() + ' at ')}`).join('; ') + '.';
+  return 'Your latest: ' + list.map(e=>`${money(e.amount)} for ${lc(e.desc)}, ${J.whenSpoken ? J.whenSpoken(e.at) : J.whenText(e.at)}`).join('; ') + '.';
 }
 function biggestExpense(t){
   const from = /\bweek\b/.test(t) ? (()=>{ const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()-((d.getDay()+6)%7)); return d.getTime(); })() : /\btoday\b/.test(t) ? (()=>{ const d = new Date(); d.setHours(0,0,0,0); return d.getTime(); })() : new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime();
@@ -1156,6 +1220,8 @@ function knowledgeQuery(t, said){
   }
   const QW = /^(?:who|what|whats|what's|when|where|why|how|which|whose|tell me about|tell me something about|what do you know about|do you know (?:anything )?about|have you heard of|explain|describe|give me info on|info on|information on|facts about|teach me about|who's|where's|when's|how's|is|are|was|were|does|did|do|can|could|has|have|will|would|should|wiki|wikipedia|look up|search for|search|google|find out)\b/;
   if (!QW.test(s)) return null;
+  // sums and money maths are never encyclopedia questions
+  if (/\d/.test(s) && /(?:%|\bpercent\b|\btip\b|\bplus\b|\bminus\b|\btimes\b|\bdivided\b|\bsplit\b|\bsquared?\b|\bdollars?\b|\bbucks\b|\blira\b|\beuros?\b)/.test(s)) return null;
   if (PERSONAL.test(s.replace(/^(?:tell me|give me|teach me|let me know)\b/, '')) && !/^(?:who|what) (?:is|was|are|were) (?:the )?(?!my\b)/.test(s)) return null;
   if (/\b(?:budget|spending|spent|money left|remaining for the month|left this month|calories|my day|reminders?|meetings?|the markets? today|in the markets?)\b/.test(s)) return null;
   if (/\b(?:you|your|yourself|jarvis)\b/.test(s.replace(/^(?:what do you know about|do you know (?:anything )?about|can you tell me about|could you tell me about|have you heard of|do you know who|do you know what)\b/, ''))) return null;
@@ -1277,11 +1343,26 @@ const SAVE_ASK = /\b(save|write (?:it|this|that) down|jot|remember (?:it|this|th
 function runCommand(cmd, said){
   cmd = String(cmd||'').replace(/[<>]/g, '').trim(); if (!cmd || cmd.length > 200) return null;
   if (/^(?:note|take a note|make a note|save a note|remember that|write down)\b/i.test(cmd) && !SAVE_WORDS.test(lc(said))) return null;
+  // the AI may only change data when the words heard asked for it: money with the same amount, a reminder or alarm when one was asked for
+  const c = lc(cmd), heard = lc(J.wordsToNumbers ? J.wordsToNumbers(String(said||'')) : said);
+  const amt = x => (moreNumbers(x).match(/\d+(?:\.\d+)?/g) || []).map(Number);
+  if (/^(?:i spent|i paid|spent|paid|got paid|i got paid|i earned|i received|set my budget|change my last expense|delete the last expense)\b/.test(c)){
+    if (/^delete\b/.test(c) ? !/\b(?:delete|remove|undo|cancel|scratch|get rid of)\b.*\b(?:expenses?|payments?|purchases?|transactions?|spending|charge|last one|it|that)\b/.test(heard) : !amt(c).some(n=>amt(heard).includes(n))) return null;
+  }
+  if (/^(?:remind me|wake me|set a timer|set an alarm|add .* to my calendar|add a habit|move my reminder)\b/.test(c) && !/\b(?:remind|reminder|alarm|wake|timer|calendar|habit|schedule|don't let me forget|dont let me forget)\b/.test(heard)) return null;
+  if (/^(?:dark mode|light mode)$/.test(c) && !/\b(?:dark|light|theme|mode|bright|night)\b/.test(heard)) return null;
   const norm = J.normalizeSpeech ? J.normalizeSpeech(cmd) : cmd;
   before(); let r = null;
   try { r = J.rethink(norm); } catch(e){ r = null; }
   noticeNew(); try { J.renderAll(); } catch(e){}
   return r;
+}
+/** an AI answer made fit to be read aloud: no markdown, lists, links or emoji, and at most about three sentences */
+function speakable(x){
+  let s = String(x||'').replace(/\[([^\]]+)\]\([^)]*\)/g, '$1').replace(/https?:\/\/\S+/g, '').replace(/[*_#`>~|]/g, '').replace(/^\s*(?:[-•]|\d+[.)])\s+/gm, '')
+    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}]/gu, '').replace(/\s*\n+\s*/g, ' ').replace(/\s{2,}/g, ' ').trim();
+  if (s.length > 360){ const sents = s.match(/[^.!?]+[.!?]+(?=\s|$)/g) || [s]; let out = ''; for (const x of sents){ if ((out + x).length > 360) break; out += x; } s = (out || s.slice(0, 340).replace(/\s+\S*$/, '') + '…').trim(); }
+  return s;
 }
 function aiAnswer(said, turnId, local){
   const ai = AI(); if (!ai || now() < aiCool || aiBusy) return null;
@@ -1290,7 +1371,7 @@ function aiAnswer(said, turnId, local){
     try {
       const j = await askAI(said);
       if (j && j.command){ const r = runCommand(j.command, said); if (r) return r; }
-      if (j && j.answer) return String(j.answer).replace(/[*_#`]/g, '').trim();
+      if (j && j.answer) return speakable(j.answer);
       if (local) return await local();
       return null;
     } catch(e){
@@ -1311,17 +1392,17 @@ function late(said, t){
   if ((c = followUp(t))){ r = J.rethink(c); if (r) return r; }
   // the same request in other words
   if ((c = rewrite(t)) && typeof c === 'object' && c.confirm){ pending = {cmd:c.confirm, at:now()}; setKind('chat'); return c.ask; }
-  if ((c = rewrite(t))){ if (c === 'recent') return recentExpenses(); if (c === 'biggest') return biggestExpense(t); r = J.rethink(c); if (r) return r; }
+  if ((c = rewrite(t))){ const sp = special(c, t); if (sp) return sp; r = J.rethink(c); if (r) return r; }
   // the same, after dropping a polite lead-in ("I was wondering", "just checking")
-  const t2 = t.replace(/^(?:i was (?:just )?wondering|just (?:checking|wondering|curious)|quick one|real quick|i'm curious|i am curious|curious|out of curiosity|by the way|btw|so basically|basically|i mean|listen|look|hey so)\b[\s,]*(?:if |whether |about )?/, '').replace(/\s+(?:real quick|quickly|by any chance|right now|at the moment|again)$/, '').trim();
-  if (t2 && t2 !== t){ r = J.rethink(t2) || ((c = rewrite(t2)) && typeof c === 'string' && (c === 'recent' ? recentExpenses() : c === 'biggest' ? biggestExpense(t2) : J.rethink(c))); if (r) return r; }
+  const t2 = t.replace(/^(?:i (?:want|wanna|would like|'d like|need) to know|do you know|tell me|i was (?:just )?wondering|just (?:checking|wondering|curious)|quick one|real quick|i'm curious|i am curious|curious|out of curiosity|by the way|btw|so basically|basically|i mean|listen|look|hey so)\b[\s,]*(?:if |whether |about )?/, '').replace(/\s+(?:real quick|quickly|by any chance|right now|at the moment|again)$/, '').trim();
+  if (t2 && t2 !== t){ r = J.rethink(t2) || ((c = rewrite(t2)) && typeof c === 'string' && (special(c, t2) || J.rethink(c))); if (r) return r; }
   // remembered conversation
   if (/^(?:what (?:did|have) (?:we|i) (?:talk|talked|speak|spoke|chat|chatted) about|what (?:did|have) i (?:ask|asked)(?: you)?(?: before| earlier| today)?|remind me what (?:we talked about|i asked|i said))$/.test(t)) return recap();
   // the closest area by keywords ("give me a spending update", "anything due today")
   const cls = classify(t2 || t);
   if (cls){ r = J.rethink(cls); if (r) return r; }
   // a question for the AI (free key) or for Wikipedia / the dictionary
-  const q = knowledgeQuery(t, said);
+  const q = knowledgeQuery(t, said) || (t2 && t2 !== t ? knowledgeQuery(t2, said) : null);
   if (AI()){
     const local = q ? async ()=>{ try { return await lookUp(q); } catch(e){ return wikiFail(e); } } : null;
     const a = aiAnswer(said, turnId, local); if (a) return a;
@@ -1411,8 +1492,8 @@ function fallbackText(t, quiet){
   return s;
 }
 
-J.brain = {early, late, before, after, confirm, suggest: t=>fallbackText(lc(t)), rewrite, followUp, calc, convertUnits, fxParse, daysUntil, edits, knowledgeQuery, cleanExtract, recap,
-  get lastEntity(){ return lastEntity; }, get memory(){ return mem.slice(); }, _reset(){ mem.length = 0; lastEntity = null; lastDomain = null; tipShown = false; aiCool = 0; }};
+J.brain = {catOf, early, late, before, after, confirm, suggest: t=>fallbackText(lc(t)), rewrite, followUp, calc, convertUnits, fxParse, daysUntil, edits, knowledgeQuery, cleanExtract, recap,
+  get lastEntity(){ return lastEntity; }, get memory(){ return mem.slice(); }, _reset(){ mem.length = 0; lastEntity = null; lastRemoved = null; lastDomain = null; tipShown = false; aiCool = 0; }};
 J.addSuggestions(["What's 15% of 240?", 'How much is 100 dollars in lira?', 'What time is it in London?', 'Change my last expense to 50', 'How many days until Christmas?', 'Who is Fairuz?']);
 } catch(e){ try { console.error('brain', e); } catch(_){} }
 })();

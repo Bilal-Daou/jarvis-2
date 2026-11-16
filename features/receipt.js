@@ -14,7 +14,7 @@
     langPath: 'https://cdn.jsdelivr.net/npm/@tesseract.js-data/eng@1.0.0/4.0.0_best_int'
   };
   const DEFAULT_LBP_RATE = 89500;
-  const CUR_OF_SETTING = {'$':'USD','€':'EUR','£':'GBP','L£':'LBP','AED':'AED','SAR':'SAR'};
+  const CUR_OF_SETTING = {'$':'USD','€':'EUR','£':'GBP','L£':'LBP','LBP':'LBP','AED':'AED','SAR':'SAR'};
   const CUR_LABEL = {USD:'$', EUR:'€', GBP:'£', LBP:'LBP', AED:'AED', SAR:'SAR'};
   const CUR_SPOKEN = {USD:'dollars', EUR:'euros', GBP:'pounds', LBP:'lira', AED:'dirhams', SAR:'riyals'};
 
@@ -486,7 +486,7 @@
 
   function money(amount, cur){
     cur = cur || userCur();
-    if (cur === userCur()) return J.fmt(amount);
+    if (cur === userCur() || cur === (J.settings && J.settings.currency)) return J.fmt(amount);
     const s = Math.abs(amount).toLocaleString('en-US', {minimumFractionDigits: amount % 1 ? 2 : 0, maximumFractionDigits: 2});
     return ['USD','EUR','GBP'].includes(cur) ? CUR_LABEL[cur] + s : s + ' ' + (CUR_LABEL[cur] || cur);
   }

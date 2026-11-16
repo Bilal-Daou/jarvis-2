@@ -45,7 +45,7 @@
   --fill:rgba(118,118,128,.1); --fill2:rgba(118,118,128,.16); --sep:rgba(60,60,67,.1);
   --text:#0c0c10; --muted:#606067; --faint:#a9a9b1; --glass:rgba(250,250,252,.8); --shadow:0 18px 44px rgba(20,24,48,.14);
   --card-shadow:0 1px 2px rgba(16,24,40,.04),0 6px 20px rgba(16,24,40,.045); --card-border:rgba(60,60,67,.06); --press:rgba(0,0,0,.04);
-  --accent-ink:color-mix(in srgb,var(--accent) 84%,#000); --good-ink:#15803d; --bad-ink:#d61f45; --warn-ink:#b45309; --faint-ink:#68686f;
+  --accent-ink:color-mix(in srgb,var(--accent) 84%,#000); --good-ink:#11753a; --bad-ink:#d61f45; --warn-ink:#b45309; --faint-ink:#68686f;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%}
@@ -57,7 +57,7 @@ body:not(.at-home)::before{opacity:.45}
 :root[data-theme="light"] body:not(.at-home)::before{opacity:.3}
 button{font:inherit;color:inherit;letter-spacing:inherit}
 input,select,textarea{font-family:inherit;letter-spacing:inherit}
-.app{position:relative;z-index:1;max-width:520px;margin:0 auto;padding:calc(56px + var(--safe-t)) 16px calc(124px + var(--safe-b))}
+.app{position:relative;z-index:1;max-width:520px;margin:0 auto;padding:calc(56px + var(--safe-t)) 16px calc(124px + var(--safe-b));overflow-x:clip}
 body.at-home .app{padding-top:calc(14px + var(--safe-t))}
 .view{display:none}
 .view.active{display:block;animation:vTab .34s var(--ease)}
@@ -82,6 +82,10 @@ body.scrolled .jv-bar{background:var(--glass);backdrop-filter:blur(24px) saturat
 .jv-title{grid-column:2;font-size:17px;font-weight:650;letter-spacing:-.022em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:min(56vw,280px);opacity:0;transform:translateY(4px);transition:opacity .2s,transform .25s var(--ease)}
 body.scrolled .jv-title{opacity:1;transform:none}
 .jv-bar-r{justify-self:end;display:flex;gap:6px;padding-right:4px}
+.jv-bar-add{position:relative;width:36px;height:36px;border-radius:50%;border:0;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent-ink);cursor:pointer;transition:transform .15s var(--ease)}
+.jv-bar-add::after{content:"";position:absolute;inset:-5px}
+.jv-bar-add svg{width:20px;height:20px}
+.jv-bar-add:active{transform:scale(.9)}
 
 /* ---------- type scale ---------- */
 .top{display:flex;align-items:center;justify-content:space-between;margin:4px 0 18px}
@@ -258,7 +262,7 @@ h2{font-size:32px;line-height:1.12;font-weight:750;letter-spacing:-.032em;margin
 .orb:active{transform:scale(.92)}
 .orb svg{width:26px;height:26px}
 .orb::before{content:"";position:absolute;inset:-6px;border-radius:50%;border:2px solid color-mix(in srgb,var(--accent) 32%,transparent);animation:breathe 3s ease-in-out infinite}
-.nav.on-home .orb{transform:translateY(26px) scale(.35);opacity:0;pointer-events:none}
+.nav.on-home .orb{transform:translateY(26px) scale(.35);opacity:0;pointer-events:none;visibility:hidden;transition:transform .4s var(--ease),opacity .25s,visibility 0s linear .3s}
 @keyframes breathe{50%{transform:scale(1.08);opacity:.4}}
 
 /* ============ HOME: one big mic + today's key numbers ============ */
@@ -299,9 +303,12 @@ body.is-listening .hm-glow{animation-duration:1.8s}
 .hm-hint{margin:18px 0 0;border:0;background:none;padding:8px 12px;min-height:40px;max-width:100%;color:var(--muted);font-size:16px;font-weight:500;letter-spacing:-.012em;line-height:1.4;text-align:center;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hm-hint.reply{color:var(--text);opacity:.82;font-size:15px}
 .hm-hint b{color:var(--text);font-weight:700}
-.hm-type{margin-top:6px;display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 16px 0 13px;border-radius:999px;border:0;background:var(--fill);color:var(--text);opacity:.85;font-size:14px;font-weight:600;letter-spacing:-.01em;cursor:pointer;transition:transform .15s var(--ease)}
-.hm-type svg{width:17px;height:17px;color:var(--muted)}
-.hm-type:active,.hm-brief:active,.tile:active{transform:scale(.97)}
+.hm-quick{margin-top:8px;display:flex;gap:8px;width:100%;max-width:400px}
+.hm-q{flex:1 1 0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:0;height:54px;padding:0 4px;border-radius:16px;border:1px solid var(--card-border);background:var(--card);box-shadow:var(--card-shadow);color:var(--text);font-size:12.5px;font-weight:600;letter-spacing:-.005em;cursor:pointer;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);transition:transform .15s var(--ease)}
+.hm-q svg{width:20px;height:20px;color:var(--accent-ink);flex:none}
+.hm-q span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hm-q[hidden]{display:none}
+.hm-q:active,.hm-brief:active,.tile:active{transform:scale(.97)}
 .hm-brief{display:flex;align-items:center;gap:12px;width:100%;min-height:58px;border-radius:20px;border:1px solid var(--card-border);background:var(--card);box-shadow:var(--card-shadow);padding:8px 14px 8px 9px;font-size:14.5px;font-weight:600;text-align:left;cursor:pointer;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);transition:transform .15s var(--ease)}
 .hm-brief[hidden]{display:none}
 .hm-brief .pb{flex:none;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent-ink)}
@@ -346,9 +353,9 @@ body.is-listening .hm-glow{animation-duration:1.8s}
   .hm-top{margin-top:0}
   .hm-greet{font-size:23px}
   .hm-stage{padding:4px 0 12px;min-height:0}
-  .hm-orb{--sz:clamp(88px,calc(100vh - var(--safe-t) - var(--safe-b) - 532px),128px);--sz:clamp(88px,calc(100svh - var(--safe-t) - var(--safe-b) - 532px),128px)}
+  .hm-orb{--sz:clamp(88px,calc(100vh - var(--safe-t) - var(--safe-b) - 548px),124px);--sz:clamp(88px,calc(100svh - var(--safe-t) - var(--safe-b) - 548px),124px)}
   .hm-hint{margin-top:6px}
-  .hm-type{margin-top:4px;height:36px}
+  .hm-quick{margin-top:4px}.hm-q{height:48px;border-radius:14px;gap:2px}.hm-q svg{width:18px;height:18px}
   .hm-brief{min-height:50px;padding:5px 12px 5px 7px;border-radius:17px}
   .hm-brief .pb{width:34px;height:34px}
   .hm-tiles{gap:8px;margin-top:8px}
@@ -376,6 +383,9 @@ body.is-listening .hm-glow{animation-duration:1.8s}
 .msg.ai{align-self:flex-start;background:var(--card-solid);border:1px solid var(--card-border);box-shadow:var(--card-shadow);border-bottom-left-radius:6px}
 :root[data-theme="dark"] .msg.ai{background:#232329;border-color:transparent}
 .msg.ai .who{display:none}
+.msg-acts{display:flex;gap:6px;flex-wrap:wrap;align-self:flex-start;margin:-2px 0 2px 2px;animation:msgIn .34s var(--spring)}
+.msg-acts .chip{min-height:36px;padding:7px 13px 7px 10px;font-size:13.5px;box-shadow:none;background:var(--fill);border-color:transparent;color:var(--accent-ink)}
+.msg-acts .chip svg{width:15px;height:15px}
 .voice-stage{display:flex;flex-direction:column;align-items:center;gap:8px;padding:6px 16px 4px}
 .wave{display:flex;align-items:center;gap:4px;height:36px}
 .wave i{width:4px;border-radius:4px;background:linear-gradient(180deg,var(--accent2),var(--accent));height:6px;transition:height .1s}
@@ -426,6 +436,7 @@ input[type=range]{width:120px;accent-color:var(--accent)}
 .btn:disabled{opacity:.45;cursor:default}
 .btn.ghost{background:var(--fill);color:var(--text);border:0}
 .btn.danger{background:rgba(244,63,94,.13);color:var(--bad-ink)}
+:root[data-theme="light"] .btn.danger{color:#b4123a}
 .set-row .btn{min-height:36px;padding:8px 14px;border-radius:999px;font-size:14px}
 .voice-list{max-height:280px;overflow-y:auto}
 .vrow{position:relative;display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;min-height:52px}
@@ -519,6 +530,8 @@ body.at-home .toast{bottom:calc(92px + var(--safe-b))}
 .fs-chips{display:flex;gap:8px;flex-wrap:wrap;margin:-4px 0 14px}
 .fs-chips button{border:0;background:var(--fill);color:var(--text);border-radius:999px;padding:8px 13px;min-height:40px;font-size:13.5px;font-weight:600;cursor:pointer;position:relative}.fs-chips button::after{content:"";position:absolute;inset:-3px -2px}
 .fs-chips button:active{transform:scale(.96)}
+.fs-chips button{display:inline-flex;align-items:center;gap:6px}.fs-chips button svg{width:16px;height:16px;flex:none;color:var(--accent-ink)}
+.fs-act .jv-sub{display:block;color:var(--muted);font-size:13px;line-height:1.35;margin-top:1px}.fs-act>svg:last-child{width:17px;height:17px;color:var(--faint-ink)}
 
 .banner{display:none;margin-bottom:14px}
 
@@ -531,9 +544,8 @@ body.at-home .toast{bottom:calc(92px + var(--safe-b))}
 .swatches button::after{content:"";position:absolute;inset:-7px}
 .fin-range button::after{content:"";position:absolute;inset:-9px -2px}
 /* every control gets a 44 px touch area (Apple's minimum) without making it look bigger */
-.seg button,.hm-type,.sheet-head .icon-btn,.set-row .btn,.bf-loc,.bf-unit button,.cal-btn.sm,.jv-gt{position:relative}
+.seg button,.sheet-head .icon-btn,.set-row .btn,.bf-loc,.bf-unit button,.cal-btn.sm,.jv-gt{position:relative}
 .seg button::after{content:"";position:absolute;inset:-5px 0}
-.hm-type::after{content:"";position:absolute;inset:-4px 0}
 .sheet-head .icon-btn::after{content:"";position:absolute;inset:-5px}
 .set-row .btn::after,.cal-btn.sm::after{content:"";position:absolute;inset:-5px -2px}
 .bf-loc::after{content:"";position:absolute;inset:-6px -2px}
@@ -565,9 +577,16 @@ body.at-home .toast{bottom:calc(92px + var(--safe-b))}
         <span class="hm-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
       </button>
       <button class="hm-hint" id="heroHint">Tap and talk</button>
-      <button class="hm-type" id="heroType"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M6.5 10h.01M10 10h.01M13.5 10h.01M17 10h.01M8 14h8"/></svg>Type instead</button>
+      <!-- one tap to the things he does every day by hand (voice stays the big button above) -->
+      <div class="hm-quick" role="group" aria-label="Quick actions">
+        <button class="hm-q" id="heroType" aria-label="Type to Jarvis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M6.5 10h.01M10 10h.01M13.5 10h.01M17 10h.01M8 14h8"/></svg><span>Type</span></button>
+        <button class="hm-q" id="heroExp" aria-label="Add an expense"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 7V5.5A1.5 1.5 0 0 0 17.5 4h-12A2.5 2.5 0 0 0 3 6.5v11A2.5 2.5 0 0 0 5.5 20h13a2.5 2.5 0 0 0 2.5-2.5v-8A2.5 2.5 0 0 0 18.5 7H5.5A2.5 2.5 0 0 1 3 4.5"/><circle cx="16.5" cy="13.5" r="1.3" fill="currentColor" stroke="none"/></svg><span>Expense</span></button>
+        <button class="hm-q" id="heroFood" aria-label="Log food: take a photo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.8l1.4-2h4.6l1.4 2h1.8A2.5 2.5 0 0 1 20 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5z"/><circle cx="12" cy="12.8" r="3.4"/></svg><span>Food</span></button>
+        <button class="hm-q" id="heroRem" aria-label="New reminder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16v-5a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/></svg><span>Remind</span></button>
+      </div>
     </div>
 
+    <button class="hm-brief hm-setup" id="heroSetup" hidden><span class="pb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 3.5 12.9 8l4.6 1.9-4.6 1.9L11 16.3l-1.9-4.5L4.5 9.9 9.1 8z"/><path d="M18.5 14.5l.8 1.9 1.9.8-1.9.8-.8 1.9-.8-1.9-1.9-.8 1.9-.8z"/></svg></span><span class="bt"><b>Set up Jarvis · 1 minute</b><small>Your name, currency, city and iPhone</small></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
     <button class="hm-brief" id="heroBrief" hidden><span class="pb"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l11-6.5a1 1 0 0 0 0-1.72l-11-6.5A1 1 0 0 0 8 5.5z"/></svg><span class="eq"><i></i><i></i><i></i></span></span><span class="bt"><b id="heroBriefTxt">Play my morning brief</b><small id="heroBriefSub">Weather, plans and money, read aloud</small></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button>
     <div class="hm-tiles" id="heroTiles"></div>
   </section>
@@ -753,7 +772,12 @@ const TENS = {twenty:20,thirty:30,forty:40,fifty:50,sixty:60,seventy:70,eighty:8
 function wordsToNumbers(s){
   const out = []; let cur = null, total = 0;
   const flush = () => { if (cur !== null){ out.push(String(total + cur)); cur = null; total = 0; } };
-  for (const tok of s.split(/\s+/)){
+  const toks = s.split(/\s+/), isW = x => { x = String(x||'').toLowerCase().replace(/[^a-z-]/g,''); return !!x && x.split('-').every(p => p in TENS || p in UNITS); };
+  for (let ti = 0; ti < toks.length; ti++){
+    const tok = toks[ti];
+    // "two hundred and eighty-one", "one thousand and five": the "and" belongs to the number
+    if (/^and$/i.test(tok) && cur !== null && (cur >= 100 || total > 0) && cur % 100 === 0 && isW(toks[ti+1])) continue;
+    if (/^an?$/i.test(tok) && cur === null && /^(hundred|thousand)\b/i.test(toks[ti+1]||'')){ flush(); cur = 1; continue; }
     const w = tok.toLowerCase().replace(/[^a-z-]/g,'');
     const parts = w ? w.split('-') : [];
     const isNum = parts.length > 0 && parts.every(p => p in TENS || p in UNITS || ((p==='hundred'||p==='thousand') && cur!==null));
@@ -767,6 +791,12 @@ function wordsToNumbers(s){
     } else { flush(); out.push(tok); }
   }
   flush(); return out.join(' ');
+}
+/* "2 million", "1.5 million", "250k", "90 thousand", "a million" -> plain numbers (lira amounts are big) */
+function bigNumbers(s){
+  return String(s).replace(/\b(?:a|one) (million|billion)\b/g, '1 $1')
+    .replace(/(\d+(?:\.\d+)?) ?(thousand|million|billion|grand)\b/g, (m, n, w) => String(Math.round(parseFloat(n) * {thousand:1e3, grand:1e3, million:1e6, billion:1e9}[w] * 100) / 100))
+    .replace(/(\d+(?:\.\d+)?)k\b(?! ?(?:run|race|walk|steps?|swim|ride|km)\b)/g, (m, n) => String(Math.round(parseFloat(n) * 1e3 * 100) / 100));
 }
 function escRe(s){ return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
 function parseTime(text){
@@ -851,7 +881,19 @@ function whenText(ts){
   if (same(d,yst)) return 'Yesterday, '+time;
   return d.toLocaleDateString([], {weekday:'short', month:'short', day:'numeric'})+', '+time;
 }
-function whenSpoken(ts){ const w = whenText(ts); return /^(Today|Tomorrow|Yesterday)/.test(w) ? w.charAt(0).toLowerCase()+w.slice(1) : 'on '+w; }
+/* a time the way you would say it: "today at 5 PM", "tomorrow at 9 AM", "on Friday at 3:30 PM", "on Monday, December 7 at 9 AM" */
+function whenSpoken(ts){
+  const d = new Date(ts); if (!isFinite(d)) return '';
+  const t = d.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}).replace(/:00(?=\s|$)/, '');
+  const d0 = x => { const y = new Date(x); y.setHours(0,0,0,0); return y.getTime(); };
+  const diff = Math.round((d0(d) - d0(Date.now())) / 864e5);
+  if (diff === 0) return 'today at ' + t; if (diff === 1) return 'tomorrow at ' + t; if (diff === -1) return 'yesterday at ' + t;
+  const wd = d.toLocaleDateString('en-US', {weekday:'long'});
+  if (diff > 1 && diff < 7) return 'on ' + wd + ' at ' + t;
+  return 'on ' + wd + ', ' + d.toLocaleDateString('en-US', {month:'long', day:'numeric'}) + (d.getFullYear() !== new Date().getFullYear() ? ', ' + d.getFullYear() : '') + ' at ' + t;
+}
+/* "call my mom" -> "call your mom" (for what Jarvis says back, never for what is saved) */
+function youify(s){ return String(s||'').replace(/\b(my|me|mine|myself|i'm|i am|i've|i)\b/gi, w => ({my:'your', me:'you', mine:'yours', myself:'yourself', "i'm":"you're", 'i am':'you are', "i've":"you've", i:'you'})[w.toLowerCase()]); }
 function ago(ts){ const s = (Date.now()-ts)/1000; if (s<60) return 'just now'; if (s<3600) return Math.floor(s/60)+'m ago'; if (s<86400) return Math.floor(s/3600)+'h ago'; return new Date(ts).toLocaleDateString([], {month:'short',day:'numeric'}); }
 
 /* ---------- the brain ---------- */
@@ -859,7 +901,7 @@ function ago(ts){ const s = (Date.now()-ts)/1000; if (s<60) return 'just now'; i
 /* ...and the way people really talk: "Um, okay so can you tell me what's the weather, please?" -> "what's the weather" */
 const SP_FILLER = /^(?:(?:um+|uh+|uhm+|erm+|hmm+|so|okay|ok|alright|oh|yeah|yes|yep|hey|hi|hello|yo|ya|yalla|habibi|wallah|listen|actually|quick question)\b[\s,.:;!?-]*|(?:well|right|like|and|all right|now|khalas)\s*[,.:;!?-]+\s*)/i;
 const SP_WAKE = /^(?:jarvis|jarvis's|jarvas|jervis|javis|jarvus|jarviss)\b[\s,.:;!?-]*/i;
-const SP_ASK = /^(?:(?:can|could|would) you (?:please )?tell me|(?:please )?tell me|let me know|i (?:want|wanna|would like|'d like|need) to know|do you know|you know|i was wondering|any idea)\b[\s,]*(?=(?:what|what's|whats|how|how's|hows|when|when's|whens|where|where's|who|who's|which|why|if|whether|is|are|am|will|was|were|do|does|did|should|can|could|have|has|any)\b)/i;
+const SP_ASK = /^(?:(?:can|could|would) you (?:please )?tell me|(?:please )?tell me|let me know|i (?:want|wanna|would like|'d like|need) to know|do you know|you know|i was wondering|any idea)\b[\s,]*(?=(?:what|what's|whats|how|how's|hows|when|when's|whens|where|where's|who|who's|which|why|if|whether|is|are|am|will|was|were|do|does|did|should|can|could|have|has|any)\b|\$?\d)/i;
 const SP_POLITE = /^(?:(?:can|could|would|will) (?:you|u)(?: please)?|please|kindly|i was wondering if you could|do me a favou?r and)\b[\s,]*/i;
 function normalizeSpeech(raw){
   let s = String(raw||'').replace(/[\u2018\u2019\u201B`\u00B4]/g,"'").replace(/[\u201C\u201D]/g,'"').replace(/\s+/g,' ').trim();
@@ -879,7 +921,7 @@ function normalizeSpeech(raw){
   // apostrophes Android dictation leaves out: "whats", "hows", "im", "dont"
   s = s.replace(/\b(what|how|where|when|who|that|there|here|it)s\b(?=\s+\S)/gi, (m, w)=>/^its$/i.test(m) ? m : w+"'s").replace(/\bim\b/gi, "I'm").replace(/\bive\b/gi, "I've").replace(/\bid like\b/gi, "I'd like").replace(/\b(do|does|did|is|are|was|were|can|could|would|should|have|has|had|wo)nt\b/gi, "$1n't").replace(/\bcant\b/gi, "can't").replace(/\bwont\b/gi, "won't").replace(/\bwhatre\b/gi, "what're");
   // words speech-to-text often gets wrong
-  s = s.replace(/\bthe whether\b/gi, 'the weather').replace(/\bwhether (?=today|tomorrow|like|forecast|outside|this)/gi, 'weather ').replace(/\b(my|any) remainders?\b/gi, (m, a)=>a+' reminder'+(/s$/i.test(m)?'s':'')).replace(/\bcalender\b/gi, 'calendar').replace(/\bbudge it\b/gi, 'budget');
+  s = s.replace(/\bthe whether\b/gi, 'the weather').replace(/\bwhether (?=today|tomorrow|like|forecast|outside|this)/gi, 'weather ').replace(/\b(my|any|what|which|set a|add a|new|the|no|your) remainders?\b(?! (?:of|when|after)\b)/gi, (m, a)=>a+' reminder'+(/s$/i.test(m)?'s':'')).replace(/\bcalender\b/gi, 'calendar').replace(/\bbudge it\b/gi, 'budget');
   s = /^(note|notes|take a note|make a note|new note|add a note|save a note|write|jot|remember that|remember to)\b/i.test(s) ? s.replace(/[.!\s,]+$/,'').trim() : s.replace(/[.!?\s,]+$/,'').trim();
   return s;
 }
@@ -921,7 +963,7 @@ const Jarvis = window.Jarvis = {
   get db(){ return db; }, get settings(){ return S; },
   save, uid, esc, fmt, cap, toast, modal, closeModal, speak, go, whenText, whenSpoken, ago, greeting, monthKey, sum, inMonth,
   categorize, CATS, wordsToNumbers, parseTime, handle, get icons(){ return ICON; },
-  renderAll: (...a)=>renderAll(...a), addLateReply: t=>addLateReply(t), normalizeSpeech: t=>normalizeSpeech(t),
+  youify: s=>youify(s), renderAll: (...a)=>renderAll(...a), addLateReply: t=>addLateReply(t), normalizeSpeech: t=>normalizeSpeech(t),
   addExpense(o){ const e = Object.assign({id:uid(), type:'expense', at:Date.now()}, o); if (!e.cat) e.cat = e.type==='income'?'Income':categorize(e.desc||''); e.desc = cap(e.desc|| (e.type==='income'?'Income':'Expense')); db.expenses.unshift(e); save(); renderAll(); return e; },
   addReminder(o){ const r = Object.assign({id:uid(), done:false, repeat:'none', created:Date.now()}, o); db.reminders.push(r); save(); renderAll(); reminderAdded(r); return r; },
   addNote(text, tag){ addNote(text); if (tag) db.notes[0].tag = tag; save(); renderAll(); return db.notes[0]; },
@@ -953,7 +995,7 @@ function renderPlugins(full){
    which returns null instead of a fallback so the brain can try something else */
 function think(said, depth){
   depth = depth || 0;
-  const t = wordsToNumbers(said.toLowerCase()).replace(/(\d),(\d{3})/g,'$1$2').replace(/[!?]/g,'').replace(/,/g,' ').replace(/\s+/g,' ').trim();
+  const t = bigNumbers(wordsToNumbers(said.toLowerCase()).replace(/(\d),(\d{3})/g,'$1$2')).replace(/[!?]/g,'').replace(/,/g,' ').replace(/\s+/g,' ').trim();
   const key = monthKey(Date.now()); let m;
   // "take a note" on its own: the next thing said becomes the note
   const wasPending = !depth && pendingNote && Date.now() - pendingNote < 60e3; if (!depth) pendingNote = 0;
@@ -973,18 +1015,29 @@ function think(said, depth){
   if (/\b(thanks|thank you)\b/.test(t) && t.split(' ').length <= 6) { turnKind = 'chat'; return `Anytime, ${S.name}.`; }
 
   // budget goal
-  if ((m = t.match(/(?:set|change|make)(?: my)?(?: monthly)? budget (?:to|at|is)?\s*\$?(\d+(?:\.\d+)?)/)) || (m = t.match(/my (?:monthly )?budget is \$?(\d+(?:\.\d+)?)/))){
-    S.budget = parseFloat(m[1]); save(); go('budget');
+  if ((m = t.match(/(?:set|change|make|update|put|raise|lower|increase|decrease)(?: my| the| a)?(?: monthly)? budget(?: for the month| for this month)? (?:to|at|is|of|as|=)?\s*\$?(\d+(?:\.\d+)?)/)) || (m = t.match(/my (?:monthly )?budget (?:is|should be|will be) \$?(\d+(?:\.\d+)?)/)) || (m = t.match(/^(?:i want|i'd like|i would like) (?:my |a )?(?:monthly )?budget (?:to be |of )?\$?(\d+(?:\.\d+)?)/))){
+    S.budget = parseFloat(m[1]); save(); try { syncSettings(); } catch(e){} go('budget');
     return `Done. Your monthly budget is now ${fmt(S.budget)}. You've used ${fmt(sum(inMonth(key)))} so far.`;
   }
   // spending questions
   // spending on one category: "how much did I spend on food this month?"
   const per = spendPeriod(t), spentIn = per ? db.expenses.filter(e=>e.type==='expense' && e.at>=per.from && (!per.to || e.at<per.to)) : inMonth(key), perWord = per ? per.label : 'this month';
-  if ((m = t.match(/(?:how much|what) (?:did|have|do) i (?:spend|spent)(?: so far)? (?:on|for|at) (.+?)(?: this month| so far| in total| lately| today| yesterday| this week| the week| last week| last 7 days)*$/))){
-    const q = m[1].replace(/^(the|my)\s+/,''); const cat = Object.keys(CATS).find(c=>c.toLowerCase().split(/ & /).some(w=>q.includes(w.replace(/s$/,'')))) || categorize(q);
+  if ((m = t.match(/(?:how much|what) (?:did|have|do) i (?:spend|spent)(?: so far)? (?:on|for|at) (.+?)(?: this month| so far| in total| lately| today| yesterday| this week| the week| last week| last 7 days| last month| this year| in [a-z]+)*$/))){
+    const q = m[1].replace(/^(the|my)\s+/,''), past = per && per.to;
+    // a category's own name ("food", "transport", "bills") beats a thing bought ("coffee", "lunch", "gas")
+    const catNamed = /^(food|foods|food and drinks?|food & drinks?|drinks?|eating out|dining( out)?|restaurants?|takeaway|groceries|grocery|supermarket|transport|transportation|travel|commute|bills?|utilities|subscriptions?|shopping|clothes|clothing|health|medical|healthcare|fun|entertainment|leisure|going out|other|misc|miscellaneous)$/.test(q) ? ((Jarvis.brain && Jarvis.brain.catOf && Jarvis.brain.catOf(q)) || Object.keys(CATS).find(c=>c.toLowerCase().split(/ & /).some(w=>q.includes(w.replace(/s$/,''))))) : null;
+    // a thing he buys ("coffee", "gas", "rent"), not a category: add up those payments
+    const qs = q.replace(/(?:es|s)$/,''), isItem = !catNamed && q.length > 2 && db.expenses.some(e=>e.type==='expense' && (e.desc||'').toLowerCase().includes(qs));
+    if (isItem){
+      go('budget'); const list = spentIn.filter(e=>(e.desc||'').toLowerCase().includes(qs)); const v = sum(list);
+      // and the whole category it sits in, when that is bigger ("coffee" -> food and drink)
+      const ic = list[0] && list[0].cat, cv = ic && ic !== 'Other' ? sum(spentIn.filter(e=>e.cat===ic)) : 0;
+      return (v ? `You${past?'':"'ve"} spent ${fmt(v)} on ${q} ${perWord}, across ${list.length} payment${list.length===1?'':'s'}.` : `Nothing spent on ${q} ${perWord}${past?'':' yet'}.`) + (cv > v ? ` ${cap(ic.toLowerCase().replace(' & ', ' and '))} overall: ${fmt(cv)}.` : '');
+    }
+    const cat = catNamed || (Jarvis.brain && Jarvis.brain.catOf && Jarvis.brain.catOf(q)) || Object.keys(CATS).find(c=>c.toLowerCase().split(/ & /).some(w=>q.includes(w.replace(/s$/,'')))) || categorize(q);
     if (cat !== 'Other'){
       go('budget'); const list = spentIn.filter(e=>e.cat===cat); const v = sum(list);
-      return v ? `You've spent ${fmt(v)} on ${cat.toLowerCase()} ${perWord}, across ${list.length} payment${list.length===1?'':'s'}.` : `Nothing spent on ${cat.toLowerCase()} ${perWord} yet.`;
+      return v ? `You${past?'':"'ve"} spent ${fmt(v)} on ${cat.toLowerCase()} ${perWord}, across ${list.length} payment${list.length===1?'':'s'}.` : `Nothing spent on ${cat.toLowerCase()} ${perWord}${past?'':' yet'}.`;
     }
   }
   // "am I over budget?", "how much do I have left?"
@@ -998,38 +1051,51 @@ function think(said, depth){
     const tot = sum(spentIn); if (!tot) return `No spending recorded ${perWord}${per && per.to ? '' : ' yet'}.`;
     const byCat = {}; spentIn.forEach(e=>byCat[e.cat]=(byCat[e.cat]||0)+e.amount);
     const top = Object.entries(byCat).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([c,v])=>`${c} ${fmt(v)}`).join(', ');
-    let s = `${cap(perWord)} you've spent ${fmt(tot)}. Top categories: ${top}.`;
-    if (S.budget){ const mt = sum(inMonth(key)); s += mt > S.budget ? ` That's ${fmt(mt-S.budget)} over your monthly budget.` : ` You have ${fmt(S.budget-mt)} left in your budget this month.`; }
+    const past = per && per.to;
+    let s = `${cap(perWord)} you${past?'':"'ve"} spent ${fmt(tot)}. Top categories: ${top}.`;
+    if (past && per.label === 'last month' && S.budget) s += tot > S.budget ? ` That was ${fmt(tot-S.budget)} over your ${fmt(S.budget)} budget.` : ` That was ${fmt(S.budget-tot)} under your ${fmt(S.budget)} budget.`;
+    else if (S.budget && !past && per?.label !== 'this year'){ const mt = sum(inMonth(key)); s += mt > S.budget ? ` That's ${fmt(mt-S.budget)} over your monthly budget.` : ` You have ${fmt(S.budget-mt)} left in your budget this month.`; }
     return s;
   }
-  if (/(what('s| is) my balance|how much (did i|have i) (earn|made|make)|my income)/.test(t)){
-    const inc = sum(inMonth(key,'income')), exp = sum(inMonth(key)); go('budget');
+  if (/(what('s| is) my balance|(how much|what) (money )?(did i|have i) (earn|earned|made|make|get paid|got paid|receive|received)\b(?! (?:from|for|on|at) [a-z])|my income|how much (money )?(came|has come) in)/.test(t)){
+    go('budget');
+    if (per){ const inn = db.expenses.filter(e=>e.type==='income' && e.at>=per.from && (!per.to || e.at<per.to)), inc = sum(inn), exp = sum(spentIn), past = !!per.to;
+      if (!inc) return `No income recorded ${perWord}${past?'':' yet'}. You${past?'':"'ve"} spent ${fmt(exp)}.`;
+      return `${cap(perWord)} you ${past?'earned':"'ve earned"} ${fmt(inc)} and ${past?'spent':'spent'} ${fmt(exp)}, so you ${past?'kept':'are up'} ${fmt(inc-exp)}.`.replace("you 've", "you've").replace(/are up -/, 'are down ').replace(/kept -/, 'were short ');
+    }
+    const inc = sum(inMonth(key,'income')), exp = sum(inMonth(key));
     return `This month: ${fmt(inc)} in, ${fmt(exp)} out. Balance ${fmt(inc-exp)}.`;
   }
   // read back
   if (/(read|what are|show|list|open).*(note)|^(my )?notes$|^(what's|what is) in my notes$|^what (notes )?do i have( in my notes)?$/.test(t)){ go('notes'); const n = db.notes.slice(0,5); return n.length ? 'Your latest notes: ' + n.map(x=>x.text).join('. ') : 'You have no notes yet.'; }
   if (/(read|what are|show|list|open|any|what('s| is)|what|do i have).*\b(reminders?|schedule|agenda)\b|^what (do i have|have i got|is) (coming up|next|planned)\b|^(do i have|have i got|is there|are there|anything|what('s| is)|any)\b.*\b(coming up|upcoming|due soon|scheduled)\b|^what('s| is) (coming up|next)( on my list| for me)?$|^(my )?reminders$/.test(t)){
-    go('reminders'); const r = upcoming().slice(0,5);
-    return r.length ? 'Coming up: ' + r.map(x=>`${x.text}, ${whenText(x.at)}`).join('. ') : 'You have no upcoming reminders.';
+    go('reminders');
+    // "what reminders do I have tomorrow": that day only, repeating ones included
+    const dw = t.match(/\b(today|tonight|tomorrow)\b/);
+    if (dw){ const d0 = new Date(); d0.setHours(0,0,0,0); if (dw[1]==='tomorrow') d0.setDate(d0.getDate()+1); const from = Math.max(+d0, dw[1]==='tomorrow' ? 0 : Date.now()-6e4), d1 = new Date(d0); d1.setDate(d1.getDate()+1);
+      const on = remindersOn(from, +d1); const lbl = dw[1]==='tomorrow' ? 'tomorrow' : 'today';
+      return on.length ? `Reminders ${lbl}: ` + andList(on.slice(0,5).map(x=>`${youify(lowerFirst(x.text))} at ${clock(x.at)}`)) + (on.length > 5 ? `, plus ${on.length-5} more` : '') + '.' : `No reminders ${lbl === 'today' ? 'left for today' : 'for tomorrow'}.`; }
+    const r = remindersOn(Date.now()-6e4, Date.now()+400*864e5).slice(0,5);
+    return r.length ? 'Coming up: ' + andList(r.map(x=>`${youify(lowerFirst(x.text))} ${whenSpoken(x.at)}`)) + '.' : 'You have no upcoming reminders.';
   }
   if (/(open|show|go to) (the )?(budget|money|expenses)/.test(t)){ go('budget'); return 'Here is your budget.'; }
   if (/(open|show|go to) (the )?settings/.test(t)){ go('settings'); return 'Opening settings.'; }
-  if (/(dark|light) (mode|theme)/.test(t)){ S.theme = /dark/.test(t)?'dark':'light'; save(); applyTheme(); return `Switched to ${S.theme} mode.`; }
+  if (/(dark|light) (mode|theme)/.test(t)){ S.theme = /dark/.test(t)?'dark':'light'; save(); applyTheme(); try { syncSettings(); } catch(e){} return `Switched to ${S.theme} mode.`; }
   // undo
   if (/(delete|remove|undo|cancel|scratch) (the |my )?last (note)/.test(t)){ const x = db.notes.sort((a,b)=>b.at-a.at).shift(); save(); return x?'Deleted your last note.':'No notes to delete.'; }
-  if ((m = t.match(/(delete|remove|undo|cancel|scratch) (the |my )?last (expense|payment|transaction|income)/))){ const want = m[3]==='income'?'income':m[3]==='transaction'?null:'expense'; const list = db.expenses.filter(e=>!want||e.type===want).sort((a,b)=>b.at-a.at); const x = list[0]; if (x){ db.expenses = db.expenses.filter(e=>e!==x); expenseEvent('removed', x); go('budget'); } save(); return x?`Removed ${fmt(x.amount)} for ${x.desc}.`:'Nothing to remove.'; }
+  if ((m = t.match(/(delete|remove|undo|cancel|scratch) (the |my )?last (expense|payment|transaction|income)/))){ const want = m[3]==='income'?'income':m[3]==='transaction'?null:'expense'; const list = db.expenses.filter(e=>!want||e.type===want).sort((a,b)=>b.at-a.at); const x = list[0]; if (x){ db.expenses = db.expenses.filter(e=>e!==x); expenseEvent('removed', x); go('budget'); } save(); return x?`Removed ${fmt(x.amount)} for ${lowerFirst(x.desc)}.`:'Nothing to remove.'; }
   if (/(delete|remove|undo|cancel|scratch) (the |my )?last (reminder)/.test(t)){ db.reminders.sort((a,b)=>b.created-a.created); const x = db.reminders.shift(); save(); return x?'Removed your last reminder.':'No reminders to remove.'; }
 
   // reminders
   if (!depth && (m = t.match(/^remind me (?:how much|what) (?:money )?i (?:have )?(spent|made|earned|spend)\b(.*)$/))){ const v = m[1]==='spend'?'spent':m[1]; const r = think(m[2].trim() ? `how much did i ${v==='spent'?'spend':v==='made'?'make':'earn'}${m[2]}` : `how much have i ${v}`, 1) || brainHook('late', `how much did i ${v==='spent'?'spend':'make'}${m[2]}`, `how much did i ${v==='spent'?'spend':'make'}${m[2]}`); if (r) return r; }
   if (!depth && (m = t.match(/^remind me (what|when|where|how much|how many) (my |the |i )(.+?) (is|are|was|were|do|did|have|spent|had)$/)) && !/\b(we|talked|said|asked|told)\b/.test(t)){ const q = m[4] === 'spent' || m[4] === 'had' || m[4] === 'do' || m[4] === 'did' || m[4] === 'have' ? `${m[1]} ${m[4] === 'spent' || m[4] === 'had' ? 'have' : m[4]} ${m[2]}${m[3]} ${m[4] === 'spent' ? 'spent' : m[4] === 'had' ? 'had' : ''}`.trim() : `${m[1]} ${m[4]} ${m[2]}${m[3]}`; const r = think(q, 1) || brainHook('late', q, q); if (r) return r; }
   if (/^remind me (what|who|where|which|how|why|if|whether)\b/.test(t)) { turnKind = 'chat'; const rc = /^remind me what (we talked about|i (asked|said)( you)?)( before| earlier| today)?$/.test(t) && brainHook('recap'); return rc || `I only remember what we said since you opened Jarvis. To keep something for good, say note, then what you want saved.`; }
-  if ((m = said.match(/^(?:hey jarvis,?\s*)?(?:please\s+)?(?:can you\s+)?(?:remind me|set (?:a )?reminder|reminder|don'?t let me forget)\s*(?:to|that|about|for)?\s*(.*)$/i))){
+  if ((m = said.match(/^(?:hey jarvis,?\s*)?(?:please\s+)?(?:can you\s+)?(?:remind me|set (?:a )?reminder|reminder|don'?t let me forget)\s*(?:(?:to|that|about|for)\b)?\s*(.*)$/i))){
     const {date, rest, repeat} = parseTime(wordsToNumbers(m[1]));
     const text = cap(rest || 'Reminder');
     const when = date || new Date(Date.now()+36e5);
     const newRem = {id:uid(), text, at:when.getTime(), done:false, repeat, created:Date.now()}; db.reminders.push(newRem); save(); go('reminders'); reminderAdded(newRem);
-    return `I'll remind you to ${text.charAt(0).toLowerCase()+text.slice(1)}, ${whenSpoken(when.getTime())}${repeat!=='none'?', repeating '+repeat:''}.` + (date?'':' You did not say a time, so I set it for an hour from now.');
+    return `I'll remind you to ${youify(lowerFirst(text))} ${whenSpoken(when.getTime())}${repeat==='daily'?', every day':repeat==='weekly'?', every week':repeat==='monthly'?', every month':''}.` + (date?'':' You did not say a time, so I set it for an hour from now.');
   }
   // explicit notes
   if (/^(take a note|take note|make a note|new note|add a note|save a note|create a note|write a note|note|write (this |something )?down|jot (this |something )?down|jot down|note down)$/.test(t)){ pendingNote = Date.now(); turnKind = 'chat'; return 'Sure. What should the note say?'; }
@@ -1039,10 +1105,14 @@ function think(said, depth){
     if (text.trim()){ addNote(text.trim()); go('notes'); turnKind = 'note'; return 'Got it, note saved.'; }
   }
   // income ("I received 3 emails" or "I made 2 mistakes" is not money: a count of things follows the number)
-  if (/\b(got paid|received|earned|i made|income|salary|got my salary)\b/.test(t) && !/\b(spent|spend|bought|paid for|pay for)\b/.test(t) && (m = t.match(/\$?(\d+(?:\.\d{1,2})?)\s*(?:dollars?|bucks|usd|euros?|pounds?)?\s*(?:from|for|as|in)?\s*(.*)$/)) && !COUNTED.test(t.slice(t.indexOf(m[1]) + m[1].length).trim())
-      && (/\b(got paid|earned|income|salary|got my salary)\b/.test(t) || /^(?:$|(?:dollars?|bucks|usd|euros?|pounds?|lira|k|grand|from|for|as|in|on|at|this|today|yesterday|last|salary|bonus|cash|net|gross|commission|profit|extra|back|tips?)\b|\$)/.test(t.slice(t.indexOf(m[1]) + m[1].length).trim()) || /\$\d|\d\s*(?:dollars?|bucks|usd)\b/.test(t))){
-    const amount = parseFloat(m[1]); const desc = cap(m[2] || (/salary/.test(t)?'Salary':'Income'));
-    db.expenses.unshift({id:uid(), type:'income', amount, desc, cat:'Income', at:Date.now()}); save(); go('budget');
+  // "a client paid me 300", "got 250 from consulting", "Rami sent me 50 dollars" are income too
+  const payer = t.match(/^(?:so |and )?(?:my |a |the |our )?([a-z][a-z ]{1,24}?) (?:paid|sent|transferred|gave|wired) me\b/), gotFrom = /^(?:i )?(?:just )?got \$?\d+(?:\.\d{1,2})?\s*(?:dollars?|bucks|usd)?(?:\s*(?:and\s+)?\d{1,2}\s*cents?)?\s+(?:from|for)\b/.test(t);
+  if ((/\b(got paid|received|earned|i made|income|salary|got my salary)\b/.test(t) || payer || gotFrom) && !/\b(spent|spend|bought|paid for|pay for)\b/.test(t) && (m = t.match(/\$?(\d+(?:\.\d{1,2})?)\s*(?:dollars?|bucks|usd|euros?|pounds?)?(?:\s*(?:and\s+)?(\d{1,2})\s*cents?)?\s*(?:from|for|as|in)?\s*(.*)$/)) && !COUNTED.test(t.slice(t.indexOf(m[1]) + m[1].length).trim())
+      && (/\b(got paid|earned|income|salary|got my salary)\b/.test(t) || payer || gotFrom || /^(?:$|(?:dollars?|bucks|usd|euros?|pounds?|lira|k|grand|from|for|as|in|on|at|this|today|yesterday|last|salary|bonus|cash|net|gross|commission|profit|extra|back|tips?)\b|\$)/.test(t.slice(t.indexOf(m[1]) + m[1].length).trim()) || /\$\d|\d\s*(?:dollars?|bucks|usd)\b/.test(t))){
+    const amount = parseFloat(m[1]) + (m[2] ? parseInt(m[2])/100 : 0);
+    const what = (m[3]||'').replace(/^(?:the|a|an|my)\s+/,'').replace(/\s*\b(?:today|yesterday|this (?:morning|afternoon|evening)|tonight|just now|earlier)$/,'').trim();
+    const desc = cap(what || (payer && !/^(?:he|she|they|someone|somebody)$/.test(payer[1]) ? payer[1] : '') || (/salary/.test(t)?'Salary':'Income'));
+    db.expenses.unshift({id:uid(), type:'income', amount, desc, cat:'Income', at:/\byesterday\b/.test(t) ? Date.now()-864e5 : Date.now()}); save(); go('budget');
     return `Nice! Added ${fmt(amount)} income. You've earned ${fmt(sum(inMonth(key,'income')))} this month.`;
   }
   // expenses
@@ -1059,12 +1129,13 @@ function think(said, depth){
   }
   if (m){
     const amount = parseFloat(m[1]) + (m[2]?parseInt(m[2])/100:0);
-    let desc = (m[3]||'').replace(/^(the|some|a|an|my)\s+/,'').trim();
+    let desc = (m[3]||'').replace(/^(the|some|a|an|my)\s+/,'').replace(/\s*\b(?:today|yesterday|this (?:morning|afternoon|evening)|tonight|just now|earlier|right now)$/,'').trim();
     if (!desc){ const b = t.match(/bought (.*?) for/) || t.match(/^(?:i )?(?:the |my |a |an |our )?([a-z][a-z' ]{1,30}?) (?:cost|costs|cost me|came to|charged me|set me back)\b/); desc = b?b[1].replace(/^(a|an|the|some)\s+/,''):'Something'; }
     const cat = categorize(desc);
-    db.expenses.unshift({id:uid(), type:'expense', amount, desc:cap(desc), cat, at:Date.now()}); save(); go('budget');
+    const yday = /\byesterday\b/.test(t);
+    db.expenses.unshift({id:uid(), type:'expense', amount, desc:cap(desc), cat, at:yday ? Date.now()-864e5 : Date.now()}); save(); go('budget');
     const tot = sum(inMonth(key));
-    let s = `Logged ${fmt(amount)} for ${desc}, under ${cat}. Month total: ${fmt(tot)}.`;
+    let s = `Logged ${fmt(amount)} for ${desc}${yday?' yesterday':''}, under ${cat}. Month total: ${fmt(tot)}.`;
     if (S.budget && tot > S.budget) s += ` Heads up, you're over budget.`;
     else if (S.budget && tot > S.budget*.8) s += ` You've used ${Math.round(tot/S.budget*100)}% of your budget.`;
     return s;
@@ -1091,6 +1162,10 @@ function spendPeriod(t){
   if (/\byesterday\b/.test(t)){ const y = new Date(d0); y.setDate(y.getDate()-1); return {from:+y, to:+d0, label:'yesterday'}; }
   if (/\blast week\b/.test(t)){ const w = new Date(d0); w.setDate(w.getDate()-((w.getDay()+6)%7)); const p0 = new Date(w); p0.setDate(p0.getDate()-7); return {from:+p0, to:+w, label:'last week'}; }
   if (/\b(this|the) week\b|\blast 7 days\b/.test(t)){ const w = new Date(d0); w.setDate(w.getDate()-((w.getDay()+6)%7)); return {from:+w, label:'this week'}; }
+  if (/\b(last|previous|past) month\b/.test(t)){ const a = new Date(d0.getFullYear(), d0.getMonth()-1, 1), b = new Date(d0.getFullYear(), d0.getMonth(), 1); return {from:+a, to:+b, label:'last month'}; }
+  if (/\bthis year\b|\bso far this year\b/.test(t)) return {from:+new Date(d0.getFullYear(), 0, 1), label:'this year'};
+  const mn = t.match(/\b(?:in|for|during) (january|february|march|april|may|june|july|august|september|october|november|december)\b/);
+  if (mn){ const i = ['january','february','march','april','may','june','july','august','september','october','november','december'].indexOf(mn[1]); let y = d0.getFullYear(); if (i > d0.getMonth()) y--; if (i === d0.getMonth() && y === d0.getFullYear()) return null; return {from:+new Date(y, i, 1), to:+new Date(y, i+1, 1), label:'in ' + cap(mn[1])}; }
   return null;
 }
 function saveThat(){
@@ -1106,10 +1181,18 @@ function smallTalk(t, said){
   const chat = r => { turnKind = 'chat'; return r; };
   // "save that" / "note that" / "write that down": you asked, so it's saved
   if (/^(save|keep|store) (that|this|it)( as a note| to my notes| in my notes| for me| for later)?$|^(add|put) (that|this|it) (to|in|into) (my )?notes$|^(note|write|jot) (that|this|it)( down)?$|^(note|write|jot) down (that|this)$|^remember (that|this)$|^make (that|this|it) a note$|^save (that|this|it) as a note$/.test(t)) return saveThat();
+  { const cf = brainHook('confirm', t); if (cf) return cf; }   // "Should I log $18 for lunch?" "Yes." / "Sure." / "Yalla." (before the chit-chat below)
   if (/^(can you |do you |you )?hear me( now| okay| ok| alright)?$|^(are )?you (there|listening|awake|on|with me)( now)?$|^(is )?(this|it|this thing|the mic|the microphone) (working|on)( now)?$|^(test|testing|mic check)( test| testing| 1| 2| 3| 1 2 3| 123)*$|^hello hello$|^(hello )+(are you there|anyone there)$/.test(t)) return chat(`Yes, I can hear you loud and clear, ${N}. What can I do for you?`);
   if (/^(help|help me|what can you do|what else can you do|what are you able to do|what do you do|what are your (features|skills|options)|how do (i|you) use (you|this|this app|jarvis)|how does this (work|app work)|what can i (ask|say|tell)( you| jarvis)?|what should i (ask|say)( you)?|show me what you can do|options|commands|features)$/.test(t)) return chat(HELP_TEXT);
   if (/^(right now |so )?(what('s| is) the time|what time is it|what time it is|time|the time|tell me the time|current time|got the time|do you have the time|have you got the time)( now| right now| please)?$/.test(t)) return chat(`It's ${now.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})}.`);
   if (/^(what('s| is) (the |today's )?date|today's date|the date|date|what day is (it|today)|what('s| is) (the )?day( today)?|which day is (it|today)|what('s| is) today|what month is it|what year is it|what('s| is) the month|what day of the week is it|what('s| is) the day of the week)( today| now)?$/.test(t)) return chat(`Today is ${now.toLocaleDateString([], {weekday:'long', month:'long', day:'numeric', year:'numeric'})}.`);
+  // "call me Billy", "my name is Bilal", "change my name to Bilal"
+  { const nm = String(said||'').replace(/[.!?]+$/,'').match(/^(?:please )?(?:call me|you can call me|my name is|my name's|change my name to|set my name to|my name should be)\s+([A-Za-z\u00C0-\u024F][A-Za-z\u00C0-\u024F' -]{0,28})$/i);
+    if (nm && !/^(back|later|tomorrow|tonight|when|if|at|in|on|a |an |the )/i.test(nm[1]) && nm[1].split(' ').length <= 3){ S.name = nm[1].trim().replace(/\b[a-z]/g, c=>c.toUpperCase()); save(); renderAll(); try { syncSettings(); } catch(e){} return chat(`Okay, I'll call you ${S.name}.`); } }
+  // "change the currency to lira", "use euros", "set my currency to dollars"
+  { const cm = t.match(/^(?:change|set|switch|make)(?: my| the)? (?:currency|money) (?:to|as|in) (.+)$|^(?:use|show (?:money|amounts|prices) in|switch to) (dollars?|us dollars|usd|euros?|eur|pounds?|sterling|gbp|lira|lebanese lira|lebanese pounds?|lbp|dirhams?|aed|riyals?|sar)$/);
+    if (cm){ const w = (cm[1] || cm[2]).trim(); const c = /^(?:\$|dollars?|us dollars?|usd)$/.test(w) ? '$' : /^(?:euros?|eur|€)$/.test(w) ? '€' : /^(?:pounds?|sterling|gbp|british pounds?|£)$/.test(w) ? '£' : /^(?:lira|lebanese lira|lebanese pounds?|lbp|l£)$/.test(w) ? 'L£' : /^(?:dirhams?|aed|uae dirhams?)$/.test(w) ? 'AED' : /^(?:riyals?|sar|saudi riyals?)$/.test(w) ? 'SAR' : null;
+      if (c){ S.currency = c; save(); renderAll(); try { syncSettings(); } catch(e){} return chat(`Done. I'll show money in ${({'$':'dollars','€':'euros','£':'pounds','L£':'Lebanese pounds','AED':'dirhams','SAR':'riyals'})[c]}. Amounts you already logged keep their numbers.`); } } }
   if (/^what did i (just )?say$/.test(t)) return chat(lastTurn ? `You said: ${lastTurn.said}.` : "You haven't said anything yet.");
   if (/^(do you )?(know|remember) (my name|who i am)$|^what('s| is) my name$|^who am i$/.test(t)) return chat(`You're ${N}.`);
   if (/^(what (did|have) (we|i) (talk|talked|speak|spoke|chat|chatted) about|what (did|have) i (ask|asked)( you)?( before| earlier| today| so far)?)$/.test(t)){ const rc = brainHook('recap'); if (rc) return chat(rc); }
@@ -1125,7 +1208,6 @@ function smallTalk(t, said){
   if (/^(yalla|yallah|yalla let's go|yalla let us go|let's go|let us go|yalla bye|yalla bye bye)$/.test(t)) return chat(/bye/.test(t) ? `Yalla, talk soon ${N}.` : `Yalla! What do you need, ${N}?`);
   if (/^(thanks|thank you|thank you so much|thanks a lot|thanks so much|thx|cheers|much appreciated|appreciate it|(awesome|great|perfect|ok|okay|cool|nice) (thanks|thank you)|thanks (jarvis|man|buddy|bro)|that's great thanks)$/.test(t)) return chat(pick([`Anytime, ${N}.`, `You're welcome, ${N}.`, `Happy to help.`]));
   if (/^(ok|okay|cool|nice|great|awesome|perfect|got it|alright|all right|sure|good|wow|fine|sounds good|sounds great|okay cool|ok cool|i see|makes sense|interesting|lovely|amazing)$/.test(t)) return chat(`Anything else, ${N}?`);
-  { const cf = brainHook('confirm', t); if (cf) return cf; }   // "Should I log $18 for lunch?" "Yes."
   if (/^(yes|yeah|yep|yup|yes please|please|sure thing|of course|definitely)$/.test(t)) return chat(`Great. What would you like me to do?`);
   if (/^(no|nope|nah|no thanks|no thank you|nothing|nothing else|never ?mind( that| it)?|forget it|forget about it|stop|cancel|that's it|that's all|thats all|that's all for now|i'm good|im good|i'm fine|all good|that's fine|khalas|khalas khalas|bas|bas khalas|that's enough|enough|shut up|be quiet|quiet|stop talking|ok stop|okay stop)$/.test(t)) return chat(/^(stop|cancel|khalas( khalas)?|bas( khalas)?|that's enough|enough|shut up|be quiet|quiet|stop talking|ok stop|okay stop)$/.test(t) ? 'Okay, stopped.' : pick(['No problem.', `Okay, I'm here if you need me.`]));
   if (/^(wait|hold on|(one|1) sec(ond)?|hang on|give me a (sec|second|minute)|just a (sec|second|minute))$/.test(t)) return chat('Sure, take your time.');
@@ -1175,6 +1257,14 @@ function fallbackReply(t){
 }
 function cap(s){ s = String(s).trim(); return s.charAt(0).toUpperCase()+s.slice(1); }
 function addNote(text){ db.notes.unshift({id:uid(), text:cap(text), tag:guessTag(text), pinned:false, at:Date.now()}); save(); }
+/* reminders between two times, with daily/weekly/monthly ones moved to their next time (a repeat that was missed while Jarvis was closed still counts) */
+function nextAt(r, from){ let at = +r.at; if (!isFinite(at)) return NaN; let g = 0;
+  while (at < from && g++ < 800){ if (r.repeat === 'daily') at += 864e5; else if (r.repeat === 'weekly') at += 7*864e5; else if (r.repeat === 'monthly'){ const d = new Date(at); d.setMonth(d.getMonth()+1); at = +d; } else break; }
+  return at; }
+function remindersOn(from, to){ return db.reminders.filter(r=>!r.done).map(r=>({text:r.text, at:nextAt(r, from), r})).filter(x=>x.at >= from && x.at < to).sort((a,b)=>a.at-b.at); }
+const andList = a => a.length <= 1 ? a.join('') : a.slice(0,-1).join(', ') + ' and ' + a[a.length-1];
+const lowerFirst = s => /^[A-Z][a-z]/.test(s||'') ? s.charAt(0).toLowerCase() + s.slice(1) : String(s||'');
+const clock = ts => new Date(ts).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}).replace(':00', '');
 function upcoming(){ return db.reminders.filter(r=>!r.done && r.at>=Date.now()-6e4).sort((a,b)=>a.at-b.at); }
 function overdue(){ return db.reminders.filter(r=>!r.done && r.at<Date.now()-6e4).sort((a,b)=>b.at-a.at); }
 function greeting(){ const h = new Date().getHours(); return h<5?'Good evening':h<12?'Good morning':h<18?'Good afternoon':'Good evening'; }
@@ -1412,12 +1502,14 @@ function renderHome(){
   const first = String(S.name||'').trim().split(/\s+/)[0];
   $('greet').textContent = first && first.toLowerCase()!=='there' ? `${greeting()}, ${first}` : greeting();
   const canTalk = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+  $('heroFood').hidden = !plugins.views.some(v=>v.id==='food');
   $('heroHint').classList.toggle('reply', !!lastReply);
   $('heroHint').innerHTML = lastReply ? '“'+esc(lastReply)+'”' : canTalk ? 'Tap and talk' : 'Voice needs <b>Safari</b> or <b>Chrome</b>. Tap to type.';
   $('heroHint').setAttribute('aria-label', lastReply ? 'Open the conversation' : 'Talk to Jarvis');
   // morning brief pill
-  const B = $('heroBrief'), hasBrief = !!(Jarvis.brief && typeof Jarvis.brief.play==='function');
-  B.hidden = !hasBrief;
+  const B = $('heroBrief'), hasBrief = !!(Jarvis.brief && typeof Jarvis.brief.play==='function'), setup = needsSetup();
+  $('heroSetup').hidden = !setup;
+  B.hidden = !hasBrief || setup;
   if (hasBrief){ const h = new Date().getHours(), on = !!Jarvis.brief.playing, ready = !on && !!Jarvis.brief.ready;
     $('heroBriefTxt').textContent = on ? 'Playing your brief' : ready ? 'Your morning brief is ready' : h>=4 && h<12 ? 'Play my morning brief' : 'Play my daily brief';
     $('heroBriefSub').textContent = on ? 'Tap to stop' : ready ? 'Tap to listen · weather, plans, money' : 'Weather, plans and money, read aloud';
@@ -1508,7 +1600,7 @@ let current = 'home';
 let navStack = [{v:'home', tab:true}], navDir = 'tab';
 const VIEW_TITLES = {home:'Home', today:'Today', budget:'Money', apps:'More', notes:'Notes', reminders:'Reminders', settings:'Settings'};
 function viewTitle(v){ if (VIEW_TITLES[v]) return VIEW_TITLES[v]; const p = plugins.views.find(x=>x.id===v); return p ? (p.title || p.label || 'Back') : 'Back'; }
-function haptic(ms){ try { navigator.vibrate && navigator.vibrate(ms||8); } catch(e){} }
+function haptic(ms){ try { const ua = navigator.userActivation; if (navigator.vibrate && (!ua || ua.hasBeenActive)) navigator.vibrate(ms||8); } catch(e){} }
 function go(name, opts){
   if (!name) return; opts = opts || {};
   const changed = current !== name;
@@ -1542,7 +1634,11 @@ function updateBar(){
   $('jvBack').hidden = !show;
   if (show){ $('jvBackTxt').textContent = viewTitle(prev.v); $('jvBack').setAttribute('aria-label', 'Back to '+viewTitle(prev.v)); }
   $('jvTitle').textContent = current==='home' ? '' : viewTitle(current);
+  // the screen's main "add" action, always one tap away at the top right (like iPhone apps)
+  const add = BAR_ADD[current], r = $('jvBarR');
+  if ((r.dataset.v||'') !== (add ? current : '')){ r.dataset.v = add ? current : ''; r.innerHTML = add ? `<button class="jv-bar-add" id="jvAdd" aria-label="${add[0]}">${IC.plus}</button>` : ''; if (add) $('jvAdd').onclick = ()=>{ haptic(); BAR_ADD[current] && BAR_ADD[current][1](); }; }
 }
+const BAR_ADD = {budget:['Add a transaction', ()=>openExpModal()], notes:['New note', ()=>openNoteModal()], reminders:['New reminder', ()=>openRemModal()], calendar:['New reminder or alarm', ()=>openRemModal()]};
 function goBack(){
   if (navStack.length <= 1) return false;
   navStack.pop(); go(navStack[navStack.length-1].v, {fromBack:true}); return true;
@@ -1679,19 +1775,21 @@ function openExpModal(e){
   if (e && e.target) e = null;   // called from a click handler
   const isNew = !e; let type = e ? e.type : 'expense', cat = e && e.cat!=='Income' ? e.cat : 'Other', catSet = !isNew && e.type!=='income';
   const cur = S.currency, pre = cur.length>1 ? '' : cur, post = cur.length>1 ? cur : '';
+  const when0 = toLocalInput(e ? e.at : Date.now());
   const box = formSheet({title: isNew ? 'New transaction' : 'Edit transaction', save: isNew ? 'Add' : 'Save',
     body: `${seg('fsType', [['expense','Expense'],['income','Income']], type, 'fs-seg')}
       <div class="fs-amt ${type==='income'?'in':''}" id="fsAmtW"><span>${esc(pre)}</span><input id="fsAmt" type="text" inputmode="decimal" placeholder="0" autocomplete="off" aria-label="Amount" value="${e ? esc(e.amount.toLocaleString('en-US', {maximumFractionDigits:2})) : ''}"><span>${esc(post)}</span></div>
       <p class="fs-sub" id="fsAmtSub">${isNew ? 'Type the amount' : 'Tap the amount to change it'}</p>
       <div class="fs-group"><div class="fs-field"><label for="fsDesc">Description</label><input id="fsDesc" type="text" placeholder="${type==='income'?'Salary, freelance…':'Lunch, groceries…'}" autocomplete="off" autocapitalize="sentences" value="${e ? esc(e.desc) : ''}"></div>
-        <div class="fs-field"><label for="fsWhen">Date</label><input id="fsWhen" type="datetime-local" value="${toLocalInput(e ? e.at : Date.now())}"></div></div>
+        <div class="fs-field"><label for="fsWhen">Date</label><input id="fsWhen" type="datetime-local" value="${when0}"></div></div>
       <div id="fsCatW" ${type==='income'?'hidden':''}><div class="fs-lbl">Category</div><div class="fs-cats" id="fsCats">${Object.keys(CATS).map(c=>`<button type="button" class="fs-cat ${c===cat?'on':''}" data-cat="${esc(c)}" style="--c:${CATS[c].c}">${catIco(c,'expense')}<span>${c==='Food & drink'?'Food':esc(c)}</span></button>`).join('')}</div></div>
-      ${isNew ? '' : `<div class="fs-group fs-acts"><button type="button" class="fs-act danger" id="fsDel">${IC.trash}Delete transaction</button></div>`}`,
+      ${isNew ? (plugins.views.some(v=>v.id==='receipts') ? `<div class="fs-group fs-acts"><button type="button" class="fs-act" id="fsScan">${IC.receipt}Scan a receipt instead</button></div>` : '') : `<div class="fs-group fs-acts"><button type="button" class="fs-act danger" id="fsDel">${IC.trash}Delete transaction</button></div>`}`,
     valid: ()=>parseAmount($('fsAmt').value) > 0,
     onSave: ()=>{
       const amount = parseAmount($('fsAmt').value); if (!(amount > 0)) return false;
       const desc = cap($('fsDesc').value.trim() || (type==='income' ? 'Income' : (e && e.type==='expense' ? e.desc : 'Expense')));
-      const at = fromLocalInput($('fsWhen').value) || (e ? e.at : Date.now());
+      // the date field only has minutes: keep the exact time unless he actually changed it (order of entries depends on it)
+      const at = $('fsWhen').value === when0 ? (e ? e.at : Date.now()) : (fromLocalInput($('fsWhen').value) || (e ? e.at : Date.now()));
       const next = {type, amount, desc, at, cat: type==='income' ? 'Income' : cat};
       if (isNew){ const x = Object.assign({id:uid()}, next); db.expenses.unshift(x); save(); renderAll(); toast(`${type==='income'?'Income':'Expense'} added`, ()=>{ db.expenses = db.expenses.filter(z=>z!==x); save(); renderAll(); }); if (monthKey(at)!==monthKey(viewMonth)) { viewMonth = new Date(at); viewMonth.setDate(1); renderBudget(); } return; }
       const before = {type:e.type, amount:e.amount, desc:e.desc, at:e.at, cat:e.cat};
@@ -1706,6 +1804,7 @@ function openExpModal(e){
   $('fsDesc').oninput = ()=>{ if (!catSet && type==='expense'){ const c = categorize($('fsDesc').value); if (c!=='Other' || cat==='Other'){ cat = c; box.querySelectorAll('.fs-cat').forEach(b=>b.classList.toggle('on', b.dataset.cat===cat)); } } };
   box.querySelectorAll('.fs-cat').forEach(b=>b.onclick = ()=>{ cat = b.dataset.cat; catSet = true; haptic(5); box.querySelectorAll('.fs-cat').forEach(x=>x.classList.toggle('on', x===b)); });
   if (!isNew) $('fsDel').onclick = ()=>{ closeModal(); const idx = db.expenses.indexOf(e); if (idx<0) return; db.expenses.splice(idx,1); expenseEvent('removed', e); save(); renderAll(); toast(`Deleted ${e.desc}`, ()=>{ db.expenses.splice(idx,0,e); expenseEvent('restored', e); save(); renderAll(); }); };
+  if (isNew && $('fsScan')) $('fsScan').onclick = ()=>{ closeModal(); go('receipts'); };
   if (isNew) setTimeout(()=>{ try { amt.focus(); } catch(x){} }, 80);
 }
 /* ---------- edit a reminder (or add one) ---------- */
@@ -1723,7 +1822,7 @@ function openRemModal(r){
       ${isNew ? '' : `<div class="fs-group fs-acts"><button type="button" class="fs-act" id="fsDone">${r.done ? IC.undo+'Mark as not done' : IC.done+'Mark as done'}</button><button type="button" class="fs-act danger" id="fsDel">${IC.trash}Delete reminder</button></div>`}`,
     valid: ()=>!!$('fsText').value.trim() && !!fromLocalInput($('fsWhen').value),
     onSave: ()=>{
-      const text = cap($('fsText').value.trim()), at = fromLocalInput($('fsWhen').value); if (!text || !at) return false;
+      const text = cap($('fsText').value.trim()), at = r && $('fsWhen').value === toLocalInput(r.at) ? r.at : fromLocalInput($('fsWhen').value); if (!text || !at) return false;
       if (isNew){ const nr = {id:uid(), text, at, done:false, repeat:rep, created:Date.now()}; db.reminders.push(nr); save(); reminderAdded(nr); renderAll(); askNotify(); toast('Reminder set · '+whenText(at)); return; }
       const before = {text:r.text, at:r.at, repeat:r.repeat, done:r.done, fired:r.fired};
       Object.assign(r, {text, at, repeat:rep}); if (at !== before.at){ r.fired = false; if (at > Date.now()) r.done = false; }
@@ -1768,6 +1867,29 @@ function openBudgetModal(){
   const a = $('mAmt'), size = ()=>{ a.style.width = Math.max(1, (a.value||a.placeholder).length) * .62 + .25 + 'em'; }; a.addEventListener('input', size); size();
   setTimeout(()=>{ try { a.focus(); a.select(); } catch(x){} }, 80);
 }
+/* ---------- first run: name, currency, city, iPhone (shown as a pill on Home until done or skipped) ---------- */
+function needsSetup(){ const n = String(S.name||'').trim(); return !S.setupDone && (!n || /^there$/i.test(n)); }
+const SETUP_CUR = [['$','$ Dollar'],['L£','L£ Lira'],['€','€ Euro'],['AED','AED']];
+function openSetup(){
+  let cur = S.currency;
+  const W = window.Jarvis && Jarvis.weather;
+  const cityHTML = ()=>{ const l = W && W.location; return l ? `<button type="button" data-su="loc">${IC.mapPin}${esc(l.name||'Your city')} · Change</button>` : `<button type="button" data-su="beirut">Beirut</button><button type="button" data-su="gps">${IC.mapPin}Use my location</button><button type="button" data-su="loc">Search a city</button>`; };
+  const commit = ()=>{ const n = $('suName').value.trim(); if (n){ S.name = cap(n); } S.currency = cur; save(); syncSettings(); renderAll(); };
+  const box = formSheet({title:'Welcome to Jarvis', save:'Done',
+    body:`<p class="fs-sub" style="margin-top:6px">A few quick things so Jarvis feels like yours. You can change them any time in Settings.</p>
+      <div class="fs-group"><div class="fs-field"><label for="suName">Your name</label><input id="suName" type="text" placeholder="First name" autocomplete="given-name" autocapitalize="words" value="${/^there$/i.test(S.name||'') ? '' : esc(S.name||'')}"></div></div>
+      <div class="fs-lbl">Currency</div>${seg('suCur', SETUP_CUR, cur, 'fs-seg')}
+      ${W ? `<div class="fs-lbl">Your city <span style="text-transform:none;letter-spacing:0;font-weight:500">· for the weather</span></div><div class="fs-chips" id="suCity">${cityHTML()}</div>` : ''}
+      <div class="fs-group fs-acts"><button type="button" class="fs-act" id="suPhone">${IC.phone}<span style="flex:1;padding:9px 0">Connect my iPhone<small class="jv-sub">Steps, sleep, calendar and alarms · about 5 min</small></span>${IC.chev}</button>
+        <button type="button" class="fs-act" id="suSkip" style="color:var(--muted)">${IC.close}Not now</button></div>`,
+    onSave: ()=>{ commit(); S.setupDone = true; save(); renderAll(); toast(String(S.name||'').trim() && !/^there$/i.test(S.name) ? `All set, ${String(S.name).split(/\s+/)[0]}` : 'All set'); }});
+  segVal(box, 'suCur', v=>{ cur = v; });
+  if ($('suCity')) $('suCity').onclick = ev=>{ const b = ev.target.closest('[data-su]'); if (!b) return; commit(); const a = b.dataset.su;
+    try { if (a==='beirut'){ W.useBeirut(); $('suCity').innerHTML = cityHTML(); haptic(5); } else if (a==='gps'){ closeModal(); W.useGPS(); } else { W.pick(); } } catch(e){ go('today'); } };
+  $('suPhone').onclick = ()=>{ commit(); S.setupDone = true; save(); closeModal(); try { if (Jarvis.health && Jarvis.health.openConnect) return Jarvis.health.openConnect(); } catch(e){} go('calendar'); };
+  $('suSkip').onclick = ()=>{ commit(); S.setupDone = true; save(); closeModal(); renderAll(); };
+}
+$('heroSetup').onclick = ()=>{ haptic(); openSetup(); };
 $('addNoteBtn').onclick = ()=>openNoteModal();
 $('addRemBtn').onclick = ()=>openRemModal();
 $('addExpBtn').onclick = ()=>openExpModal();
@@ -1776,6 +1898,7 @@ Object.assign(Jarvis, {
   editExpense: id=>{ const x = db.expenses.find(z=>z.id===id); if (x) openExpModal(x); return !!x; },
   editReminder: id=>{ const x = db.reminders.find(z=>z.id===id); if (x) openRemModal(x); return !!x; },
   editNote: id=>{ const x = db.notes.find(z=>z.id===id); if (x) openNoteModal(x); return !!x; },
+  setup: ()=>openSetup(),
   haptic
 });
 
@@ -1793,6 +1916,15 @@ const MENU = {
   settings: {g:3, ic:'gear', c:'#8e8e93', d:'Voice, name, currency, theme, backup'}
 };
 const MENU_GROUPS = ['Your day', 'Money', 'Health', 'Jarvis'];
+/* iPhone link status, right under the profile card: one tap to connect, or to see what came in */
+function iphoneRow(){
+  const H = window.Jarvis && Jarvis.health, C = window.Jarvis && Jarvis.calendar; if (!H && !C) return '';
+  const at = Math.max((H && H.syncedAt) || 0, (C && C.store && C.store.syncedAt) || 0);
+  const sub = at ? `Last sync ${ago(at)}` : 'Steps, sleep, calendar, alarms';
+  return `<div class="jv-group" style="margin-top:12px"><button class="jv-row" data-iphone="${at?'open':'connect'}">${ico('phone', '#0a84ff')}<span class="jv-rb"><span class="jv-rt">${at?'iPhone connected':'Connect your iPhone'}</span><span class="jv-rs">${esc(sub)}</span></span><span class="jv-rr">${at?'':'<span class="tag">5 min</span>'}${IC.chev.replace('<svg ', '<svg class="jv-chev" ')}</span></button></div>`;
+}
+document.addEventListener('click', e=>{ const b = e.target.closest('[data-iphone]'); if (!b) return; haptic();
+  try { if (b.dataset.iphone==='open' && Jarvis.health && Jarvis.health.syncedAt) return go('health'); if (Jarvis.health && Jarvis.health.openConnect) return Jarvis.health.openConnect(); } catch(x){} go('calendar'); });
 function renderMore(){
   const el = $('moreMenu'); if (!el) return;
   const views = [{id:'notes', label:'Notes'}, {id:'reminders', label:'Reminders'}, {id:'budget', label:'Budget'}, ...plugins.views.filter(v=>v.tile!==false), {id:'settings', label:'Settings'}];
@@ -1814,7 +1946,8 @@ function renderMore(){
   if (extra.length) groups.splice(3, 0, extra);
   const names = extra.length ? ['Your day', 'Money', 'Health', 'More', 'Jarvis'] : MENU_GROUPS;
   const first = /^there$/i.test(String(S.name||'').trim()) ? '' : String(S.name||'').trim(), init = (first[0]||'J').toUpperCase();
-  const html = `<button class="jv-me" data-go="settings"><span class="jv-av">${esc(init)}</span><span style="flex:1;min-width:0"><b>${esc(first||'You')}</b><small>${first ? 'Name, voice, theme and backup' : 'Tap to add your name, voice and theme'}</small></span>${IC.chev.replace('<svg ', '<svg class="jv-chev" ')}</button>`
+  const html = `<button class="jv-me" data-go="settings"><span class="jv-av">${first ? esc(init) : '<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/></svg>'}</span><span style="flex:1;min-width:0"><b>${esc(first||'You')}</b><small>${first ? 'Name, voice, theme and backup' : 'Tap to add your name, voice and theme'}</small></span>${IC.chev.replace('<svg ', '<svg class="jv-chev" ')}</button>`
+    + iphoneRow()
     + groups.map((g,i)=>g.length ? `<div class="section-h"><h3>${names[i]}</h3></div><div class="jv-group">${g.join('')}</div>` : '').join('')
     + `<p class="jv-foot">Jarvis 2.0 · your data stays on this device</p>`;
   if (el.dataset.h !== html){ el.innerHTML = html; el.dataset.h = html; }
@@ -1828,6 +1961,24 @@ function addMsg(who, text){
   el.innerHTML = who==='ai' ? `<div class="who">Jarvis</div>${esc(text)}` : esc(text);
   $('chat').appendChild(el); $('chat').scrollTop = $('chat').scrollHeight;
   if (who==='ai' && chatLog.some(m=>m.who==='me')){ lastReply = String(text); try { renderHome(); } catch(e){} }
+  if (who==='me') turnMark = {e: newestId(db.expenses), r: newestId(db.reminders), n: newestId(db.notes), done: false};
+  else if (turnMark && !turnMark.done){ const m = turnMark; setTimeout(()=>chatActs(m), 0); }
+}
+/* after Jarvis logs something by voice, one tap fixes it by typing: an Edit button under the reply */
+let turnMark = null;
+function newestId(list){ return new Set((list||[]).map(x=>x && x.id)); }
+function chatActs(m){
+  if (m.done) return;
+  const acts = [];
+  const pickNew = (list, seen) => (list||[]).find(x=>x && x.id && !seen.has(x.id)) || null;
+  const e = pickNew(db.expenses, m.e), r = pickNew(db.reminders, m.r), n = pickNew(db.notes, m.n);
+  if (e) acts.push(`<button class="chip" data-edit-exp="${esc(e.id)}">${IC.pen}Edit ${e.type==='income'?'income':'expense'}</button>`);
+  if (r) acts.push(`<button class="chip" data-edit-rem="${esc(r.id)}">${IC.pen}Edit reminder</button>`);
+  if (n) acts.push(`<button class="chip" data-edit-note="${esc(n.id)}">${IC.pen}Edit note</button>`);
+  if (!acts.length) return;
+  m.done = true;
+  const el = document.createElement('div'); el.className = 'msg-acts'; el.innerHTML = acts.join('');
+  $('chat').appendChild(el); $('chat').scrollTop = $('chat').scrollHeight;
 }
 function openSheet(listen){
   $('sheet').classList.add('open'); $('sheetBg').classList.add('open');
@@ -1839,6 +1990,9 @@ $('orb').onclick = ()=>openSheet(true);
 $('heroMic').onclick = ()=>openSheet(!!SR);
 $('heroHint').onclick = ()=>openSheet(!lastReply && !!SR);
 $('heroType').onclick = ()=>{ openSheet(false); try { $('textIn').focus(); } catch(e){} };
+$('heroExp').onclick = ()=>{ haptic(); openExpModal(); };
+$('heroRem').onclick = ()=>{ haptic(); openRemModal(); };
+$('heroFood').onclick = ()=>{ haptic(); try { if (Jarvis.food && typeof Jarvis.food.snap==='function'){ Jarvis.food.snap(); return; } } catch(e){} go('food'); };
 document.addEventListener('click', e=>{
   const t = e.target.closest('[data-tile="wx"]'); if (!t) return;
   // no city yet: open the brief's own location picker (its card lives on the Today screen)
@@ -1961,7 +2115,7 @@ function checkReminders(){
       if (taken){ if (r.repeat && r.repeat!=='none'){ const d = new Date(r.at); do { if (r.repeat==='daily') d.setDate(d.getDate()+1); else if (r.repeat==='weekly') d.setDate(d.getDate()+7); else d.setMonth(d.getMonth()+1); } while (d.getTime() <= now); r.at = d.getTime(); r.fired = false; } return; }
       toast('⏰ '+r.text); speak(msg);
       try { if ('Notification' in window && Notification.permission==='granted'){ navigator.serviceWorker && navigator.serviceWorker.ready ? navigator.serviceWorker.ready.then(reg=>reg.showNotification('Jarvis', {body:r.text, icon:'icon-192.png', badge:'icon-192.png'})).catch(()=>new Notification('Jarvis',{body:r.text})) : new Notification('Jarvis',{body:r.text}); } } catch(e){}
-      try { navigator.vibrate && navigator.vibrate([250,100,250]); } catch(e){}
+      try { const ua = navigator.userActivation; if (navigator.vibrate && (!ua || ua.hasBeenActive)) navigator.vibrate([250,100,250]); } catch(e){}
       if (r.repeat && r.repeat!=='none'){ const d = new Date(r.at); do { if (r.repeat==='daily') d.setDate(d.getDate()+1); else if (r.repeat==='weekly') d.setDate(d.getDate()+7); else d.setMonth(d.getMonth()+1); } while (d.getTime() <= now); r.at = d.getTime(); r.fired = false; }
     }
   });

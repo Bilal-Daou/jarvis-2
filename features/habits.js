@@ -311,7 +311,7 @@ function setValue(h, k, v){
   const prev = val(h,k);
   v = Math.max(0, Math.round(v*100)/100);
   if (v) h.hist[k] = v; else delete h.hist[k];
-  if (v !== prev) lastAction = {hid:h.id, k, prev};
+  if (v !== prev) lastAction = {hid:h.id, k, prev, at:Date.now()};
   const nowDone = isDone(h,k);
   const info = {h, prev, v, wasDone, nowDone, completed: !wasDone && nowDone, line:'', perfect:false};
   if (info.completed && k===dkey(today0())){
@@ -395,7 +395,7 @@ const prevPct = {};   // ctx:id -> last rendered pct (drives ring animation)
 const pops = {};      // habit id -> timestamp of completion (check pop animation)
 let ANIM = false;
 const reduced = () => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch(e){ return false; } };
-const buzz = (p) => { try { navigator.vibrate && navigator.vibrate(p||15); } catch(e){} };
+const buzz = (p) => { try { const ua = navigator.userActivation; if (navigator.vibrate && (!ua || ua.hasBeenActive)) navigator.vibrate(p||15); } catch(e){} };
 
 const CONF_COLORS = ['#6d5dfc','#22d3ee','#22c55e','#f59e0b','#f43f5e','#ec4899','#facc15'];
 function burstAt(x, y, colors, n){
@@ -1200,6 +1200,17 @@ function intent(said, t0){
 
   // status questions
   if (/^(?:how (?:are|is) my habits?(?: going| doing)?|how am i doing (?:on|with) (?:my )?habits|(?:my |show )?habits? (?:status|summary|progress|update|report)|what habits? (?:do i (?:have )?left|are left)(?: today)?|what(?:'s| is) left (?:on my habits|for my habits)|did i (?:do|finish) (?:all )?my habits(?: today)?)$/.test(t)) { J.go('habits'); setTab('today'); return ret(habitsSummary()); }
+  // "did I meditate today?", "have I read yet?", "did I do my reading?": yes or not yet, from today's check-ins
+  if ((m = t.match(/^(?:did|have) i (?:already |even |actually )?(?:do |done |did |finish |finished |complete |completed |log |logged |tick off |ticked off )?(?:my |the |today's |any )?(.+?)(?: (?:today|yet|already|this morning|so far|for today|or not))*$/)) && habits().length
+      && !/\b(?:spen[dt]|eat|ate|eaten|calories|sleep|slept|steps|budget|money|paid|pay|bought|buy|make|made|earn|earned|miss|missed|forget|forgot|say|tell|ask|set|save|saved|log in|leave|lock|close|turn|send|sent|call|get paid|enough water|all my habits|my habits|habits)\b/.test(m[1])){
+    const q = m[1].replace(/\bhabits?\b/g, '').trim(); const h = q ? matchHabit(q) : null;
+    if (h && matchScore(q, h.name + ' ' + (h.unit||'')) >= 20){
+      J.go('habits'); setTab('today'); const k = dkey(today0()), v = val(h,k), nm = lc(h.name);
+      if (isDone(h,k)) return ret(`Yes, ${nm} is done for today${isCount(h) ? `, ${qty(v, h.unit)}` : ''}. ${streakBit(h)}`.trim());
+      if (v > 0) return ret(`Not fully yet. ${h.name}: ${num(v)} of ${qty(tgt(h), h.unit)} today, ${qty(Math.round((tgt(h)-v)*100)/100, h.unit)} to go.`);
+      return ret(`Not yet. ${h.name} is still to do today${isCount(h) && h.unit ? `: ${qty(tgt(h), h.unit)}` : ''}. When it's done, say: mark ${nm} as done.`);
+    }
+  }
   // one habit: "how's my water habit?"
   if ((m = t.match(/^(?:how(?:'s| is| am i doing (?:on|with))) (?:my |the )?(.+?) habit(?: going| doing| coming along)?(?: today)?$/))){
     const h = matchHabit(m[1]);
@@ -1223,7 +1234,14 @@ function intent(said, t0){
   }
   if (/^(?:open|show|go to|see)(?: me)? (?:my |the )?habits?(?: page| screen| tracker)?$/.test(t)){ J.go('habits'); setTab('today'); return 'Here are your habits.'; }
   if (/^(?:open|show|go to|see)(?: me)? (?:my |the )?goals?(?: page| screen)?$/.test(t)){ J.go('habits'); setTab('goals'); return 'Here are your goals.'; }
-  if (/^(?:undo|cancel|scratch|remove) (?:my |the )?last (?:habit|check ?in|check)$/.test(t)){ const h = undoLast(); return h ? `Undone. ${h.name} is back to ${isCount(h)?qty(val(h,dkey(today0())),h.unit):(isDone(h,dkey(today0()))?'done':'not done')} today.` : 'There is nothing to undo.'; }
+  if (/^(?:undo|cancel|scratch|remove) (?:my |the )?last (?:habit|check ?in|check)$/.test(t)){
+    // the last thing logged was a glass of water (Food keeps it when there is no water habit): take that back instead
+    try { const mem = (J.brain && J.brain.memory) || []; const w = mem.slice().reverse().find(x=>WATER_RE.test(lc(x.said||'').replace(/[.!?]+$/,'')) && /\bwater\b/i.test(x.reply||''));
+      if (w && (!lastAction || w.at >= lastAction.at) && Date.now() - w.at < 30*60e3 && !waterHabit() && J.rethink) { const r = J.rethink('remove a glass of water'); if (r) return r; } } catch(e){}
+    const wh = waterHabit(), k0 = dkey(today0()), wv0 = wh ? val(wh, k0) : 0;
+    const h = undoLast();
+    // undoing the water habit also takes the glasses off the Food screen, so both stay the same
+    if (h && wh && h.id === wh.id){ try { const dv = wv0 - val(wh, k0); const g = isCount(wh) ? unitConvert(dv, wh.unit, 'glasses') : 1; if (g > 0 && J.food && J.food.addWater) J.food.addWater(-Math.round(g)); } catch(e){} } return h ? `Undone. ${h.name} is back to ${isCount(h)?qty(val(h,dkey(today0())),h.unit):(isDone(h,dkey(today0()))?'done':'not done')} today.` : 'There is nothing to undo.'; }
 
   // explicit "mark X done" / "check off X"
   if ((m = t.match(/^(?:mark|check|tick|set)\s+(?:off\s+)?(?:my |the )?(.+?)\s+(?:as\s+)?(?:done|complete|completed|finished|off)(?:\s+(?:for\s+)?today)?$/)) || (m = t.match(/^(?:check off|tick off|complete)\s+(?:my |the )?(.+?)(?:\s+(?:for\s+)?today)?$/))){
@@ -1447,7 +1465,7 @@ J.css(`
 .hb-goal-nums{display:flex;align-items:baseline;gap:6px;margin-top:10px}
 .hb-goal-nums b{font-size:18px;font-weight:800;letter-spacing:-.3px}
 .hb-goal-nums span{color:var(--muted);font-size:13px;flex:1}
-.hb-goal-nums strong{font-size:15px;font-weight:800;color:var(--hc)}
+.hb-goal-nums strong{font-size:15px;font-weight:800;color:var(--hc);color:color-mix(in srgb,var(--hc) 62%,var(--text))}
 .hb-goal-need{font-size:12.5px;color:var(--muted);margin-top:4px}
 .hb-goal-need b{color:var(--text)}
 .hb-goal-act{display:flex;gap:8px;align-items:center;margin-top:12px}
