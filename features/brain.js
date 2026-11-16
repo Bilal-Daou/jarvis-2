@@ -47,6 +47,7 @@ const toN = s => { s = lc(s||'').trim(); if (!s || /^(an?|one)$/.test(s)) return
    ========================================================= */
 const mem = [];               // [{said, reply, at, domain}]
 let lastEntity = null;        // {kind:'expense'|'reminder'|'note', id, at}
+let lastRemoved = null;       // the entry removed last by voice: {kind, item, at, said, restore}
 let lastDomain = null;        // {domain, at, said, place}
 let pre = null;
 function ids(list){ const s = new Set(); (list||[]).forEach(x=>x && s.add(x.id)); return s; }
@@ -187,6 +188,16 @@ function edits(t, said){
   const IT = '(?:it|that|this|that one|this one)';
   const kindWord = /\b(reminders?|alarms?|timers?)\b/.test(T) ? 'reminder' : new RegExp('\\b'+NOTE_N+'\\b').test(T) ? 'note' : new RegExp('\\b(?:'+EXP_N+'|income|salary)\\b').test(T) ? 'expense' : null;
   const target = kindWord || (recent && recent.kind) || null;
+  /* ---------- just removed by voice: "undo that" brings it back; "move it", "make it 30" must not hit another entry ---------- */
+  const rm = lastRemoved && now() - lastRemoved.at < 10*MIN && !(lastEntity && lastEntity.at > lastRemoved.at) ? lastRemoved : null;
+  if (rm && !depthEdit){
+    if (/^(?:undo|undo (?:that|it|this|the delete|the last one)|scratch that|cancel that|reverse that|take (?:that|it) back|bring (?:it|that|this) back|put (?:it|that|this) back|restore (?:it|that|this)|undelete(?: it| that)?|don't delete (?:it|that)|i didn't mean (?:that|to(?: delete (?:it|that))?)|keep (?:it|that))$/.test(T)){
+      const what = rm.said; return rm.restore() ? `Okay, I brought back ${what}.` : 'That one is already back.';
+    }
+    if (/^(?:(?:make|change|put|set|move|push|shift|call|name|label|rename|file|switch|update|edit|fix|correct|categori[sz]e|recategori[sz]e|snooze|delay|postpone|reschedule|mark|pin)\s+)(?:it|that|this)\b|^(?:it|that|this)\s+(?:was|is|should|cost|came)\b/.test(T))
+      return `You just removed ${rm.said}. Say undo to bring it back, then change it.`;
+  }
+
   // "it", "that", "this" only mean something right after an entry was added or changed
   if (!recent && !depthEdit){
     // an edit that names no entry, long after the last one: ask which, rather than changing the wrong thing
@@ -221,11 +232,17 @@ function edits(t, said){
     return deleteExpense(e);
   }
   if ((m = T.match(/^(?:delete|remove|cancel|get rid of)\s+(?:the|my)\s+(?:reminder|alarm)\s+(?:about|for|to)\s+(.+)$/)) || (m = T.match(/^(?:delete|remove|cancel|get rid of)\s+(?:the|my)\s+(.+?)\s+reminder$/))){
-    if (/^(last|latest|next|previous|recent)$/.test(m[1])) return null;
-    const r = lastReminder(m[1]); if (!r) return `I couldn't find a reminder about ${m[1]}.`;
-    return deleteReminder(r);
+    if (!/^(last|latest|newest|most recent|next|previous|recent)$/.test(m[1])){
+      const r = lastReminder(m[1]); if (!r) return `I couldn't find a reminder about ${m[1]}.`;
+      return deleteReminder(r);
+    }
   }
-  if ((m = T.match(/^(?:delete|remove|get rid of|erase)\s+(?:the|my)\s+(?:latest|newest|most recent|previous|last)\s+(expense|payment|purchase|transaction|entry)$/))){ const e = lastExpense('expense'); return e ? deleteExpense(e) : "There's no expense to remove."; }
+  if ((m = T.match(/^(?:delete|remove|get rid of|erase|cancel|scratch|undo)\s+(?:the|my)\s+(?:latest|newest|most recent|previous|last|(next))\s+(reminder|note)$/)) && !(m[1] && m[2] === 'note')){
+    if (m[1]){ const nx = (db().reminders||[]).filter(r=>!r.done && r.at >= now() - MIN).sort((a,b)=>a.at-b.at)[0]; return nx ? deleteReminder(nx) : 'You have no upcoming reminders.'; }
+    if (m[2] === 'note'){ const n = lastNote(); return n ? deleteNote(n) : 'No notes to delete.'; }
+    const r = lastReminder(); return r ? deleteReminder(r) : 'No reminders to remove.';
+  }
+  if ((m = T.match(/^(?:delete|remove|get rid of|erase|cancel|scratch|undo)\s+(?:the|my)\s+(?:latest|newest|most recent|previous|last)\s+(expense|payment|purchase|entry)$/))){ const e = lastExpense('expense'); return e ? deleteExpense(e) : "There's no expense to remove."; }
 
   /* ---------- expenses: amount ---------- */
   const expAmount = () => {
@@ -403,25 +420,32 @@ function deleteEntity(kind){
   if (kind === 'note'){ const n = lastNote(); return n ? deleteNote(n) : 'Nothing to remove.'; }
   return null;
 }
+/* the entry removed last by voice, so "undo that" / "bring it back" can restore it (and "move it to X" does not hit another entry) */
+function removedNow(kind, key, item, i, said, after){
+  const restore = ()=>{ const d = db(), list = d[key] || (d[key] = []); if (list.includes(item)) return false; list.splice(Math.min(i, list.length), 0, item); J.save(); J.renderAll(); try { after && after(); } catch(_){} lastEntity = {kind, id:item.id, at:now()}; lastRemoved = null; return true; };
+  lastRemoved = {kind, item, at:now(), said, restore};
+  return restore;
+}
 function deleteExpense(e){
   const d = db(); const i = d.expenses.indexOf(e); if (i < 0) return 'Nothing to remove.';
   d.expenses.splice(i, 1); J.save(); J.renderAll(); lastEntity = null;
   try { window.dispatchEvent(new CustomEvent('jarvis:expense-removed', {detail:{id:e.id, expense:e}})); } catch(_){}
-  J.toast(`Removed ${money(e.amount)} ${e.desc}`, ()=>{ d.expenses.splice(Math.min(i, d.expenses.length), 0, e); J.save(); J.renderAll(); try { window.dispatchEvent(new CustomEvent('jarvis:expense-restored', {detail:{id:e.id, expense:e}})); } catch(_){} });
+  const back = removedNow('expense', 'expenses', e, i, `${money(e.amount)} for ${lc(e.desc)}`, ()=>{ window.dispatchEvent(new CustomEvent('jarvis:expense-restored', {detail:{id:e.id, expense:e}})); });
+  J.toast(`Removed ${money(e.amount)} ${e.desc}`, back);
   try { J.go('budget'); } catch(_){}
   return `Removed ${money(e.amount)} for ${lc(e.desc)}.`;
 }
 function deleteReminder(r){
   const d = db(); const i = d.reminders.indexOf(r); if (i < 0) return 'Nothing to remove.';
   d.reminders.splice(i, 1); J.save(); J.renderAll(); lastEntity = null;
-  J.toast(`Removed: ${r.text}`, ()=>{ d.reminders.splice(Math.min(i, d.reminders.length), 0, r); J.save(); J.renderAll(); });
+  J.toast(`Removed: ${r.text}`, removedNow('reminder', 'reminders', r, i, `your reminder to ${lower1(r.text)}`));
   try { J.go('reminders'); } catch(_){}
   return `Removed your reminder to ${lower1(r.text)}.`;
 }
 function deleteNote(n){
   const d = db(); const i = d.notes.indexOf(n); if (i < 0) return 'Nothing to remove.';
   d.notes.splice(i, 1); J.save(); J.renderAll(); lastEntity = null;
-  J.toast('Note deleted', ()=>{ d.notes.splice(Math.min(i, d.notes.length), 0, n); J.save(); J.renderAll(); });
+  J.toast('Note deleted', removedNow('note', 'notes', n, i, 'your note'));
   return 'Deleted that note.';
 }
 
@@ -1469,7 +1493,7 @@ function fallbackText(t, quiet){
 }
 
 J.brain = {catOf, early, late, before, after, confirm, suggest: t=>fallbackText(lc(t)), rewrite, followUp, calc, convertUnits, fxParse, daysUntil, edits, knowledgeQuery, cleanExtract, recap,
-  get lastEntity(){ return lastEntity; }, get memory(){ return mem.slice(); }, _reset(){ mem.length = 0; lastEntity = null; lastDomain = null; tipShown = false; aiCool = 0; }};
+  get lastEntity(){ return lastEntity; }, get memory(){ return mem.slice(); }, _reset(){ mem.length = 0; lastEntity = null; lastRemoved = null; lastDomain = null; tipShown = false; aiCool = 0; }};
 J.addSuggestions(["What's 15% of 240?", 'How much is 100 dollars in lira?', 'What time is it in London?', 'Change my last expense to 50', 'How many days until Christmas?', 'Who is Fairuz?']);
 } catch(e){ try { console.error('brain', e); } catch(_){} }
 })();

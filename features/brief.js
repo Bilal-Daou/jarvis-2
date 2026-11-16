@@ -379,7 +379,7 @@ try {
     if (days >= 3){ const from = today - days*864e5; avg = exp.filter(e=>e.at >= from && e.at < today).reduce((s,e)=>s + +e.amount, 0) / days; }
     return {yesterday, avg, days};
   }
-  const CUR_WORD = {'$':['dollar','dollars'], '€':['euro','euros'], '£':['pound','pounds'], 'L£':['Lebanese pound','Lebanese pounds'], 'AED':['dirham','dirhams'], 'SAR':['riyal','riyals']};
+  const CUR_WORD = {'$':['dollar','dollars'], '€':['euro','euros'], '£':['pound','pounds'], 'L£':['Lebanese pound','Lebanese pounds'], 'LBP':['Lebanese pound','Lebanese pounds'], 'AED':['dirham','dirhams'], 'SAR':['riyal','riyals']};
   function money(v){
     const c = J.settings.currency || '$'; const x = v >= 10 ? r0(v) : Math.round(v*100)/100;
     const w = CUR_WORD[c]; const s = x.toLocaleString('en-US');
