@@ -821,7 +821,8 @@ try {
       && /\b(my day|today|today's|the day|this morning)\b/.test(t)
       && /\b(agenda|rundown|run down|plan|plans|planned|look|looks|looking|need to know|should know|going on|happening|have|got|on my plate|update|brief|briefing|summary|overview|recap|ahead|in store|lined up|up)\b/.test(t)
       && !/\b(weather|rain|raining|temperature|temp|hot|cold|warm|sunny|forecast|market|markets|stocks?|spend|spent|spending|budget|money|calories?|kcal|protein|carbs?|fats?|fiber|sugar|macros|nutrition|food|eat|ate|eaten|meals?|water|drink|drank|drunk|habits?|goals?|streak|receipts?|remind|reminders?|notes?|calendar|schedule|agenda|meetings?|events?|appointments?|alarms?|date|time|day of the week|what day|news|price)\b/.test(t);
-    if (BRIEF_RE.test(t) || briefLoose){
+    // "have I read today?", "do I need to stretch today?" are about a habit, not the whole day
+    if (BRIEF_RE.test(t) || (briefLoose && (!/^(do i|have i)\b/.test(t) || /^(do i have|have i got)\b/.test(t)))){
       ready = false;
       const s = composeBrief(); caption = s;
       if (st.loc && !cached() && navigator.onLine !== false){ refresh(true); }
@@ -877,7 +878,8 @@ try {
   J.addSuggestions(['Brief me', "What's the weather?", 'Will it rain today?']);
 
   // small API for other features
-  J.weather = {get location(){ return st.loc; }, get data(){ return cached(); }, now: ()=>now(cached()), describe: desc, refresh: ()=>refresh(true)};
+  J.weather = {get location(){ return st.loc; }, get data(){ return cached(); }, now: ()=>now(cached()), describe: desc, refresh: ()=>refresh(true),
+    pick: ()=>openLocation(), useGPS: ()=>useGPS(null), useBeirut: ()=>setLocation(Object.assign({}, BEIRUT))};
   // playing: the brief is being read aloud now; ready: the once-a-morning "your brief is ready" state (Home's pill shows both)
   J.brief = {compose: composeBrief, composeTomorrow, play: playBrief, get playing(){ return playing; }, get ready(){ return ready && !playing; }};
 } catch(e){ try { console.error('brief', e); } catch(_){} }
