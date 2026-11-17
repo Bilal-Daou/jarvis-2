@@ -753,15 +753,43 @@ function loadVoices(){
   renderVoices();
 }
 function currentVoice(){ return voices.find(v=>v.name===S.voice) || voices[0] || null; }
-function speak(text){
-  if (!S.speak) return;
-  try {
-    speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text.replace(/[•·]/g,','));
-    const v = currentVoice(); if (v){ u.voice = v; u.lang = v.lang; }
-    u.rate = +S.rate; u.pitch = +S.pitch; speechSynthesis.speak(u);
-  } catch(e){}
+/* Speaking, made sturdy for iPhone Safari:
+   - long text is split into short sentences (Safari quietly stops one long utterance part-way)
+   - utterances are kept in a list so the browser can't throw them away mid-sentence (that also cuts speech)
+   - a stuck "paused" engine is resumed, and speak() right after cancel() is delayed a moment (Safari drops it otherwise)
+   - if nothing starts within 1.5 s, it tries once more */
+let speakQ = [], speakSeq = 0;
+function speechChunks(text){
+  const parts = String(text).replace(/[•·]/g, ',').replace(/\s+/g, ' ').trim().match(/[^.!?;:]+[.!?;:]*\s*/g) || [];
+  const out = []; let cur = '';
+  parts.forEach(p=>{ if ((cur + p).length > 160 && cur){ out.push(cur.trim()); cur = ''; } cur += p; });
+  if (cur.trim()) out.push(cur.trim());
+  return out.flatMap(c => c.length <= 220 ? [c] : c.match(/.{1,200}(\s|$)/g).map(s=>s.trim()).filter(Boolean));
 }
+function speak(text){
+  if (!S.speak || !('speechSynthesis' in window)) return;
+  const id = ++speakSeq, chunks = speechChunks(text); if (!chunks.length) return;
+  const go = ()=>{
+    if (id !== speakSeq) return;
+    try { if (speechSynthesis.paused) speechSynthesis.resume(); } catch(e){}
+    const v = currentVoice();
+    speakQ = chunks.map(c=>{ const u = new SpeechSynthesisUtterance(c); if (v){ u.voice = v; u.lang = v.lang; } u.rate = +S.rate || 1; u.pitch = +S.pitch || 1; u.onstart = ()=>{ if (id === speakSeq) started = true; }; return u; });
+    speakQ.forEach(u=>{ try { speechSynthesis.speak(u); } catch(e){} });
+  };
+  let busy = false, started = false, retried = false; try { busy = speechSynthesis.speaking || speechSynthesis.pending; } catch(e){}
+  rawCancel();
+  if (busy) setTimeout(go, 80); else go();   // nothing playing: speak at once (keeps the tap's permission on iPhone)
+  setTimeout(()=>{ if (id !== speakSeq || started || retried) return; let on = false; try { on = speechSynthesis.speaking; } catch(e){}
+    if (!on){ retried = true; rawCancel(); setTimeout(go, 80); } }, 1500);
+}
+/* anyone else stopping speech (Stop brief, the mic, an alarm) also cancels a delayed start or retry */
+let rawCancel = ()=>{};
+if ('speechSynthesis' in window){ try { const c = speechSynthesis.cancel.bind(speechSynthesis); rawCancel = ()=>{ try { c(); } catch(e){} }; speechSynthesis.cancel = ()=>{ speakSeq++; rawCancel(); }; } catch(e){} }
+/* iPhone only lets a page talk after a tap: say "nothing" on the first tap so later replies are allowed */
+(function(){ const ev = ['pointerdown','touchend','click'];
+  function unlockSpeech(){ ev.forEach(t=>document.removeEventListener(t, unlockSpeech, true));
+    try { if (!speechSynthesis.speaking){ const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } } catch(e){} }
+  if ('speechSynthesis' in window) ev.forEach(t=>document.addEventListener(t, unlockSpeech, true)); })();
 if ('speechSynthesis' in window){ loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; setTimeout(loadVoices, 600); }
 
 /* =========================================================
@@ -2037,6 +2065,7 @@ function finish(r, deliver){
   clearRecTimers(); releaseRec(r); micUI(false);
   // after the mic, leave the "play and record" audio session so Safari lets go of the microphone (and the volume is normal again)
   setAudioSession('playback');   // back to 'auto' when the mic starts again
+  try { window.dispatchEvent(new Event('jarvis:mic-off')); } catch(e){}   // other parts let go of audio too (calendar's sound engine)
   finalText = interimText = '';
   if (deliver && text){ $('live').textContent = 'Tap the mic to talk again.'; handle(text); }
   else if (/^(Listening|Finishing)/.test($('live').textContent)) $('live').textContent = deliver ? "I didn't catch that. Tap the mic and try again." : 'Tap the mic and talk, or type below.';
