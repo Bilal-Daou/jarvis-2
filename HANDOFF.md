@@ -294,3 +294,12 @@ The branches `round4-wip`, `round5-wip`, `audit-wip` and `wf-test` on GitHub are
    - On GitHub: until you approve it, it sits in a "pull request" (a proposed change you accept with one tap: open the link I send you and tap the green **Merge pull request** button, then **Confirm merge**). After that it's at https://github.com/bilal-daou/jarvis-2/blob/main/HANDOFF.md.
 4. **To continue in a new Claude Code session:** start the new session with the repository `bilal-daou/jarvis-2` selected (when Claude Code asks which repository to use, pick **jarvis-2**). Then copy this whole document and paste it as your first message, or just say: "Read HANDOFF.md in the jarvis-2 repo first, then continue." The Claude GitHub App is already installed on the repo, so the new session can save changes to it.
 5. **Your personal data** (notes, expenses, reminders, food, habits) is **not** in any of these places. It lives only inside Safari on your iPhone. To keep a copy: open Jarvis, tap the **gear icon** at the top of Home (or More → Settings), go to **Backup** and tap **Save**. A `jarvis-backup-<date>.json` file lands in Files → Downloads. To bring it back later, use the **Restore** button next to Save and pick that file.
+
+---
+
+## 13. SESSION LOG (Claude Code desktop, 17–18 Nov 2026)
+
+- Code now lives locally at `D:\Desktop\JARVIS 2.0` (git clone). This PC pushes as GitHub user `bilaldaou2002`, a collaborator on `Bilal-Daou/jarvis-2`. Python 3.12 + Node are installed; local preview = `.claude/launch.json` ("jarvis", port 8000).
+- **v9 (45e7f44) made iPhone voice WORSE** (no recognition, no speech, mic dot still on): it chunked speech, wrapped `speechSynthesis.cancel`, added a first-tap silent utterance and suspended calendar.js's AudioContext. **Reverted in v10.** Don't reintroduce those without a real-iPhone test, and change one thing at a time.
+- **v11:** if speech hasn't started after 1.8 s, the voice is marked dead (`localStorage['jarvis2-deadvoices']`) and the reply is repeated with the default voice. Theory: iPhone lists Premium/Enhanced voices that aren't downloaded, and the auto-pick prefers them, so speech is silent. Added `Jarvis.stopSpeaking()`. **Waiting on an iPhone test.**
+- Still open: the orange mic dot stays on after closing the chat (X).
