@@ -329,13 +329,8 @@ function unlock(){
     if (c.state !== 'running' && c.resume) c.resume().then(()=>{ if (c.state === 'running') done(); }).catch(()=>{});
     if (c.state === 'running') done();
   } catch(e){}
-  function done(){ ['pointerdown','touchend','click','keydown'].forEach(t=>document.removeEventListener(t, unlock, true)); idle(); }
+  function done(){ ['pointerdown','touchend','click','keydown'].forEach(t=>document.removeEventListener(t, unlock, true)); }
 }
-/** iPhone: a running sound engine keeps the audio session "live" after the mic was used, so the orange mic dot
-    stays on and spoken replies can go silent. Put it to sleep whenever nothing is ringing (it is already unlocked,
-    so startSound() can wake it again). */
-function idle(){ setTimeout(()=>{ try { if (actx && !ring.master && actx.state === 'running') actx.suspend(); } catch(e){} }, 300); }
-window.addEventListener('jarvis:mic-off', idle);
 ['pointerdown','touchend','click','keydown'].forEach(t=>document.addEventListener(t, unlock, true));
 
 const ring = {active:null, queue:[], timer:null, master:null, vib:null, stopAt:0};
@@ -378,7 +373,7 @@ function silence(){
   if (ring.master){ try { const c = ctx(); ring.master.gain.cancelScheduledValues(c.currentTime); ring.master.gain.setTargetAtTime(0.0001, c.currentTime, 0.05); const m = ring.master; setTimeout(()=>{ try { m.disconnect(); } catch(e){} }, 400); } catch(e){} }
   ring.master = null;
 }
-function stopSound(){ silence(); if (!night.on) setSession('auto'); setTimeout(idle, 500); }
+function stopSound(){ silence(); if (!night.on) setSession('auto'); }
 
 let ovEl = null;
 function overlay(){
