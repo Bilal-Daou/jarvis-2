@@ -752,16 +752,33 @@ function loadVoices(){
   try { voices = speechSynthesis.getVoices().filter(v=>/^en/i.test(v.lang)).sort((a,b)=>voiceScore(b)-voiceScore(a)); } catch(e){ voices = []; }
   renderVoices();
 }
-function currentVoice(){ return voices.find(v=>v.name===S.voice) || voices[0] || null; }
+/* iPhone lists "Premium"/"Enhanced" voices that are not downloaded yet: speaking with one is silent.
+   If a voice never starts, it goes on this list and Jarvis says it again with the phone's own default voice. */
+let deadVoices = {}; try { deadVoices = JSON.parse(localStorage.getItem('jarvis2-deadvoices') || '{}') || {}; } catch(e){}
+function currentVoice(){ return voices.find(v=>v.name===S.voice && !deadVoices[v.name]) || voices.find(v=>!deadVoices[v.name]) || null; }
+let speakSeq = 0;
 function speak(text){
   if (!S.speak) return;
+  const id = ++speakSeq, said = text.replace(/[•·]/g,',');
   try {
     speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text.replace(/[•·]/g,','));
+    const u = new SpeechSynthesisUtterance(said);
     const v = currentVoice(); if (v){ u.voice = v; u.lang = v.lang; }
-    u.rate = +S.rate; u.pitch = +S.pitch; speechSynthesis.speak(u);
+    u.rate = +S.rate; u.pitch = +S.pitch;
+    let started = false, stopped = false;
+    u.onstart = ()=>{ started = true; };
+    u.onerror = ev=>{ if (ev && /interrupted|canceled/.test(ev.error || '')) stopped = true; };
+    speechSynthesis.speak(u);
+    if (v) setTimeout(()=>{
+      if (started || stopped || id !== speakSeq || (typeof rec !== 'undefined' && rec)) return;
+      try { if (speechSynthesis.speaking) return; } catch(e){}
+      deadVoices[v.name] = 1; try { localStorage.setItem('jarvis2-deadvoices', JSON.stringify(deadVoices)); } catch(e){}
+      try { speechSynthesis.cancel(); const u2 = new SpeechSynthesisUtterance(said); u2.lang = 'en-US'; u2.rate = +S.rate; u2.pitch = +S.pitch; speechSynthesis.speak(u2); } catch(e){}
+    }, 1800);
   } catch(e){}
 }
+/** stop talking on purpose (Stop button, mic): also cancels the silent-voice retry above */
+function stopSpeaking(){ speakSeq++; try { speechSynthesis.cancel(); } catch(e){} }
 if ('speechSynthesis' in window){ loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; setTimeout(loadVoices, 600); }
 
 /* =========================================================
@@ -961,7 +978,7 @@ const plugins = {views:[], intents:[], homeCards:[], suggestions:[], tiles:[]};
 const HOME_ORDER = {brief:1, habits:10, food:20, receipts:35, finance:50};
 const Jarvis = window.Jarvis = {
   get db(){ return db; }, get settings(){ return S; },
-  save, uid, esc, fmt, cap, toast, modal, closeModal, speak, go, whenText, whenSpoken, ago, greeting, monthKey, sum, inMonth,
+  save, uid, esc, fmt, cap, toast, modal, closeModal, speak, stopSpeaking, go, whenText, whenSpoken, ago, greeting, monthKey, sum, inMonth,
   categorize, CATS, wordsToNumbers, parseTime, handle, get icons(){ return ICON; },
   youify: s=>youify(s), renderAll: (...a)=>renderAll(...a), addLateReply: t=>addLateReply(t), normalizeSpeech: t=>normalizeSpeech(t),
   addExpense(o){ const e = Object.assign({id:uid(), type:'expense', at:Date.now()}, o); if (!e.cat) e.cat = e.type==='income'?'Income':categorize(e.desc||''); e.desc = cap(e.desc|| (e.type==='income'?'Income':'Expense')); db.expenses.unshift(e); save(); renderAll(); return e; },

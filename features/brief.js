@@ -535,7 +535,7 @@ try {
   }
   function playBrief(){
     ready = false;
-    if (playing){ try { speechSynthesis.cancel(); } catch(e){} playing = false; stopPoll(); paint(); return; }
+    if (playing){ try { J.stopSpeaking ? J.stopSpeaking() : speechSynthesis.cancel(); } catch(e){} playing = false; stopPoll(); paint(); return; }
     const text = composeBrief(); caption = text;
     if (!('speechSynthesis' in window)){ playing = false; paint(); J.toast("Voice isn't available here, so here's your brief as text."); return; }
     playing = true; sayNow(text); watchSpeech(); paint();
