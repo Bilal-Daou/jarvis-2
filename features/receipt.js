@@ -116,7 +116,7 @@
     for (const {l} of order){
       const d = dateFromLine(l, now);
       if (d){
-        const t = l.match(/\b([01]?\d|2[0-3])[:h]([0-5]\d)(?::[0-5]\d)?\s*(am|pm)?\b/i);
+        const t = l.match(/\b([01]?\d|2[0-3])[:h]([0-5]\d)(?::[0-5]\d)?\s*(am|pm|ph|ah|an|pn)?\b/i); // OCR reads "PM" as "PH"
         if (t){ let h = +t[1]; if (t[3]){ const pm = /p/i.test(t[3]); if (h === 12) h = pm?12:0; else if (pm) h += 12; } d.setHours(h, +t[2], 0, 0); }
         return d;
       }
@@ -138,7 +138,7 @@
     ['ikea','IKEA'],['zara','Zara'],['h&m','H&M'],['abc ','ABC'],['virgin megastore','Virgin Megastore'],['medco','Medco'],['ipt','IPT'],['coral','Coral'],['hypco','Hypco'],['total energies','TotalEnergies'],['totalenergies','TotalEnergies'],['shell','Shell'],['chevron','Chevron'],['exxon','Exxon']
   ];
   const CAT_HINTS = {
-    Groceries:   ['supermarket','super market','hypermarket','grocery','grocer','market','épicerie','epicerie','spinneys','carrefour','charcutier','monoprix','bou khalil','fahed','happy discount','tsc','makhazen','walmart','kroger','whole foods','trader joe','safeway','aldi','lidl','publix','costco','produce','dairy','bakery','milk','bread','eggs','banana','tomato','cucumber','yogurt','labneh','cheese','rice','chicken breast','vegetable','fruit','detergent'],
+    Groceries:   ['supermarket','vcoop','coop','super market','hypermarket','grocery','grocer','market','épicerie','epicerie','spinneys','carrefour','charcutier','monoprix','bou khalil','fahed','happy discount','tsc','makhazen','walmart','kroger','whole foods','trader joe','safeway','aldi','lidl','publix','costco','produce','dairy','bakery','milk','bread','eggs','banana','tomato','cucumber','yogurt','labneh','cheese','rice','chicken breast','vegetable','fruit','detergent'],
     'Food & drink':['restaurant','resto','cafe','café','coffee','bistro','grill','diner','kitchen','pizza','burger','shawarma','sushi','snack','bakery & cafe','starbucks','mcdonald','kfc','burger king','subway','zaatar','roadster','tawook','barbar','crepaway','dine in','dine-in','take away','takeaway','delivery','waiter','server','covers','gratuity','service charge','hummus','fattoush','tabbouleh','mezza','mezze','kebab','argileh','nargileh','espresso','latte','cappuccino','fries','beverage','soft drink','pepsi','coca','lemonade','dessert','manakish','manoushe','boulangerie','patisserie','pâtisserie','brasserie','baguette','croissant','pain au chocolat'],
     Health:      ['pharmacy','pharmacie','pharma','drug store','drugstore','cvs','walgreens','clinic','hospital','medical','laboratory','dental','dentist','optic','tablet','tablets','capsule','caps','syrup','mg','panadol','advil','vitamin','prescription','rx','bandage','sunscreen','paracetamol','ibuprofen'],
     Transport:   ['fuel','petrol','gasoline','diesel','unleaded','octane','gas station','station service','medco','ipt','coral','hypco','uniterminals','shell','chevron','exxon','total energies','totalenergies','nozzle','pump','litres','liters','price/l','parking','valet','taxi','car wash','toll'],
@@ -190,6 +190,38 @@
   function titleCase(s){ return s.toLowerCase().replace(/(^|[\s\-'&])([a-z])/g, (a,b,c)=>b+c.toUpperCase()).replace(/\b(Llc|Inc|Sal|Sarl|Ltd)\b/g, w=>w.toUpperCase()); }
   const near = (a, b) => Math.abs(a - b) <= Math.max(0.02, Math.abs(b) * 0.015);
 
+  /* Lebanese supermarkets (Spinneys, Carrefour, Coop...) print the bill twice on the TOTAL line:
+     "Total LB FUSD122.70 10,982,032.00" plus "Rate: 89,500". OCR often garbles the long LBP number,
+     so read the short USD amount (fixing look-alike letters: I→1, T→7, Z→2...) and the printed rate,
+     and check them against each other. When it adds up, the USD amount is the total. */
+  const LOOK = {I:'1', l:'1', '|':'1', i:'1', Z:'2', z:'2', O:'0', o:'0', D:'0', Q:'0', S:'5', s:'5', T:'7', B:'8', g:'9', G:'6'};
+  const fixDigits = s => s.replace(/[Il|iZzOoDQSsTBgG]/g, c=>LOOK[c]);
+  function lebaneseDual(lines, res){
+    let rate = null;
+    for (const l of lines){
+      const m = l.match(/\brate\b\s*[:=]?\s*(?:\$?1\s*=\s*)?([\dIlOoSZ][\dIlOoSZ.,\s]{4,9})/i);
+      if (m){ const v = parseAmount(fixDigits(m[1]).replace(/\s/g,'')); if (v >= 1000 && v <= 300000){ rate = v; break; } }
+    }
+    let usd = null, lbp = null;
+    for (let i = 0; i < lines.length; i++){
+      const l = lines[i];
+      // the "Total" word and the FUSD amount sometimes land on neighbouring OCR lines
+      const isTot = s => s && /tota[l1]/i.test(s) && !/sub\s*-?\s*tota[l1]|subtota[l1]/i.test(s);
+      if (!isTot(l) && !(/F?U[S5$]D/i.test(l) && !/cash|@/i.test(l) && (isTot(lines[i-1]) || isTot(lines[i+1])))) continue;
+      const u = l.match(/(?:F?U[S5$]D|\$)\s*([\dIlOoSZTB|]{1,5}[.,][\dIlOoSZTB]{2})(?![\d])/i);
+      if (u){ const v = parseAmount(fixDigits(u[1])); if (v > 0 && v < 100000){ usd = v;
+        const rest = l.slice(u.index + u[0].length); const big = amountsIn(rest).filter(a=>a.v >= 1000).pop(); if (big) lbp = big.v; break; } }
+    }
+    if (rate) res.rate = rate;
+    if (usd == null) return;
+    const lbpTotal = rate ? Math.round(usd * rate) : lbp;
+    const agrees = rate && lbp && near(lbp, usd * rate);
+    // no rate printed and no LBP number to check against: still trust a "Total ... USD x.xx" line over anything else
+    res.total = usd; res.currency = 'USD'; res.dual = true;
+    if (lbpTotal) res.alt = {total: lbpTotal, currency: 'LBP'};
+    res.conf = agrees ? 'high' : (rate || lbp ? 'medium' : res.conf === 'none' ? 'low' : res.conf);
+  }
+
   function parseReceipt(text, opts){
     opts = opts || {};
     const now = opts.now || new Date();
@@ -205,7 +237,7 @@
 
     // ---- merchant
     const lower = lines.slice(0, 12).join('\n').toLowerCase();
-    const brand = BRANDS.find(([k])=> k.trim().length <= 3 ? new RegExp('\\b'+k.trim()+'\\b').test(lower) : lower.includes(k));
+    const brand = (/\bv\s*c+\s*o+\s*o*\s*p+\b|\bu\s*c\s*c\s*m\b|central\s*markets/i.test(lower) ? ['coop', 'VCoop'] : null) || BRANDS.find(([k])=> k.trim().length <= 3 ? new RegExp('\\b'+k.trim()+'\\b').test(lower) : lower.includes(k));
     let merchantIdx = -1;
     if (brand) res.merchant = brand[1];
     for (let i = 0; i < Math.min(lines.length, 8) && !res.merchant; i++){
@@ -325,6 +357,7 @@
       if (checks.some(x=>near(x, res.total))) res.conf = 'high';
       if (res.conf === 'low' && items.length >= 2 && near(itemSum, res.total)) res.conf = 'medium';
     }
+    lebaneseDual(lines, res);
     if (!res.currency){
       const amts = res.total;
       res.currency = (amts != null && amts >= 5000 && Number.isInteger(amts) && prefer === 'USD') ? 'LBP' : (mainCur ? mainCur[0] : prefer);
@@ -576,8 +609,19 @@
 
   // Choose the best of several OCR reads: a total that adds up wins, then totals that agree, then overall quality.
   function pickRun(runs){
+    const best = pickRun0(runs);
+    // fill what the winning read missed from the other reads (date, store, the printed LBP rate)
+    for (const x of runs){ if (x === best) continue; const p = x.parsed, b = best.parsed;
+      if (!b.date && p.date) b.date = p.date; if (!b.rate && p.rate) b.rate = p.rate;
+      if (p.merchant && (!b.merchant || (/^(VCoop)$/.test(p.merchant) && b.merchant !== p.merchant))) b.merchant = p.merchant; }
+    return best;
+  }
+  function pickRun0(runs){
     const lvl = {none:0, low:1, medium:2, high:3};
-    const rank = x => lvl[x.parsed.conf]*100 + x.ocrConf/5 + Math.min(x.parsed.items.length, 10) + (x.parsed.merchant ? 4 : 0) + (x.parsed.date ? 4 : 0);
+    // a "Total ... USD x.xx" found on a Lebanese dual-currency receipt beats a guessed total
+    const rank = x => lvl[x.parsed.conf]*100 + (x.parsed.dual ? 150 : 0) + x.ocrConf/5 + Math.min(x.parsed.items.length, 10) + (x.parsed.merchant ? 4 : 0) + (x.parsed.date ? 4 : 0);
+    const dual = runs.filter(x=>x.parsed.dual);
+    if (dual.length) return dual.sort((a,b)=>rank(b)-rank(a))[0];
     const highs = runs.filter(x=>x.parsed.conf === 'high');
     if (highs.length) return highs.sort((a,b)=>rank(b)-rank(a))[0];
     for (const x of runs){
@@ -601,7 +645,7 @@
       merchant, total: parsed.total != null ? numStr(parsed.total, pcur) : '', currency: pcur, subtotal: parsed.subtotal,
       date: dateInput(d), time: parsed.date ? [parsed.date.getHours(), parsed.date.getMinutes()] : null, dateFound: !!parsed.date,
       cat, items: parsed.items.map(x=>({n:x.n, p:x.p})), conf: parsed.conf, alt: parsed.alt, itemSum: parsed.itemSum,
-      rate: store().meta.lbpRate || DEFAULT_LBP_RATE, convert: true
+      rate: parsed.rate || store().meta.lbpRate || DEFAULT_LBP_RATE, convert: true
     }, extra);
   }
   function toReview(parsed, extra){ setState({screen:'review', draft: draftFrom(parsed, extra)}); }
