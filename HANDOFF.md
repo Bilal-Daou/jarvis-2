@@ -305,3 +305,5 @@ The branches `round4-wip`, `round5-wip`, `audit-wip` and `wf-test` on GitHub are
 - Still open: the orange mic dot stays on after closing the chat (X).
 - **v12 (18 Nov):** receipts now read Lebanese dual-currency totals (`lebaneseDual()` in `features/receipt.js`). Tested end to end in the browser with a real VCoop photo (`.claude/test/vcoop.jpg`, local only), which gave VCoop, $122.70, 2 Nov 2026, Groceries. The browser pane can now open localhost, so test receipts locally with `Jarvis._receipt.onFile(file)`.
 - Voice: Bilal's iPhone was on **Silent** (🔕). Website speech is muted in Silent mode. Waiting to hear whether it speaks with Silent off. If yes, the next step is making speech play even on Silent (one change only).
+- **v13 (18 Nov):** confirmed that speech works with Silent off. `speak()` now sets `navigator.audioSession.type = 'playback'` (but never while the mic is listening) so Jarvis can talk on Silent. **Not yet tested on the iPhone.** If listening breaks, revert this one line.
+- Still open: the orange mic dot after closing the chat (X). Next fix, done on its own.
