@@ -1,5 +1,5 @@
 // Lets Jarvis open even without internet, and shows reminder alerts.
-const CACHE = 'jarvis-v14';
+const CACHE = 'jarvis-v15';
 const FILES = ['./', './index.html', './manifest.json', './icon.svg', './icon-192.png', './icon-512.png', './icon-180.png', './features/brief.js', './features/habits.js', './features/finance.js', './features/receipt.js', './features/food.js', './features/calendar.js', './features/health.js', './features/brain.js'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES))); self.skipWaiting(); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))); self.clients.claim(); });

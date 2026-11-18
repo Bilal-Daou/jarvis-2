@@ -310,7 +310,14 @@ The branches `round4-wip`, `round5-wip`, `audit-wip` and `wf-test` on GitHub are
 
 ### Where to pick up (end of the 18 Nov session)
 - **v13's Silent-mode change didn't work** (`audioSession = 'playback'` doesn't make iPhone website speech play on Silent), so it was removed in **v14**. For now the answer is: Jarvis talks only when Silent is off. Possible next idea: tell the user on screen ("Your phone is on Silent, so turn it off to hear me"). Website speech can't be forced through Silent.
+- **iPhone setup DONE on Bilal's real iPhone (18 Nov, evening, guided by screenshots):**
+  - "Jarvis" shortcut (run by the Action Button) sends calendar, steps, active energy, resting heart rate and sleep via `#sync=`. All verified arriving (Connect page shows ✓ Arrived; his exact link was replayed on localhost and parsed fine).
+  - Real-device findings: a bare "Repeat Item" bubble (not set to Title/Value) works, since calendar events become their title and sleep samples their stage (Deep/Core/REM/Awake). "Fill Missing" in Group by Day adds a harmless `0` line (steps/energy are summed). Shortcuts' "last 1 day" for sleep returns from the start of yesterday. On his iOS, tapping a shortcut tile opens the editor (no •••), and the guide text was fixed in **v15**.
+  - "Jarvis Alarm" shortcut: its Input/Time were empty (faded). Fixed to Get dates from **Shortcut Input** → Create Alarm for **Dates**. The Test button created a real Clock alarm. ✅
+  - Deleted leftover shortcuts "Rename Shortcut" and "Open URLs".
+  - Sleep showed "nothing for last night" only because he didn't wear the watch. **Next session: first ask whether sleep shows after a night with the watch.**
 - **Next tasks, in order, one per session:**
-  1. **iPhone connection setup, done together:** Bilal turns on Remote Control and sends screenshots, and Claude guides one tap at a time. Simplify first: merge the Shortcut steps (sync, sleep, calendar, alarms) into as few as possible, ideally one shareable iCloud Shortcut link for future customers.
-  2. **The mic dot** stays on after closing the chat (X). Try one small change at a time, publish, and have Bilal test.
+  1. **Optional: "Alarms in your Clock app" block** (Get All Alarms → Repeat → Text Name|Time → Combine → `[alarms]` → Add to Variable), placed above "Combine Jarvis". Not done yet.
+  2. **Shareable iCloud links for future customers:** from his phone, Share → Copy iCloud Link for both "Jarvis" and "Jarvis Alarm", then add an "Add the shortcut" button in the Connect page so customers skip building it. Remove anything personal first; the URL inside is the public app URL, so that's fine.
+  3. **The mic dot** stays on after closing the chat (X). Try one small change at a time, publish, and have Bilal test.
 - **Working rules learned:** Bilal can't read code. Test everything possible on the computer first (the browser pane works on localhost; run `Jarvis._receipt.onFile(file)` for receipts). Only voice/iPhone things need him to test. Keep each change small and reversible.
