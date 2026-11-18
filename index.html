@@ -760,9 +760,6 @@ let speakSeq = 0;
 function speak(text){
   if (!S.speak) return;
   const id = ++speakSeq, said = text.replace(/[•·]/g,',');
-  // iPhone (Safari 17+): "playback" lets Jarvis talk even when the phone is on Silent, like a video app.
-  // Never while the mic is listening (that needs the "auto" session).
-  try { if (navigator.audioSession && !(typeof rec !== 'undefined' && rec) && navigator.audioSession.type !== 'playback') navigator.audioSession.type = 'playback'; } catch(e){}
   try {
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(said);

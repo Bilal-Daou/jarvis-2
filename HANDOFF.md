@@ -307,3 +307,10 @@ The branches `round4-wip`, `round5-wip`, `audit-wip` and `wf-test` on GitHub are
 - Voice: Bilal's iPhone was on **Silent** (🔕). Website speech is muted in Silent mode. Waiting to hear whether it speaks with Silent off. If yes, the next step is making speech play even on Silent (one change only).
 - **v13 (18 Nov):** confirmed that speech works with Silent off. `speak()` now sets `navigator.audioSession.type = 'playback'` (but never while the mic is listening) so Jarvis can talk on Silent. **Not yet tested on the iPhone.** If listening breaks, revert this one line.
 - Still open: the orange mic dot after closing the chat (X). Next fix, done on its own.
+
+### Where to pick up (end of the 18 Nov session)
+- **v13's Silent-mode change didn't work** (`audioSession = 'playback'` doesn't make iPhone website speech play on Silent), so it was removed in **v14**. For now the answer is: Jarvis talks only when Silent is off. Possible next idea: tell the user on screen ("Your phone is on Silent, so turn it off to hear me"). Website speech can't be forced through Silent.
+- **Next tasks, in order, one per session:**
+  1. **iPhone connection setup, done together:** Bilal turns on Remote Control and sends screenshots, and Claude guides one tap at a time. Simplify first: merge the Shortcut steps (sync, sleep, calendar, alarms) into as few as possible, ideally one shareable iCloud Shortcut link for future customers.
+  2. **The mic dot** stays on after closing the chat (X). Try one small change at a time, publish, and have Bilal test.
+- **Working rules learned:** Bilal can't read code. Test everything possible on the computer first (the browser pane works on localhost; run `Jarvis._receipt.onFile(file)` for receipts). Only voice/iPhone things need him to test. Keep each change small and reversible.
