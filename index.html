@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en" data-theme="dark">
 <head>
-<meta name="jv-ver" content="24">
+<meta name="jv-ver" content="25">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <meta name="theme-color" content="#07090f">
@@ -682,7 +682,7 @@ body.at-home .toast{bottom:calc(92px + var(--safe-b))}
     </div>
     <div class="set-group"><div class="set-row"><div class="lbl"><b>Debug report</b><small>What the mic and voice did, for fixing problems. No words you said.</small></div><button class="btn ghost" id="dbgShow">Show</button><button class="btn ghost" id="dbgClear">Clear</button></div>
       <pre id="dbgBox" hidden style="white-space:pre-wrap;font-size:11px;max-height:60vh;overflow:auto;margin:0;padding:10px"></pre></div>
-    <p class="jv-foot">Jarvis 2.0 · version 24<br>Your data stays on this device.</p>
+    <p class="jv-foot">Jarvis 2.0 · version 25<br>Your data stays on this device.</p>
     <input type="file" id="importFile" accept="application/json" hidden>
   </section>
 </div>
@@ -800,6 +800,19 @@ function speak(text){
   jvLog('speak waits '+wait+' ms after mic');
   setTimeout(()=>{ if (id === speakSeq && !(typeof rec !== 'undefined' && rec)) say(0); }, wait);
 }
+/* iPhone blocks speech that doesn't start from a tap until one tap has "unlocked" it.
+   The brief (a tap) always spoke; mic replies (no tap, after a fresh open) never did (debug reports v22-v24).
+   So the first tap anywhere says a silent, zero-volume word. Not on the mic button: touching audio there broke hearing (v17). */
+let speechUnlocked = false;
+function unlockSpeech(e){
+  if (speechUnlocked || !('speechSynthesis' in window)) return;
+  if (e && e.target && e.target.closest && e.target.closest('#micBtn')) return;
+  speechUnlocked = true;
+  ['pointerdown','touchend','click'].forEach(t=>document.removeEventListener(t, unlockSpeech, true));
+  try { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); jvLog('voice unlocked by a tap'); } catch(err){ jvLog('voice unlock failed'); }
+}
+['pointerdown','touchend','click'].forEach(t=>document.addEventListener(t, unlockSpeech, true));
+jvLog('app opened');
 /** stop talking on purpose (Stop button, mic): also cancels the silent-voice retry above */
 function stopSpeaking(){ speakSeq++; try { speechSynthesis.cancel(); } catch(e){} }
 if ('speechSynthesis' in window){ loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; setTimeout(loadVoices, 600); }
