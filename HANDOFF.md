@@ -356,3 +356,4 @@ The branches `round4-wip`, `round5-wip`, `audit-wip` and `wf-test` on GitHub are
 - **v28:** the unlock speaks '.' (volume 0, rate 2) on the first non-mic tap and logs `voice unlock: started (good)` / `did not start, will retry on next tap` (it re-arms until some speech has started). The header now shows `voice unlocked: yes` only once speech has REALLY started (`speechEverStarted`). Tap-to-hear bubbles stay as a fallback.
   - If '.' isn't counted either: try a real short word on the first tap (but iOS may ignore volume 0, so it might be audible), or speak a short greeting when the chat opens.
   - Not done: the orange dot (later; don't use `audioRest`); maybe remove the Voice tests button once the voice is settled.
+- **v29:** X (`closeSheet`) also calls `stopSpeaking()`. Bilal pressed X during a long spoken answer and it kept talking.
