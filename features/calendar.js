@@ -1117,8 +1117,8 @@ function syncRecipeHTML(){
       ${addVar(4)}</div></details>
     <details class="cal-blk" id="cal-blk-alarms"><summary>${bi('clock','#ff9500')}Alarms in your Clock app${tag('alarms') || '<span class="tg opt">Optional</span>'}</summary><div class="in">
       <p>Lets you ask “what alarms are on my iPhone?”. Needs iOS 17 or newer.</p>
-      ${stepHTML(1, 'Search and add <b>Get All Alarms</b> (orange Clock icon).' + copyRow('Get All Alarms'))}
-      ${stepHTML(2, 'Add <b>Repeat with Each</b>, and a <b>Text</b> inside it. Tap <b>Repeat Item</b>, tap the bubble, choose <b>Name</b> (the alarm’s label). Paste <code>|</code>, add <b>Repeat Item</b> again and choose <b>Time</b>. If the list also offers <b>Is Enabled</b> (or <b>Enabled</b>), add <code>|</code> and that too; if not, skip it.' + copyRow('|', '|  (the line character)'))}
+      ${stepHTML(1, 'Search and add <b>Find Alarms</b> (Clock icon; older iPhones call it <b>Get All Alarms</b>). Optional: tap <b>Add Filter</b> → <b>Is Enabled</b> is on, so only alarms that will ring are sent.' + copyRow('Find Alarms'))}
+      ${stepHTML(2, 'Add <b>Repeat with Each</b>, and a <b>Text</b> inside it. Tap <b>Repeat Item</b>, tap the bubble, choose <b>Label</b> (or <b>Name</b>). Paste <code>|</code>, add <b>Repeat Item</b> again and choose <b>Time</b>. If the list also offers <b>Is Enabled</b> (or <b>Enabled</b>), add <code>|</code> and that too; if not, skip it.' + copyRow('|', '|  (the line character)'))}
       ${stepHTML(3, 'If tapping the <b>Time</b> bubble shows <b>Date Format</b>, set it to <b>None</b> and <b>Time Format</b> to <b>Short</b>.')}
       ${stepHTML(4, 'Under <b>End Repeat</b>: <b>Combine Text</b> with <b>New Lines</b>, then <b>Text</b> with this and the <b>Combined Text</b> bubble:' + hdr('alarms'))}
       ${addVar(5)}</div></details>
