@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en" data-theme="dark">
 <head>
-<meta name="jv-ver" content="22">
+<meta name="jv-ver" content="23">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <meta name="theme-color" content="#07090f">
@@ -682,7 +682,7 @@ body.at-home .toast{bottom:calc(92px + var(--safe-b))}
     </div>
     <div class="set-group"><div class="set-row"><div class="lbl"><b>Debug report</b><small>What the mic and voice did, for fixing problems. No words you said.</small></div><button class="btn ghost" id="dbgShow">Show</button><button class="btn ghost" id="dbgClear">Clear</button></div>
       <pre id="dbgBox" hidden style="white-space:pre-wrap;font-size:11px;max-height:60vh;overflow:auto;margin:0;padding:10px"></pre></div>
-    <p class="jv-foot">Jarvis 2.0 · version 22<br>Your data stays on this device.</p>
+    <p class="jv-foot">Jarvis 2.0 · version 23<br>Your data stays on this device.</p>
     <input type="file" id="importFile" accept="application/json" hidden>
   </section>
 </div>
@@ -2022,7 +2022,7 @@ function openSheet(listen){
   if (!chatLog.length) addMsg('ai', `${greeting()}, ${S.name}. Tap the mic and tell me what you need.`);
   if (listen) startListening();
 }
-function closeSheet(){ jvLog('X: close chat'); $('sheet').classList.remove('open'); $('sheetBg').classList.remove('open'); stopListening(); try { Jarvis.calendar.audioRest(); } catch(e){} }
+function closeSheet(){ jvLog('X: close chat'); $('sheet').classList.remove('open'); $('sheetBg').classList.remove('open'); stopListening(); }
 $('orb').onclick = ()=>openSheet(true);
 $('heroMic').onclick = ()=>openSheet(!!SR);
 $('heroHint').onclick = ()=>openSheet(!lastReply && !!SR);
@@ -2069,7 +2069,7 @@ function releaseRec(r){
 }
 /** ends a session exactly once. deliver: true = act on what was heard, false = throw it away */
 function finish(r, deliver){
-  if (!r || r._jvDone) return; r._jvDone = true; jvLog('mic finish (deliver='+deliver+')');
+  if (!r || r._jvDone) return; r._jvDone = true; jvLog('mic finish (deliver='+deliver+', heard '+((finalText || interimText || '').trim().length)+' letters)');
   const text = (finalText || interimText || '').replace(/\s+/g,' ').trim();
   clearRecTimers(); releaseRec(r); micUI(false);
   // after the mic, leave the "play and record" audio session so Safari lets go of the microphone (and the volume is normal again)
@@ -2094,7 +2094,7 @@ function startListening(){
   r.onstart = ()=>{ jvLog('mic onstart'); if (!mine()) return; clearTimeout(recTimers.nostart); micUI(true); if (!interimText) $('live').textContent = 'Listening…';
     recTimer('quiet', 8000, ()=>{ if (mine() && !(finalText || interimText)) { $('live').textContent = "I didn't catch that. Tap the mic and try again."; finish(r, false); } }); // nothing heard
     recTimer('max', 25000, ()=>{ if (mine()) stopListening(); }); };                    // never more than 25 s
-  r.onresult = ev=>{ if (!mine()) return; let fin = '', interim = '';
+  r.onresult = ev=>{ if (!r._jvHeard){ r._jvHeard = 1; jvLog('mic heard words'); } if (!mine()) return; let fin = '', interim = '';
     for (let i = 0; i < ev.results.length; i++){ const x = ev.results[i]; if (x.isFinal) fin += x[0].transcript; else interim += x[0].transcript; }
     finalText = fin; interimText = fin + interim;
     $('live').textContent = interimText || 'Listening…';
@@ -2127,7 +2127,7 @@ function stopListening(){
 }
 /** cut the mic right now and throw away anything half-heard */
 function cancelListening(){ if (rec) finish(rec, false); }
-$('micBtn').onclick = ()=> rec && !rec._jvStopping ? stopListening() : startListening();
+$('micBtn').onclick = ()=>{ if (rec && !rec._jvStopping){ jvLog('mic tap: stop'); stopListening(); } else startListening(); };
 // leaving the app (home screen, another app, lock, tab switch, closing): the mic goes off at once
 document.addEventListener('visibilitychange', ()=>{ if (document.visibilityState === 'hidden') cancelListening(); });
 window.addEventListener('pagehide', cancelListening);
