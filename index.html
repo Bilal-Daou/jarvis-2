@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en" data-theme="dark">
 <head>
-<meta name="jv-ver" content="23">
+<meta name="jv-ver" content="24">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <meta name="theme-color" content="#07090f">
@@ -682,7 +682,7 @@ body.at-home .toast{bottom:calc(92px + var(--safe-b))}
     </div>
     <div class="set-group"><div class="set-row"><div class="lbl"><b>Debug report</b><small>What the mic and voice did, for fixing problems. No words you said.</small></div><button class="btn ghost" id="dbgShow">Show</button><button class="btn ghost" id="dbgClear">Clear</button></div>
       <pre id="dbgBox" hidden style="white-space:pre-wrap;font-size:11px;max-height:60vh;overflow:auto;margin:0;padding:10px"></pre></div>
-    <p class="jv-foot">Jarvis 2.0 · version 23<br>Your data stays on this device.</p>
+    <p class="jv-foot">Jarvis 2.0 · version 24<br>Your data stays on this device.</p>
     <input type="file" id="importFile" accept="application/json" hidden>
   </section>
 </div>
@@ -767,6 +767,9 @@ let deadVoices = {}; try { localStorage.removeItem('jarvis2-deadvoices'); deadVo
 let voiceMisses = 0;
 function currentVoice(){ return voices.find(v=>v.name===S.voice && !deadVoices[v.name]) || voices.find(v=>!deadVoices[v.name]) || null; }
 let speakSeq = 0;
+/* iPhone needs a moment after the mic stops before it can talk: speaking right away was silent every time (debug report, v23).
+   So a reply waits until AFTER_MIC_MS have passed since the mic ended. */
+const AFTER_MIC_MS = 1000; let lastMicEnd = 0;
 function speak(text){
   if (!S.speak) return;
   const id = ++speakSeq, said = text.replace(/[•·]/g,',');
@@ -792,7 +795,10 @@ function speak(text){
       }, 1500);
     } catch(e){}
   };
-  say(0);
+  const wait = Math.max(0, AFTER_MIC_MS - (Date.now() - lastMicEnd));
+  if (!wait) return say(0);
+  jvLog('speak waits '+wait+' ms after mic');
+  setTimeout(()=>{ if (id === speakSeq && !(typeof rec !== 'undefined' && rec)) say(0); }, wait);
 }
 /** stop talking on purpose (Stop button, mic): also cancels the silent-voice retry above */
 function stopSpeaking(){ speakSeq++; try { speechSynthesis.cancel(); } catch(e){} }
@@ -2074,6 +2080,7 @@ function finish(r, deliver){
   clearRecTimers(); releaseRec(r); micUI(false);
   // after the mic, leave the "play and record" audio session so Safari lets go of the microphone (and the volume is normal again)
   setAudioSession('playback');   // back to 'auto' when the mic starts again
+  lastMicEnd = Date.now();
   finalText = interimText = '';
   if (deliver && text){ $('live').textContent = 'Tap the mic to talk again.'; handle(text); }
   else if (/^(Listening|Finishing)/.test($('live').textContent)) $('live').textContent = deliver ? "I didn't catch that. Tap the mic and try again." : 'Tap the mic and talk, or type below.';
