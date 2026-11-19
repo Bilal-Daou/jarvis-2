@@ -315,7 +315,7 @@ The branches `round4-wip`, `round5-wip`, `audit-wip` and `wf-test` on GitHub are
   - Real-device findings: a bare "Repeat Item" bubble (not set to Title/Value) works, since calendar events become their title and sleep samples their stage (Deep/Core/REM/Awake). "Fill Missing" in Group by Day adds a harmless `0` line (steps/energy are summed). Shortcuts' "last 1 day" for sleep returns from the start of yesterday. On his iOS, tapping a shortcut tile opens the editor (no •••), and the guide text was fixed in **v15**.
   - "Jarvis Alarm" shortcut: its Input/Time were empty (faded). Fixed to Get dates from **Shortcut Input** → Create Alarm for **Dates**. The Test button created a real Clock alarm. ✅
   - Deleted leftover shortcuts "Rename Shortcut" and "Open URLs".
-  - Sleep showed "nothing for last night" only because he didn't wear the watch. **Next session: first ask whether sleep shows after a night with the watch.**
+  - Sleep showed "nothing for last night" only because he didn't wear the watch. **19 Nov: confirmed, real sleep shows (6h 19m with Deep/Core/REM/Awake).**
 - **Next tasks, in order, one per session:**
   1. **Optional: "Alarms in your Clock app" block** (Get All Alarms → Repeat → Text Name|Time → Combine → `[alarms]` → Add to Variable), placed above "Combine Jarvis". Not done yet.
   2. **Shareable iCloud links for future customers:** from his phone, Share → Copy iCloud Link for both "Jarvis" and "Jarvis Alarm", then add an "Add the shortcut" button in the Connect page so customers skip building it. Remove anything personal first; the URL inside is the public app URL, so that's fine.
