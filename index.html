@@ -2015,7 +2015,7 @@ function openSheet(listen){
   if (!chatLog.length) addMsg('ai', `${greeting()}, ${S.name}. Tap the mic and tell me what you need.`);
   if (listen) startListening();
 }
-function closeSheet(){ $('sheet').classList.remove('open'); $('sheetBg').classList.remove('open'); stopListening(); }
+function closeSheet(){ $('sheet').classList.remove('open'); $('sheetBg').classList.remove('open'); stopListening(); try { Jarvis.calendar.audioRest(); } catch(e){} }
 $('orb').onclick = ()=>openSheet(true);
 $('heroMic').onclick = ()=>openSheet(!!SR);
 $('heroHint').onclick = ()=>openSheet(!lastReply && !!SR);
