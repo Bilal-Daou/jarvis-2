@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en" data-theme="dark">
 <head>
-<meta name="jv-ver" content="27">
+<meta name="jv-ver" content="28">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <meta name="theme-color" content="#07090f">
@@ -683,7 +683,7 @@ body.at-home .toast{bottom:calc(92px + var(--safe-b))}
     </div>
     <div class="set-group"><div class="set-row"><div class="lbl"><b>Debug report</b><small>What the mic and voice did, for fixing problems. No words you said.</small></div><button class="btn ghost" id="dbgTest">Voice tests</button><button class="btn ghost" id="dbgShow">Show</button><button class="btn ghost" id="dbgClear">Clear</button></div>
       <pre id="dbgBox" hidden style="white-space:pre-wrap;font-size:11px;max-height:60vh;overflow:auto;margin:0;padding:10px"></pre></div>
-    <p class="jv-foot">Jarvis 2.0 · version 27<br>Your data stays on this device.</p>
+    <p class="jv-foot">Jarvis 2.0 · version 28<br>Your data stays on this device.</p>
     <input type="file" id="importFile" accept="application/json" hidden>
   </section>
 </div>
@@ -781,7 +781,7 @@ function speak(text){
       const u = new SpeechSynthesisUtterance(said);
       const v = currentVoice(); if (v){ u.voice = v; u.lang = v.lang; }
       u.rate = +S.rate; u.pitch = +S.pitch;
-      u.onstart = ()=>{ jvLog('voice started'); started = true; voiceMisses = 0; };
+      u.onstart = ()=>{ jvLog('voice started'); started = true; voiceMisses = 0; speechEverStarted = true; };
       u.onend = ()=>jvLog('voice ended');
       u.onerror = ev=>{ jvLog('voice error: '+(ev&&ev.error)); if (ev && /interrupted|canceled/.test(ev.error || '')) stopped = true; };
       jvLog('speak (try '+tries+', voice '+(v?v.name:'default')+')'); speechSynthesis.speak(u);
@@ -806,15 +806,27 @@ function speak(text){
 /* iPhone blocks speech that doesn't start from a tap until one tap has "unlocked" it.
    The brief (a tap) always spoke; mic replies (no tap, after a fresh open) never did (debug reports v22-v24).
    So the first tap anywhere says a silent, zero-volume word. Not on the mic button: touching audio there broke hearing (v17). */
-let speechUnlocked = false;
+let speechUnlocked = false, speechEverStarted = false;
+/* v25 said ' ' (a blank): iPhone didn't count it. v27 report: after ONE real tap-started voice, every later reply spoke.
+   So the unlock now says '.', a real character with nothing to hear, and logs whether iPhone started it.
+   If it didn't start and nothing else has spoken yet, the next tap tries again. */
+const UNLOCK_EVENTS = ['pointerdown','touchend','click'];
 function unlockSpeech(e){
-  if (speechUnlocked || !('speechSynthesis' in window)) return;
+  if (speechUnlocked || speechEverStarted || !('speechSynthesis' in window)) return;
   if (e && e.target && e.target.closest && e.target.closest('#micBtn')) return;
   speechUnlocked = true;
-  ['pointerdown','touchend','click'].forEach(t=>document.removeEventListener(t, unlockSpeech, true));
-  try { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); jvLog('voice unlocked by a tap'); } catch(err){ jvLog('voice unlock failed'); }
+  UNLOCK_EVENTS.forEach(t=>document.removeEventListener(t, unlockSpeech, true));
+  let ok = false;
+  try {
+    const u = new SpeechSynthesisUtterance('.'); u.volume = 0; u.rate = 2;
+    u.onstart = ()=>{ ok = true; speechEverStarted = true; jvLog('voice unlock: started (good)'); };
+    u.onerror = ev=>jvLog('voice unlock: error '+(ev && ev.error));
+    speechSynthesis.speak(u); jvLog('voice unlock: tried on a tap');
+  } catch(err){ jvLog('voice unlock failed'); }
+  setTimeout(()=>{ if (ok || speechEverStarted) return; jvLog('voice unlock: did not start, will retry on next tap');
+    speechUnlocked = false; UNLOCK_EVENTS.forEach(t=>document.addEventListener(t, unlockSpeech, true)); }, 1500);
 }
-['pointerdown','touchend','click'].forEach(t=>document.addEventListener(t, unlockSpeech, true));
+UNLOCK_EVENTS.forEach(t=>document.addEventListener(t, unlockSpeech, true));
 jvLog('app opened');
 /** stop talking on purpose (Stop button, mic): also cancels the silent-voice retry above */
 function stopSpeaking(){ speakSeq++; try { speechSynthesis.cancel(); } catch(e){} }
@@ -2232,7 +2244,7 @@ function saveBackup(){
 }
 $('exportBtn').onclick = saveBackup;
 $('dbgShow').onclick = ()=>{ const b=$('dbgBox'); let a=[]; try { a=JSON.parse(localStorage.getItem('jarvis2-debuglog')||'[]'); } catch(e){}
-  const c=Jarvis.calendar&&Jarvis.calendar.audio; b.textContent='v'+(document.querySelector('meta[name=jv-ver]')||{}).content+' · audio now: '+(c?c.state:'none')+' · voice unlocked: '+(speechUnlocked?'yes':'no')+String.fromCharCode(10)+(a.slice(-60).join(String.fromCharCode(10))||'(empty)'); b.hidden=false; };
+  const c=Jarvis.calendar&&Jarvis.calendar.audio; b.textContent='v'+(document.querySelector('meta[name=jv-ver]')||{}).content+' · audio now: '+(c?c.state:'none')+' · voice unlocked: '+(speechEverStarted?'yes':'no')+String.fromCharCode(10)+(a.slice(-60).join(String.fromCharCode(10))||'(empty)'); b.hidden=false; };
 $('dbgTest').onclick = ()=>{
   const eng = ()=> Jarvis.calendar && Jarvis.calendar.audio, say = t=>{ const w=S.speak; S.speak=true; speak(t); S.speak=w; };
   jvLog('voice tests: start (audio engine '+(eng()?eng().state:'none')+')'); toast('Listen: 2 short tests in the next 12 seconds');
