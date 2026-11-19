@@ -357,3 +357,11 @@ The branches `round4-wip`, `round5-wip`, `audit-wip` and `wf-test` on GitHub are
   - If '.' isn't counted either: try a real short word on the first tap (but iOS may ignore volume 0, so it might be audible), or speak a short greeting when the chat opens.
   - Not done: the orange dot (later; don't use `audioRest`); maybe remove the Voice tests button once the voice is settled.
 - **v29:** X (`closeSheet`) also calls `stopSpeaking()`. Bilal pressed X during a long spoken answer and it kept talking.
+- **v29 report (20 Nov 00:31): ✅ WORKS.** After a fresh open with no voice taps, 6/6 mic answers were spoken (`voice started` within ms of `speak try 0`), hearing 6/6, same voice (Karen), and X stopped the voice both times.
+
+### Where to pick up (end of the 20 Nov session)
+- **Voice + mic are fixed (v29, confirmed on iPhone).** The root cause was that iPhone only allows a web app's non-tap speech after ONE real tap-started utterance. The first non-mic tap now speaks '.' at volume 0 (`unlockSpeech`). Don't remove it. Tapping an answer bubble also speaks it ("Tap to hear" label if a reply couldn't speak).
+- **Debug report** (Settings → Debug report: Voice tests / Show / Clear) is the testing method now. Bilal does the test, taps Show and pastes or screenshots it. Keep `jvLog` calls for any audio/mic change. The "Voice tests" button can be removed later (no longer needed).
+- **Release checklist:** bump `jv-ver` meta + footer "version N" in index.html + `CACHE` in sw.js.
+- **Next task: the orange mic dot after X**, using the debug report. Proven: suspending the calendar AudioContext (`audioRest`) clears the dot but makes later recognition hear nothing → don't. Ideas to try one at a time: check whether the dot is tied to the recognizer (`releaseRec` aborts it, but maybe call `r.stop()` first), the audio session ('none' instead of 'playback' after the mic?), or just iOS's normal indicator lingering a few seconds. First ask Bilal exactly when it shows and how long it stays.
+- Then: shareable iCloud links, a full screen check, paid voice/brain only on his go. Remind about the weekly backup.
