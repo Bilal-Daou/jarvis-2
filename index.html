@@ -754,29 +754,38 @@ function loadVoices(){
   renderVoices();
 }
 /* iPhone lists "Premium"/"Enhanced" voices that are not downloaded yet: speaking with one is silent.
-   If a voice never starts, it goes on this list and Jarvis says it again with the phone's own default voice. */
-let deadVoices = {}; try { deadVoices = JSON.parse(localStorage.getItem('jarvis2-deadvoices') || '{}') || {}; } catch(e){}
+   Jarvis keeps the voice the user chose. If a reply doesn't start, it is retried once in the SAME voice
+   (iPhone often just hiccups right after the mic). Only after 3 replies in a row fail does that voice go on
+   the dead list, and the user is told, so the voice never changes silently. (v11-v18 switched after one miss.) */
+let deadVoices = {}; try { localStorage.removeItem('jarvis2-deadvoices'); deadVoices = JSON.parse(localStorage.getItem('jarvis2-deadvoices2') || '{}') || {}; } catch(e){}
+let voiceMisses = 0;
 function currentVoice(){ return voices.find(v=>v.name===S.voice && !deadVoices[v.name]) || voices.find(v=>!deadVoices[v.name]) || null; }
 let speakSeq = 0;
 function speak(text){
   if (!S.speak) return;
   const id = ++speakSeq, said = text.replace(/[•·]/g,',');
-  try {
-    speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(said);
-    const v = currentVoice(); if (v){ u.voice = v; u.lang = v.lang; }
-    u.rate = +S.rate; u.pitch = +S.pitch;
+  const say = (tries)=>{
     let started = false, stopped = false;
-    u.onstart = ()=>{ started = true; };
-    u.onerror = ev=>{ if (ev && /interrupted|canceled/.test(ev.error || '')) stopped = true; };
-    speechSynthesis.speak(u);
-    if (v) setTimeout(()=>{
-      if (started || stopped || id !== speakSeq || (typeof rec !== 'undefined' && rec)) return;
-      try { if (speechSynthesis.speaking) return; } catch(e){}
-      deadVoices[v.name] = 1; try { localStorage.setItem('jarvis2-deadvoices', JSON.stringify(deadVoices)); } catch(e){}
-      try { speechSynthesis.cancel(); const u2 = new SpeechSynthesisUtterance(said); u2.lang = 'en-US'; u2.rate = +S.rate; u2.pitch = +S.pitch; speechSynthesis.speak(u2); } catch(e){}
-    }, 1800);
-  } catch(e){}
+    try {
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(said);
+      const v = currentVoice(); if (v){ u.voice = v; u.lang = v.lang; }
+      u.rate = +S.rate; u.pitch = +S.pitch;
+      u.onstart = ()=>{ started = true; voiceMisses = 0; };
+      u.onerror = ev=>{ if (ev && /interrupted|canceled/.test(ev.error || '')) stopped = true; };
+      speechSynthesis.speak(u);
+      if (!v) return;
+      setTimeout(()=>{
+        if (started || stopped || id !== speakSeq || (typeof rec !== 'undefined' && rec)) return;
+        try { if (speechSynthesis.speaking) return; } catch(e){}
+        if (tries < 1) return say(tries + 1);          // one retry, same voice
+        if (++voiceMisses >= 3){ voiceMisses = 0; deadVoices[v.name] = 1;
+          try { localStorage.setItem('jarvis2-deadvoices2', JSON.stringify(deadVoices)); } catch(e){}
+          toast(`The voice “${v.name}” isn't working on this phone. Pick another in Settings → Voice.`); }
+      }, 1500);
+    } catch(e){}
+  };
+  say(0);
 }
 /** stop talking on purpose (Stop button, mic): also cancels the silent-voice retry above */
 function stopSpeaking(){ speakSeq++; try { speechSynthesis.cancel(); } catch(e){} }
@@ -2058,7 +2067,6 @@ function finish(r, deliver){
   clearRecTimers(); releaseRec(r); micUI(false);
   // after the mic, leave the "play and record" audio session so Safari lets go of the microphone (and the volume is normal again)
   setAudioSession('playback');   // back to 'auto' when the mic starts again
-  try { Jarvis.calendar && Jarvis.calendar.audioRest && Jarvis.calendar.audioRest(); } catch(e){}  // a running sound engine can keep the orange dot on
   finalText = interimText = '';
   if (deliver && text){ $('live').textContent = 'Tap the mic to talk again.'; handle(text); }
   else if (/^(Listening|Finishing)/.test($('live').textContent)) $('live').textContent = deliver ? "I didn't catch that. Tap the mic and try again." : 'Tap the mic and talk, or type below.';
