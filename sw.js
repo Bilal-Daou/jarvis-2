@@ -1,5 +1,5 @@
 // Lets Jarvis open even without internet, and shows reminder alerts.
-const CACHE = 'jarvis-v21';
+const CACHE = 'jarvis-v22';
 const FILES = ['./', './index.html', './manifest.json', './icon.svg', './icon-192.png', './icon-512.png', './icon-180.png', './features/brief.js', './features/habits.js', './features/finance.js', './features/receipt.js', './features/food.js', './features/calendar.js', './features/health.js', './features/brain.js'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES))); self.skipWaiting(); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))); self.clients.claim(); });
@@ -28,7 +28,8 @@ self.addEventListener('fetch', e => {
     return;
   }
   if (!same) return;
-  e.respondWith(fetch(e.request).then(r => { if (r.ok) { const copy = r.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)); } return r; })
+  // cache: 'no-cache' = always ask GitHub if there's a newer file (else the phone may reuse an old one for 10 min)
+  e.respondWith(fetch(e.request, {cache: 'no-cache'}).then(r => { if (r.ok) { const copy = r.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)); } return r; })
     .catch(() => caches.match(e.request).then(r => r || (e.request.mode === 'navigate' ? caches.match('./index.html') : Response.error()))));
 });
 self.addEventListener('notificationclick', e => { e.notification.close(); e.waitUntil(self.clients.matchAll({type:'window'}).then(cs => cs.length ? cs[0].focus() : self.clients.openWindow('./'))); });

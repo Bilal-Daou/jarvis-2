@@ -336,3 +336,4 @@ The branches `round4-wip`, `round5-wip`, `audit-wip` and `wf-test` on GitHub are
 ### 20 Nov session
 - **v20:** `closeSheet()` (the X) now calls `Jarvis.calendar.audioRest()`. Only change. Not yet tested on iPhone.
 - **v21: Debug report.** `jvLog(msg)` (top of main script) keeps the last 200 mic/voice/audio events in localStorage `jarvis2-debuglog` (times + event names, never the spoken words). Settings → Debug report → Show / Clear. Shows app version and audio-engine state. Testing flow: Bilal clears it, does the test, taps Show, sends one screenshot; Claude reads it.
+- **v22:** Settings footer shows "version N" (bump it AND the `jv-ver` meta in index.html AND `CACHE` in sw.js every release). sw.js now fetches with `cache: 'no-cache'`, because GitHub Pages sends `max-age=600` and the phone kept showing the old app for up to 10 min after a publish (Bilal saw no Debug report right after v21).
