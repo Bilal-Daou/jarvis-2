@@ -332,3 +332,7 @@ The branches `round4-wip`, `round5-wip`, `audit-wip` and `wf-test` on GitHub are
 - **Next session, first task: the orange mic dot after X.** It's back since v19 undid the v17 fix. v17 proved that suspending calendar.js's AudioContext (`Jarvis.calendar.audioRest()`, still in the code, unused) clears the dot, but calling it after EVERY recognition broke speech/listening. Next try, ONE change only: call `audioRest()` from `closeSheet()` in index.html (the X) only, never from `finish()`, and never resume audio on a tap. Publish, then Bilal tests: dot gone after X? Mic still hears 3 questions in a row? Same voice?
 - **Then:** shareable iCloud links (Bilal: "later"), a full check of every screen, then the paid upgrades **only on his explicit go**: smarter AI brain and a natural British-butler voice "like Jarvis" (ElevenLabs or similar, ~$5/month; no cloning of the film actor's voice). His plan: polish the free app first, pay last.
 - Bilal saved his first backup on 19 Nov; remind him weekly.
+
+### 20 Nov session
+- **v20:** `closeSheet()` (the X) now calls `Jarvis.calendar.audioRest()`. Only change. Not yet tested on iPhone.
+- **v21: Debug report.** `jvLog(msg)` (top of main script) keeps the last 200 mic/voice/audio events in localStorage `jarvis2-debuglog` (times + event names, never the spoken words). Settings → Debug report → Show / Clear. Shows app version and audio-engine state. Testing flow: Bilal clears it, does the test, taps Show, sends one screenshot; Claude reads it.

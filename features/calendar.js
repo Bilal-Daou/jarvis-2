@@ -319,7 +319,7 @@ let actx = null;
 function ctx(){
   if (actx) return actx;
   const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null;
-  try { actx = new AC(); } catch(e){ actx = null; } return actx;
+  try { actx = new AC(); actx.onstatechange = ()=>jvLog('audio engine: '+actx.state); jvLog('audio engine created'); } catch(e){ actx = null; } return actx;
 }
 /** iPhone only lets a page make sound after a tap: unlock audio on the first tap anywhere */
 function unlock(){
@@ -336,8 +336,9 @@ function unlock(){
     Not while an alarm rings or nightstand is on. It is NOT woken on the next tap: that tap is usually the mic,
     and waking audio while recognition starts made iPhone stop hearing (v17). startSound() resumes it when an alarm rings. */
 function audioRest(){
+  jvLog('audioRest called (engine '+(actx?actx.state:'none')+(ring.active?', ringing':'')+(night.on?', nightstand':'')+')');
   if (!actx || ring.active || night.on || actx.state !== 'running') return;
-  try { actx.suspend(); } catch(e){}
+  jvLog('audioRest: pausing'); try { actx.suspend(); } catch(e){}
 }
 
 const ring = {active:null, queue:[], timer:null, master:null, vib:null, stopAt:0};

@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en" data-theme="dark">
 <head>
+<meta name="jv-ver" content="21">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <meta name="theme-color" content="#07090f">
@@ -679,6 +680,8 @@ body.at-home .toast{bottom:calc(92px + var(--safe-b))}
       <div class="set-row"><div class="set-ic" style="background:#0a84ff"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18.5a4.5 4.5 0 0 1-.6-9 6 6 0 0 1 11.4 1.6 3.8 3.8 0 0 1-.3 7.4z"/><path d="M12 16v-5M9.8 13 12 10.8l2.2 2.2"/></svg></div><div class="lbl"><b>Backup</b><small>Save or restore all your data</small></div><button class="btn ghost" id="exportBtn">Save</button><button class="btn ghost" id="importBtn">Restore</button></div>
       <div class="set-row"><div class="set-ic" style="background:#ff3b30"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></div><div class="lbl"><b>Erase everything</b><small>Notes, money, food, habits…</small></div><button class="btn danger" id="wipeBtn">Erase</button></div>
     </div>
+    <div class="set-group"><div class="set-row"><div class="lbl"><b>Debug report</b><small>What the mic and voice did, for fixing problems. No words you said.</small></div><button class="btn ghost" id="dbgShow">Show</button><button class="btn ghost" id="dbgClear">Clear</button></div>
+      <pre id="dbgBox" hidden style="white-space:pre-wrap;font-size:11px;max-height:60vh;overflow:auto;margin:0;padding:10px"></pre></div>
     <p class="jv-foot">Jarvis 2.0<br>Your data stays on this device.</p>
     <input type="file" id="importFile" accept="application/json" hidden>
   </section>
@@ -712,6 +715,9 @@ body.at-home .toast{bottom:calc(92px + var(--safe-b))}
 <div class="modal" id="modal"><div class="box" id="modalBox" role="dialog" aria-modal="true" tabindex="-1"></div></div>
 
 <script>
+/* DEBUG REPORT: a short list of what the mic/voice/audio did (no words you said), kept on this phone only. Settings -> Debug report. */
+window.jvLog = function(m){ try { const k='jarvis2-debuglog', a=JSON.parse(localStorage.getItem(k)||'[]'), d=new Date();
+  a.push(d.toTimeString().slice(0,8)+'.'+String(d.getMilliseconds()).padStart(3,'0')+' '+m); localStorage.setItem(k, JSON.stringify(a.slice(-200))); } catch(e){} };
 /* =========================================================
    DATA (saved only on this device)
    ========================================================= */
@@ -771,9 +777,10 @@ function speak(text){
       const u = new SpeechSynthesisUtterance(said);
       const v = currentVoice(); if (v){ u.voice = v; u.lang = v.lang; }
       u.rate = +S.rate; u.pitch = +S.pitch;
-      u.onstart = ()=>{ started = true; voiceMisses = 0; };
-      u.onerror = ev=>{ if (ev && /interrupted|canceled/.test(ev.error || '')) stopped = true; };
-      speechSynthesis.speak(u);
+      u.onstart = ()=>{ jvLog('voice started'); started = true; voiceMisses = 0; };
+      u.onend = ()=>jvLog('voice ended');
+      u.onerror = ev=>{ jvLog('voice error: '+(ev&&ev.error)); if (ev && /interrupted|canceled/.test(ev.error || '')) stopped = true; };
+      jvLog('speak (try '+tries+', voice '+(v?v.name:'default')+')'); speechSynthesis.speak(u);
       if (!v) return;
       setTimeout(()=>{
         if (started || stopped || id !== speakSeq || (typeof rec !== 'undefined' && rec)) return;
@@ -2015,7 +2022,7 @@ function openSheet(listen){
   if (!chatLog.length) addMsg('ai', `${greeting()}, ${S.name}. Tap the mic and tell me what you need.`);
   if (listen) startListening();
 }
-function closeSheet(){ $('sheet').classList.remove('open'); $('sheetBg').classList.remove('open'); stopListening(); try { Jarvis.calendar.audioRest(); } catch(e){} }
+function closeSheet(){ jvLog('X: close chat'); $('sheet').classList.remove('open'); $('sheetBg').classList.remove('open'); stopListening(); try { Jarvis.calendar.audioRest(); } catch(e){} }
 $('orb').onclick = ()=>openSheet(true);
 $('heroMic').onclick = ()=>openSheet(!!SR);
 $('heroHint').onclick = ()=>openSheet(!lastReply && !!SR);
@@ -2052,7 +2059,7 @@ function micUI(on){
 }
 function recTimer(name, ms, fn){ clearTimeout(recTimers[name]); recTimers[name] = setTimeout(fn, ms); }
 function clearRecTimers(){ Object.keys(recTimers).forEach(k=>clearTimeout(recTimers[k])); recTimers = {}; }
-function setAudioSession(type){ try { if (navigator.audioSession && navigator.audioSession.type !== type) navigator.audioSession.type = type; } catch(e){} }
+function setAudioSession(type){ jvLog('audioSession -> '+type); try { if (navigator.audioSession && navigator.audioSession.type !== type) navigator.audioSession.type = type; } catch(e){} }
 /** the final cut for one recognizer: no more events, abort, forget it */
 function releaseRec(r){
   if (!r) return;
@@ -2062,7 +2069,7 @@ function releaseRec(r){
 }
 /** ends a session exactly once. deliver: true = act on what was heard, false = throw it away */
 function finish(r, deliver){
-  if (!r || r._jvDone) return; r._jvDone = true;
+  if (!r || r._jvDone) return; r._jvDone = true; jvLog('mic finish (deliver='+deliver+')');
   const text = (finalText || interimText || '').replace(/\s+/g,' ').trim();
   clearRecTimers(); releaseRec(r); micUI(false);
   // after the mic, leave the "play and record" audio session so Safari lets go of the microphone (and the volume is normal again)
@@ -2072,7 +2079,7 @@ function finish(r, deliver){
   else if (/^(Listening|Finishing)/.test($('live').textContent)) $('live').textContent = deliver ? "I didn't catch that. Tap the mic and try again." : 'Tap the mic and talk, or type below.';
 }
 function startListening(){
-  if (!SR){ $('live').textContent = 'Voice is not supported in this browser. Type below instead.'; return; }
+  jvLog('mic tap: start'); if (!SR){ $('live').textContent = 'Voice is not supported in this browser. Type below instead.'; return; }
   if (rec && !rec._jvStopping) return;        // already listening (or about to start)
   if (rec) finish(rec, true);                  // a stop still finishing: wrap it up first, then start fresh
   try { speechSynthesis.cancel(); } catch(e){}
@@ -2084,7 +2091,7 @@ function startListening(){
   const nl = String(navigator.language || '');
   r.lang = /^en-(US|GB|AU|CA|IN|IE|NZ|ZA|SG|AE|SA|PH|MY)$/i.test(nl) ? nl : 'en-US'; r.interimResults = true; r.continuous = false; r.maxAlternatives = 1;
   const mine = ()=> rec === r && !r._jvDone;  // events from an old recognizer are ignored
-  r.onstart = ()=>{ if (!mine()) return; clearTimeout(recTimers.nostart); micUI(true); if (!interimText) $('live').textContent = 'Listening…';
+  r.onstart = ()=>{ jvLog('mic onstart'); if (!mine()) return; clearTimeout(recTimers.nostart); micUI(true); if (!interimText) $('live').textContent = 'Listening…';
     recTimer('quiet', 8000, ()=>{ if (mine() && !(finalText || interimText)) { $('live').textContent = "I didn't catch that. Tap the mic and try again."; finish(r, false); } }); // nothing heard
     recTimer('max', 25000, ()=>{ if (mine()) stopListening(); }); };                    // never more than 25 s
   r.onresult = ev=>{ if (!mine()) return; let fin = '', interim = '';
@@ -2094,7 +2101,7 @@ function startListening(){
     clearTimeout(recTimers.quiet);
     // iPhone sometimes keeps the mic open after you stop talking: 2.5 s of silence ends it
     recTimer('pause', fin && !interim ? 1500 : 2500, ()=>{ if (mine()) stopListening(); }); };
-  r.onerror = ev=>{ if (!mine()) return; const e = ev && ev.error;
+  r.onerror = ev=>{ jvLog('mic error: '+(ev&&ev.error)); if (!mine()) return; const e = ev && ev.error;
     if (e === 'not-allowed' || e === 'service-not-allowed') $('live').textContent = 'Please allow the microphone for this page, then tap the mic again.';
     else if (e === 'no-speech') $('live').textContent = "I didn't catch that. Tap the mic and try again.";
     else if (e === 'audio-capture') $('live').textContent = 'Another app is using the microphone. Close it and tap the mic again.';
@@ -2103,14 +2110,14 @@ function startListening(){
     // our own stops never reach here (their handlers are removed first), so "aborted" means iOS cut it (a call, Siri):
     // end the session and keep whatever was already heard
     finish(r, !/not-allowed|service-not-allowed|audio-capture/.test(e || '')); };
-  r.onend = ()=>{ if (!mine()) return; finish(r, true); };
+  r.onend = ()=>{ jvLog('mic onend'); if (!mine()) return; finish(r, true); };
   try { r.start(); } catch(e){ finish(r, false); $('live').textContent = 'Tap the mic again to talk.'; return; }
   micUI(true); $('live').textContent = 'Listening…';   // show it right away; onstart confirms
   recTimer('nostart', 6000, ()=>{ if (mine() && !finalText && !interimText) finish(r, false); }); // never started (iPhone glitch)
 }
 /** stop listening and use what was heard. If the sheet was closed, or nothing was heard, just cut the mic. */
 function stopListening(){
-  const r = rec; if (!r || r._jvDone) return;
+  const r = rec; if (!r || r._jvDone) return; jvLog('mic stop');
   const sheetOpen = $('sheet').classList.contains('open');
   if (!sheetOpen){ finish(r, false); return; }
   if (r._jvStopping) return;
@@ -2200,6 +2207,9 @@ function saveBackup(){
   toast('Backup saved. Keep the file in iCloud Drive or email it to yourself.'); renderHome();
 }
 $('exportBtn').onclick = saveBackup;
+$('dbgShow').onclick = ()=>{ const b=$('dbgBox'); let a=[]; try { a=JSON.parse(localStorage.getItem('jarvis2-debuglog')||'[]'); } catch(e){}
+  const c=Jarvis.calendar&&Jarvis.calendar.audio; b.textContent='v'+(document.querySelector('meta[name=jv-ver]')||{}).content+' · audio now: '+(c?c.state:'none')+String.fromCharCode(10)+(a.slice(-60).join(String.fromCharCode(10))||'(empty)'); b.hidden=false; };
+$('dbgClear').onclick = ()=>{ try { localStorage.removeItem('jarvis2-debuglog'); } catch(e){} $('dbgBox').hidden=true; toast('Debug report cleared'); };
 $('heroBackup').onclick = ()=>{ haptic(); saveBackup(); };
 $('importBtn').onclick = ()=>$('importFile').click();
 $('importFile').onchange = async e=>{ try { const data = JSON.parse(await e.target.files[0].text()); if (!data.notes) throw 0; const next = Object.assign({notes:[],reminders:[],expenses:[]}, data); next.settings = Object.assign({...DEFAULT_SETTINGS}, data.settings||{}); localStorage.setItem(KEY, JSON.stringify(next)); try { sessionStorage.setItem('jarvis2-toast', 'Backup restored'); } catch(x){} location.reload(); } catch(err){ toast('That file is not a Jarvis backup'); } };
