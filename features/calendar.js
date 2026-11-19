@@ -333,11 +333,11 @@ function unlock(){
 }
 ['pointerdown','touchend','click','keydown'].forEach(t=>document.addEventListener(t, unlock, true));
 /** after the mic: pause the idle sound engine so iPhone can let go of the microphone (orange dot).
-    Not while an alarm rings or nightstand is on. The next tap anywhere wakes it again (unlock). */
+    Not while an alarm rings or nightstand is on. It is NOT woken on the next tap: that tap is usually the mic,
+    and waking audio while recognition starts made iPhone stop hearing (v17). startSound() resumes it when an alarm rings. */
 function audioRest(){
   if (!actx || ring.active || night.on || actx.state !== 'running') return;
-  try { actx.suspend(); } catch(e){ return; }
-  ['pointerdown','touchend','click','keydown'].forEach(t=>document.addEventListener(t, unlock, true));
+  try { actx.suspend(); } catch(e){}
 }
 
 const ring = {active:null, queue:[], timer:null, master:null, vib:null, stopAt:0};
