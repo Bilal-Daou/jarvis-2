@@ -332,6 +332,13 @@ function unlock(){
   function done(){ ['pointerdown','touchend','click','keydown'].forEach(t=>document.removeEventListener(t, unlock, true)); }
 }
 ['pointerdown','touchend','click','keydown'].forEach(t=>document.addEventListener(t, unlock, true));
+/** after the mic: pause the idle sound engine so iPhone can let go of the microphone (orange dot).
+    Not while an alarm rings or nightstand is on. The next tap anywhere wakes it again (unlock). */
+function audioRest(){
+  if (!actx || ring.active || night.on || actx.state !== 'running') return;
+  try { actx.suspend(); } catch(e){ return; }
+  ['pointerdown','touchend','click','keydown'].forEach(t=>document.addEventListener(t, unlock, true));
+}
 
 const ring = {active:null, queue:[], timer:null, master:null, vib:null, stopAt:0};
 function setSession(type){ try { if (navigator.audioSession) navigator.audioSession.type = type; } catch(e){} }
@@ -1291,7 +1298,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
 setInterval(()=>{ try { if (J.current === 'calendar'){ const v = document.getElementById('v-calendar'); v && paint(v); } } catch(e){} }, 30000);
 
 /* for tests and other features */
-J.calendar = { parseDate, buildICS, reminderItem, eventItem, parseCalPayload, applySync, parseAlarm, spokenTimes, alarmText, alarmLink, syncLink, openSheet, closeSheet, showAlarm, stopAlarm, snoozeAlarm, checkSnoozes, nightstand, get ring(){ return ring; }, get audio(){ return actx; }, store: st };
+J.calendar = { parseDate, buildICS, reminderItem, eventItem, parseCalPayload, applySync, parseAlarm, spokenTimes, alarmText, alarmLink, syncLink, openSheet, closeSheet, showAlarm, stopAlarm, snoozeAlarm, checkSnoozes, nightstand, get ring(){ return ring; }, get audio(){ return actx; }, audioRest, store: st };
 
 } catch(e){ console.error('calendar feature failed to load', e); }
 })();

@@ -588,6 +588,7 @@ body.at-home .toast{bottom:calc(92px + var(--safe-b))}
 
     <button class="hm-brief hm-setup" id="heroSetup" hidden><span class="pb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 3.5 12.9 8l4.6 1.9-4.6 1.9L11 16.3l-1.9-4.5L4.5 9.9 9.1 8z"/><path d="M18.5 14.5l.8 1.9 1.9.8-1.9.8-.8 1.9-.8-1.9-1.9-.8 1.9-.8z"/></svg></span><span class="bt"><b>Set up Jarvis · 1 minute</b><small>Your name, currency, city and iPhone</small></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
     <button class="hm-brief" id="heroBrief" hidden><span class="pb"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l11-6.5a1 1 0 0 0 0-1.72l-11-6.5A1 1 0 0 0 8 5.5z"/></svg><span class="eq"><i></i><i></i><i></i></span></span><span class="bt"><b id="heroBriefTxt">Play my morning brief</b><small id="heroBriefSub">Weather, plans and money, read aloud</small></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button>
+    <button class="hm-brief hm-setup" id="heroBackup" hidden><span class="pb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5v11"/><path d="m7.5 10 4.5 4.5 4.5-4.5"/><path d="M4.5 16.5v2a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-2"/></svg></span><span class="bt"><b>Save a backup</b><small id="heroBackupSub">Your data lives only on this phone</small></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
     <div class="hm-tiles" id="heroTiles"></div>
   </section>
 
@@ -1531,6 +1532,9 @@ function renderHome(){
     $('heroBriefTxt').textContent = on ? 'Playing your brief' : ready ? 'Your morning brief is ready' : h>=4 && h<12 ? 'Play my morning brief' : 'Play my daily brief';
     $('heroBriefSub').textContent = on ? 'Tap to stop' : ready ? 'Tap to listen · weather, plans, money' : 'Weather, plans and money, read aloud';
     B.classList.toggle('playing', on); B.classList.toggle('ready', ready); B.setAttribute('aria-label', on ? 'Stop the brief' : $('heroBriefTxt').textContent); }
+  // weekly backup nudge: data lives only on this phone
+  const bk = backupDue(); $('heroBackup').hidden = !bk || setup;
+  if (bk) $('heroBackupSub').textContent = bk === 'never' ? 'Your data lives only on this phone' : `${bk} days since your last one`;
   const tiles = homeTiles(); if (tiles.length % 2) tiles[tiles.length-1].wide = true;
   const html = tiles.map(t=>tileHTML(t).replace('class="tile"', t.wide?'class="tile wide"':'class="tile"')).join('');
   if ($('heroTiles').dataset.h !== html){ $('heroTiles').innerHTML = html; $('heroTiles').dataset.h = html; }
@@ -2054,6 +2058,7 @@ function finish(r, deliver){
   clearRecTimers(); releaseRec(r); micUI(false);
   // after the mic, leave the "play and record" audio session so Safari lets go of the microphone (and the volume is normal again)
   setAudioSession('playback');   // back to 'auto' when the mic starts again
+  try { Jarvis.calendar && Jarvis.calendar.audioRest && Jarvis.calendar.audioRest(); } catch(e){}  // a running sound engine can keep the orange dot on
   finalText = interimText = '';
   if (deliver && text){ $('live').textContent = 'Tap the mic to talk again.'; handle(text); }
   else if (/^(Listening|Finishing)/.test($('live').textContent)) $('live').textContent = deliver ? "I didn't catch that. Tap the mic and try again." : 'Tap the mic and talk, or type below.';
@@ -2170,7 +2175,24 @@ $('sCur').onchange = e=>{ S.currency = e.target.value; save(); renderAll(); };
 $('sBudget').onchange = e=>{ S.budget = parseFloat(e.target.value)||0; save(); renderAll(); };
 $('sTheme').onchange = e=>{ S.theme = e.target.value; save(); applyTheme(); };
 $('notifBtn').onclick = ()=>{ try { Notification.requestPermission().then(syncSettings); } catch(e){} };
-$('exportBtn').onclick = ()=>{ const blob = new Blob([JSON.stringify(db,null,2)], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'jarvis-backup-'+new Date().toISOString().slice(0,10)+'.json'; a.click(); toast('Backup saved'); };
+/* ---------- backup ----------
+   The data lives only on this phone, so Home shows a "Save a backup" nudge when the last one is 7+ days old
+   (or none was ever saved and there is data from 2+ days ago). The date is kept outside db so a restore doesn't change it. */
+var BACKUP_KEY = 'jarvis2-lastBackup';   // var: renderHome can run before this line
+function lastBackupAt(){ try { return +localStorage.getItem('jarvis2-lastBackup') || 0; } catch(e){ return 0; } }
+function backupDue(){
+  const items = [...db.notes, ...db.reminders, ...db.expenses]; if (!items.length) return 0;
+  const lb = lastBackupAt(), now = Date.now(), day = 864e5;
+  if (!lb){ const oldest = Math.min(...items.map(x=>x.created || x.at || now)); return now - oldest >= 2*day ? 'never' : 0; }
+  const d = Math.floor((now - lb) / day); return d >= 7 ? d : 0;
+}
+function saveBackup(){
+  const blob = new Blob([JSON.stringify(db,null,2)], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'jarvis-backup-'+new Date().toISOString().slice(0,10)+'.json'; a.click();
+  try { localStorage.setItem(BACKUP_KEY, String(Date.now())); } catch(e){}
+  toast('Backup saved. Keep the file in iCloud Drive or email it to yourself.'); renderHome();
+}
+$('exportBtn').onclick = saveBackup;
+$('heroBackup').onclick = ()=>{ haptic(); saveBackup(); };
 $('importBtn').onclick = ()=>$('importFile').click();
 $('importFile').onchange = async e=>{ try { const data = JSON.parse(await e.target.files[0].text()); if (!data.notes) throw 0; const next = Object.assign({notes:[],reminders:[],expenses:[]}, data); next.settings = Object.assign({...DEFAULT_SETTINGS}, data.settings||{}); localStorage.setItem(KEY, JSON.stringify(next)); try { sessionStorage.setItem('jarvis2-toast', 'Backup restored'); } catch(x){} location.reload(); } catch(err){ toast('That file is not a Jarvis backup'); } };
 $('wipeBtn').onclick = ()=>{ modal(`<h4>Erase everything?</h4><p style="color:var(--muted);margin:0 0 12px">All notes, reminders, money, food, habits, goals and receipts on this device will be deleted. Your settings stay. Save a backup first if you might want them.</p><div class="row"><button class="btn ghost" id="mCancel">Cancel</button><button class="btn danger" id="mSave">Erase</button></div>`); $('mCancel').onclick=closeModal; $('mSave').onclick=()=>{ try { localStorage.setItem(KEY, JSON.stringify({notes:[], reminders:[], expenses:[], settings:S})); Object.keys(localStorage).filter(k=>k!==KEY && /^jarvis2/.test(k)).forEach(k=>localStorage.removeItem(k)); sessionStorage.setItem('jarvis2-toast', 'Everything erased'); } catch(x){} location.reload(); }; };

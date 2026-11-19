@@ -548,11 +548,16 @@ if (typeof J.addBriefLine === 'function') J.addBriefLine(()=>{
   try {
     if (!st.syncedAt) return null;
     const bits = [], n = lastNight();
-    if (n) bits.push(`you ${n.asleep ? 'slept' : 'were in bed for'} ${hmSay(n.asleep || n.inBed)} last night`);
+    if (n){ const tot = n.asleep || n.inBed;
+      bits.push(`you ${n.asleep ? 'slept' : 'were in bed for'} ${hmSay(tot)} last night${tot < 360 ? ', a bit short' : tot >= 420 && tot <= 570 ? ', a solid night' : ''}`); }
     const y = st.history[dayKey(Date.now() - DAY)];
     if (y && y.steps != null && y.stepsAt && new Date(y.stepsAt).getHours() >= 18) bits.push(`yesterday you walked ${N0.format(y.steps)} steps`);
+    // the next iPhone Clock alarm that is switched on, if it rings within the next day
+    const list = iphoneAlarms(), on = list.filter(a => a.on === true), now = Date.now();
+    if (on.length){ const when = Math.min(...on.map(a => nextAlarmAt(a, now)));
+      if (when - now < DAY) bits.push(`your next alarm is at ${tsay(when)} ${startOfDay(when) === startOfDay(now) ? 'today' : 'tomorrow'}`); }
     if (!bits.length) return null;
-    const s = bits.join(', and ');
+    const s = bits.length > 1 ? bits.slice(0, -1).join('; ') + '; and ' + bits[bits.length-1] : bits[0];
     return s.charAt(0).toUpperCase() + s.slice(1) + '.';
   } catch(e){ return null; }
 });
