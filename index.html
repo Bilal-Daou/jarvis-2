@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en" data-theme="dark">
 <head>
-<meta name="jv-ver" content="30">
+<meta name="jv-ver" content="31">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <meta name="theme-color" content="#07090f">
@@ -683,7 +683,7 @@ body.at-home .toast{bottom:calc(92px + var(--safe-b))}
     </div>
     <div class="set-group"><div class="set-row"><div class="lbl"><b>Debug report</b><small>What the mic and voice did, for fixing problems. No words you said.</small></div><button class="btn ghost" id="dbgTest">Voice tests</button><button class="btn ghost" id="dbgShow">Show</button><button class="btn ghost" id="dbgClear">Clear</button></div>
       <pre id="dbgBox" hidden style="white-space:pre-wrap;font-size:11px;max-height:60vh;overflow:auto;margin:0;padding:10px"></pre></div>
-    <p class="jv-foot">Jarvis 2.0 · version 30<br>Your data stays on this device.</p>
+    <p class="jv-foot">Jarvis 2.0 · version 31<br>Your data stays on this device.</p>
     <input type="file" id="importFile" accept="application/json" hidden>
   </section>
 </div>
@@ -2061,7 +2061,26 @@ function openSheet(listen){
 function micStateLine(){ const c=Jarvis.calendar&&Jarvis.calendar.audio; let s='?'; try{ s=navigator.audioSession?navigator.audioSession.type:'n/a'; }catch(e){} return 'state: session='+s+', engine='+(c?c.state:'none')+', recognizer='+(rec?(rec._jvDone?'done':'alive'):'none')+', listening='+listening+', speaking='+(window.speechSynthesis?speechSynthesis.speaking:'?'); }
 let dotWatch=null;
 function watchAfterX(){ clearInterval(dotWatch); let n=0; jvLog('after X '+micStateLine()); dotWatch=setInterval(()=>{ n+=2; jvLog('after X +'+n+'s '+micStateLine()); if(n>=20) clearInterval(dotWatch); },2000); }
-function closeSheet(){ jvLog('X: close chat'); setTimeout(watchAfterX,0); $('sheet').classList.remove('open'); $('sheetBg').classList.remove('open'); stopListening(); stopSpeaking(); }   // X also stops Jarvis talking
+/* v31 ONE CHANGE (orange dot). v30 report + Bilal: after a normal mic use + spoken reply, the dot stays after X (25 s+).
+   His workaround always clears it: reopen the chat (the mic starts by itself), then X while it is still listening (= abort mid-listen).
+   So on X, if the mic was used since the chat opened and isn't listening now, do that for him: start a hidden recognizer
+   inside the X tap and abort it 1 s after it has the mic (or after 2.5 s), like his manual X. No UI, nothing is heard or used. */
+let micUsedSinceOpen = false, flushRec = null;
+function killFlush(why){ const f = flushRec; if (!f) return; flushRec = null; jvLog('dot flush: abort ('+why+')');
+  ['onstart','onaudiostart','onend','onerror','onresult'].forEach(k=>{ try { f[k] = null; } catch(e){} }); try { f.abort(); } catch(e){} setAudioSession('playback'); }
+function flushMic(){
+  if (!SR || rec || flushRec) return; let f;
+  setAudioSession('auto');
+  try { f = new SR(); } catch(e){ jvLog('dot flush: could not create'); setAudioSession('playback'); return; }
+  flushRec = f; f.lang = 'en-US'; f.interimResults = false; f.continuous = false;
+  f.onstart = ()=>jvLog('dot flush: onstart');
+  f.onaudiostart = ()=>{ jvLog('dot flush: audiostart'); setTimeout(()=>{ if (flushRec === f) killFlush('had the mic'); }, 1000); };
+  f.onerror = ev=>jvLog('dot flush: error '+(ev&&ev.error));
+  f.onend = ()=>{ jvLog('dot flush: onend'); if (flushRec === f){ flushRec = null; setAudioSession('playback'); } };
+  try { f.start(); jvLog('dot flush: start'); } catch(e){ jvLog('dot flush: start failed'); flushRec = null; setAudioSession('playback'); return; }
+  setTimeout(()=>{ if (flushRec === f) killFlush('2.5 s timeout'); }, 2500);
+}
+function closeSheet(){ jvLog('X: close chat'); const used = micUsedSinceOpen && !rec; micUsedSinceOpen = false; setTimeout(watchAfterX,0); $('sheet').classList.remove('open'); $('sheetBg').classList.remove('open'); stopListening(); stopSpeaking(); if (used) flushMic(); else jvLog('dot flush: not needed'); }   // X also stops Jarvis talking
 $('orb').onclick = ()=>openSheet(true);
 $('heroMic').onclick = ()=>openSheet(!!SR);
 $('heroHint').onclick = ()=>openSheet(!lastReply && !!SR);
@@ -2119,14 +2138,14 @@ function finish(r, deliver){
   else if (/^(Listening|Finishing)/.test($('live').textContent)) $('live').textContent = deliver ? "I didn't catch that. Tap the mic and try again." : 'Tap the mic and talk, or type below.';
 }
 function startListening(){
-  jvLog('mic tap: start'); if (!SR){ $('live').textContent = 'Voice is not supported in this browser. Type below instead.'; return; }
+  killFlush('real mic start'); jvLog('mic tap: start'); if (!SR){ $('live').textContent = 'Voice is not supported in this browser. Type below instead.'; return; }
   if (rec && !rec._jvStopping) return;        // already listening (or about to start)
   if (rec) finish(rec, true);                  // a stop still finishing: wrap it up first, then start fresh
   try { speechSynthesis.cancel(); } catch(e){}
   clearRecTimers(); setAudioSession('auto');
   let r;
   try { r = new SR(); } catch(e){ $('live').textContent = 'Voice is not available right now. Type below instead.'; return; }
-  rec = r; finalText = ''; interimText = '';
+  rec = r; micUsedSinceOpen = true; finalText = ''; interimText = '';
   // Jarvis understands English: use the phone's English variant when it has one Siri dictation knows, else US English
   const nl = String(navigator.language || '');
   r.lang = /^en-(US|GB|AU|CA|IN|IE|NZ|ZA|SG|AE|SA|PH|MY)$/i.test(nl) ? nl : 'en-US'; r.interimResults = true; r.continuous = false; r.maxAlternatives = 1;
