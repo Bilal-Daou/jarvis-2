@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en" data-theme="dark">
 <head>
-<meta name="jv-ver" content="29">
+<meta name="jv-ver" content="30">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <meta name="theme-color" content="#07090f">
@@ -683,7 +683,7 @@ body.at-home .toast{bottom:calc(92px + var(--safe-b))}
     </div>
     <div class="set-group"><div class="set-row"><div class="lbl"><b>Debug report</b><small>What the mic and voice did, for fixing problems. No words you said.</small></div><button class="btn ghost" id="dbgTest">Voice tests</button><button class="btn ghost" id="dbgShow">Show</button><button class="btn ghost" id="dbgClear">Clear</button></div>
       <pre id="dbgBox" hidden style="white-space:pre-wrap;font-size:11px;max-height:60vh;overflow:auto;margin:0;padding:10px"></pre></div>
-    <p class="jv-foot">Jarvis 2.0 · version 29<br>Your data stays on this device.</p>
+    <p class="jv-foot">Jarvis 2.0 · version 30<br>Your data stays on this device.</p>
     <input type="file" id="importFile" accept="application/json" hidden>
   </section>
 </div>
@@ -2057,7 +2057,11 @@ function openSheet(listen){
   if (!chatLog.length) addMsg('ai', `${greeting()}, ${S.name}. Tap the mic and tell me what you need.`);
   if (listen) startListening();
 }
-function closeSheet(){ jvLog('X: close chat'); $('sheet').classList.remove('open'); $('sheetBg').classList.remove('open'); stopListening(); stopSpeaking(); }   // X also stops Jarvis talking
+/* v30 DIAGNOSTIC (orange dot): after X, log the mic/audio state every 2 s for 20 s. Changes nothing. */
+function micStateLine(){ const c=Jarvis.calendar&&Jarvis.calendar.audio; let s='?'; try{ s=navigator.audioSession?navigator.audioSession.type:'n/a'; }catch(e){} return 'state: session='+s+', engine='+(c?c.state:'none')+', recognizer='+(rec?(rec._jvDone?'done':'alive'):'none')+', listening='+listening+', speaking='+(window.speechSynthesis?speechSynthesis.speaking:'?'); }
+let dotWatch=null;
+function watchAfterX(){ clearInterval(dotWatch); let n=0; jvLog('after X '+micStateLine()); dotWatch=setInterval(()=>{ n+=2; jvLog('after X +'+n+'s '+micStateLine()); if(n>=20) clearInterval(dotWatch); },2000); }
+function closeSheet(){ jvLog('X: close chat'); setTimeout(watchAfterX,0); $('sheet').classList.remove('open'); $('sheetBg').classList.remove('open'); stopListening(); stopSpeaking(); }   // X also stops Jarvis talking
 $('orb').onclick = ()=>openSheet(true);
 $('heroMic').onclick = ()=>openSheet(!!SR);
 $('heroHint').onclick = ()=>openSheet(!lastReply && !!SR);
@@ -2106,7 +2110,7 @@ function releaseRec(r){
 function finish(r, deliver){
   if (!r || r._jvDone) return; r._jvDone = true; jvLog('mic finish (deliver='+deliver+', heard '+((finalText || interimText || '').trim().length)+' letters)');
   const text = (finalText || interimText || '').replace(/\s+/g,' ').trim();
-  clearRecTimers(); releaseRec(r); micUI(false);
+  clearRecTimers(); releaseRec(r); micUI(false); jvLog('after mic '+micStateLine());
   // after the mic, leave the "play and record" audio session so Safari lets go of the microphone (and the volume is normal again)
   setAudioSession('playback');   // back to 'auto' when the mic starts again
   lastMicEnd = Date.now();
@@ -2146,6 +2150,7 @@ function startListening(){
     // our own stops never reach here (their handlers are removed first), so "aborted" means iOS cut it (a call, Siri):
     // end the session and keep whatever was already heard
     finish(r, !/not-allowed|service-not-allowed|audio-capture/.test(e || '')); };
+  r.onaudiostart = ()=>jvLog('mic audiostart'); r.onaudioend = ()=>jvLog('mic audioend');
   r.onend = ()=>{ jvLog('mic onend'); if (!mine()) return; finish(r, true); };
   try { r.start(); } catch(e){ finish(r, false); $('live').textContent = 'Tap the mic again to talk.'; return; }
   micUI(true); $('live').textContent = 'Listening…';   // show it right away; onstart confirms
