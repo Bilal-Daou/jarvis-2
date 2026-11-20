@@ -68,7 +68,7 @@ jobs:
           else
             git commit -q -m "Update market data $(date -u +'%Y-%m-%d %H:%M UTC')"
           fi
-          # main may have moved while we ran (e.g. Bilal pushed a new app version): rebase our one
+          # main may have moved while we ran (e.g. a new app version was pushed): rebase our one
           # data commit on top of it. -X theirs = on a conflict in finance.json keep the fresh data.
           pushed=""
           for i in 1 2 3; do

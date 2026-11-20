@@ -42,7 +42,7 @@ function quote(sym){ return (data && data.quotes && data.quotes[sym]) || null; }
 // sample prices because no live price could be fetched yet (news/calendar are then real).
 function samplePx(){ return !!(data && (data.sample || data.sample_prices)); }
 
-/* Symbols Bilal added that the feed doesn't cover show as "waiting for data".
+/* Symbols the user added that the feed doesn't cover show as "waiting for data".
    (Yahoo blocks direct browser requests, so a client-side fetch would only fail.) */
 function tryMissing(){}
 
@@ -84,7 +84,7 @@ function resolve(text, loose){
   if (data && data.quotes && data.quotes[up]) return up;
   if (NAMES[up]) return up;
   if (data && data.quotes){ for (const [s,q] of Object.entries(data.quotes)){ const n = (q.name||'').toLowerCase(); if (n && x.length >= 4 && (n === x || n.startsWith(x+' '))) return s; } }
-  if (loose && /^[a-z]{1,5}(-[a-z])?$/i.test(up)) return up;               // a ticker Bilal spelled out
+  if (loose && /^[a-z]{1,5}(-[a-z])?$/i.test(up)) return up;               // a ticker the user spelled out
   return null;
 }
 
@@ -580,9 +580,9 @@ function bindScrub(root){
 /* detail sheet */
 let detailSym = null, detailRange = '1d';
 function repoEditLink(){
-  let owner = 'bilal-daou', repo = 'jarvis-2';
-  try { if (/\.github\.io$/.test(location.hostname)){ owner = location.hostname.split('.')[0]; const seg = location.pathname.split('/').filter(Boolean)[0]; if (seg && !/\./.test(seg)) repo = seg; } } catch(e){}
-  return `https://github.com/${owner}/${repo}/edit/main/data/watchlist.json`;
+  // read from the address (owner.github.io/repo/), so no account is written into the code; '' when not on GitHub Pages
+  try { if (/\.github\.io$/.test(location.hostname)){ const owner = location.hostname.split('.')[0], seg = location.pathname.split('/').filter(Boolean)[0]; const repo = seg && !/\./.test(seg) ? seg : owner + '.github.io'; return `https://github.com/${owner}/${repo}/edit/main/data/watchlist.json`; } } catch(e){}
+  return '';
 }
 function detailHTML(sym){
   const q = quote(sym); const inList = st.watchlist.includes(sym);
@@ -590,7 +590,7 @@ function detailHTML(sym){
   const btns = `<div class="fin-btns">${q?`<button class="btn ghost" data-fin-say>${(J.icons && J.icons.play) || ''}Hear it</button>`:''}<button class="btn ${inList?'danger':''}" data-fin-toggle>${inList?'Remove':'＋ Add to watchlist'}</button></div>`;
   if (!q) return `<div class="fin-mbox"><div class="fin-dt-top"><div><h4>${J.esc(tickerLabel(sym))}</h4><small>${J.esc(NAMES[sym]||'Added by you')}</small></div>${close}</div>
     <div class="fin-note" style="margin-top:14px"><span>⏳</span><span><b>No price yet.</b> ${J.esc(tickerLabel(sym))} isn't in Jarvis's market feed. It covers about 90 of the most-traded US stocks, ETFs and crypto. To add more, put the ticker in the feed list on GitHub and it shows up after the next update.</span></div>
-    <a class="btn ghost" style="display:block;text-align:center;text-decoration:none" href="${repoEditLink()}" target="_blank" rel="noopener noreferrer">Open the feed list on GitHub</a>${btns}</div>`;
+    ${repoEditLink() ? `<a class="btn ghost" style="display:block;text-align:center;text-decoration:none" href="${repoEditLink()}" target="_blank" rel="noopener noreferrer">Open the feed list on GitHub</a>` : ''}${btns}</div>`;
   const ser = series(q, detailRange);
   const five = detailRange==='5d' && ser.length > 1 ? {chg:q.price-ser[0], pct:(q.price-ser[0])/ser[0]*100, kind:q.kind} : null;
   const shown = five || q;

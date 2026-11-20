@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en" data-theme="dark">
 <head>
-<meta name="jv-ver" content="31">
+<meta name="jv-ver" content="32">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <meta name="theme-color" content="#07090f">
@@ -683,7 +683,7 @@ body.at-home .toast{bottom:calc(92px + var(--safe-b))}
     </div>
     <div class="set-group"><div class="set-row"><div class="lbl"><b>Debug report</b><small>What the mic and voice did, for fixing problems. No words you said.</small></div><button class="btn ghost" id="dbgTest">Voice tests</button><button class="btn ghost" id="dbgShow">Show</button><button class="btn ghost" id="dbgClear">Clear</button></div>
       <pre id="dbgBox" hidden style="white-space:pre-wrap;font-size:11px;max-height:60vh;overflow:auto;margin:0;padding:10px"></pre></div>
-    <p class="jv-foot">Jarvis 2.0 · version 31<br>Your data stays on this device.</p>
+    <p class="jv-foot">Jarvis 2.0 · version 32<br>Your data stays on this device.</p>
     <input type="file" id="importFile" accept="application/json" hidden>
   </section>
 </div>
@@ -1254,7 +1254,7 @@ function smallTalk(t, said){
   if (/^(help|help me|what can you do|what else can you do|what are you able to do|what do you do|what are your (features|skills|options)|how do (i|you) use (you|this|this app|jarvis)|how does this (work|app work)|what can i (ask|say|tell)( you| jarvis)?|what should i (ask|say)( you)?|show me what you can do|options|commands|features)$/.test(t)) return chat(HELP_TEXT);
   if (/^(right now |so )?(what('s| is) the time|what time is it|what time it is|time|the time|tell me the time|current time|got the time|do you have the time|have you got the time)( now| right now| please)?$/.test(t)) return chat(`It's ${now.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})}.`);
   if (/^(what('s| is) (the |today's )?date|today's date|the date|date|what day is (it|today)|what('s| is) (the )?day( today)?|which day is (it|today)|what('s| is) today|what month is it|what year is it|what('s| is) the month|what day of the week is it|what('s| is) the day of the week)( today| now)?$/.test(t)) return chat(`Today is ${now.toLocaleDateString([], {weekday:'long', month:'long', day:'numeric', year:'numeric'})}.`);
-  // "call me Billy", "my name is Bilal", "change my name to Bilal"
+  // "call me Sam", "my name is Maya", "change my name to Maya"
   { const nm = String(said||'').replace(/[.!?]+$/,'').match(/^(?:please )?(?:call me|you can call me|my name is|my name's|change my name to|set my name to|my name should be)\s+([A-Za-z\u00C0-\u024F][A-Za-z\u00C0-\u024F' -]{0,28})$/i);
     if (nm && !/^(back|later|tomorrow|tonight|when|if|at|in|on|a |an |the )/i.test(nm[1]) && nm[1].split(' ').length <= 3){ S.name = nm[1].trim().replace(/\b[a-z]/g, c=>c.toUpperCase()); save(); renderAll(); try { syncSettings(); } catch(e){} return chat(`Okay, I'll call you ${S.name}.`); } }
   // "change the currency to lira", "use euros", "set my currency to dollars"

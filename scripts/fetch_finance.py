@@ -60,7 +60,7 @@ MARKETS = [
 
 DEFAULT_WATCHLIST = ["AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "TSLA", "META"]
 
-# Broad list so most tickers Bilal adds by voice are already covered.
+# Broad list so most tickers a user adds by voice are already covered.
 NAMES = {
     "AAPL": "Apple", "MSFT": "Microsoft", "NVDA": "Nvidia", "AMZN": "Amazon",
     "GOOGL": "Alphabet", "META": "Meta", "TSLA": "Tesla", "AVGO": "Broadcom",

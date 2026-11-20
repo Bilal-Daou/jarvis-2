@@ -1,7 +1,7 @@
 {
   "name": "Jarvis 2.0",
   "short_name": "Jarvis",
-  "description": "Your voice-first personal assistant: notes, reminders and budget.",
+  "description": "Your voice-first personal assistant: notes, reminders, money, markets, food, habits and your day.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

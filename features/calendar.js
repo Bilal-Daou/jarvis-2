@@ -12,7 +12,8 @@
 try {
 const J = window.Jarvis; if (!J) return;
 const S = J.settings;
-const APP_URL = 'https://bilal-daou.github.io/jarvis-2/';
+/* The app's own address, read from wherever it is hosted (any account or domain), so nothing is tied to one owner */
+const appURL = () => location.origin + location.pathname.replace(/index\.html$/, '');
 const st = J.store('calendar', {
   events: [], local: [], syncedAt: 0, syncCount: 0,
   syncName: 'Jarvis', alarmName: 'Jarvis Alarm', alarmReady: false,
@@ -162,7 +163,7 @@ async function shareICS(ics, name){
 /* "2026-11-16 06:30:00": Shortcuts reads this the same way in every language and region (a 24-hour time with a date),
    unlike "6:30 AM", which depends on the phone's settings */
 function alarmText(ms){ const d = new Date(ms); return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())} ${p2(d.getHours())}:${p2(d.getMinutes())}:00`; }
-function backURL(extra){ const base = /^https?:/.test(location.protocol) ? location.origin + location.pathname : APP_URL; return base + '#jarvis=' + extra; }
+function backURL(extra){ return appURL() + '#jarvis=' + extra; }
 function alarmLink(r){
   const name = encodeURIComponent(st.alarmName || 'Jarvis Alarm'), text = encodeURIComponent(alarmText(r.at));
   // In Safari we can come back to Jarvis when the Shortcut finishes. A home-screen app would be sent to Safari instead, so skip it there.
@@ -1070,8 +1071,7 @@ J.css(`
 .cal-diag i{font-style:normal;width:20px;text-align:center;flex:none}
 `);
 function syncRecipeHTML(){
-  const base = /^https?:/.test(location.protocol) && !/localhost|127\.0\.0\.1/.test(location.host) ? location.origin + location.pathname : APP_URL;
-  const syncPrefix = base + '#sync=';
+  const syncPrefix = appURL() + '#sync=';
   const H = J.health, last = H && H.lastSync, got = (last && last.got) || {};
   const names = ['Jarvis', 'Open Jarvis', 'Jarvis 2.0'];
   if (!names.includes(st.syncName)) names.push(st.syncName);

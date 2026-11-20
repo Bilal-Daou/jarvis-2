@@ -1,4 +1,4 @@
-/* Jarvis brain: understands more of what Bilal says, so Jarvis almost never answers "I can't do that".
+/* Jarvis brain: understands more of what the user says, so Jarvis almost never answers "I can't do that".
    Loaded last. index.html's think() calls:
      Jarvis.brain.early(said, t)  before the feature intents: fixing entries by voice ("that was actually 40"),
                                   maths, unit and currency conversion, time abroad, days until, coin flips, spelling
