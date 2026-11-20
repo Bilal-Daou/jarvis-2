@@ -219,8 +219,7 @@ The branches `round4-wip`, `round5-wip`, `audit-wip` and `wf-test` on GitHub are
 - **Very large single files.** `index.html` is ~221 KB, `features/food.js` ~185 KB, `brain.js` ~164 KB. The understanding is built from many regular expressions, so a change to phrasing can break other phrasings. Re-test widely after any change to `think()` or `brain.js`.
 - **Gemini model list will go stale.** `AI_MODELS` in `features/food.js` is a hand-made list (Nov 2026). Google renames and retires models, so update it if AI photos stop working. The free tier may let Google use photos to improve its AI. Bilal was told not to snap private things.
 - **Free data sources can break without warning.** Yahoo often blocks plain requests (that's why yfinance is used), and Nasdaq earnings is optional and sometimes blocked. The job keeps the previous values when a source fails, so the app shows older data instead of crashing.
-- **Hard-coded or Lebanon-specific bits to review for a rename/sale:** `APP_URL = 'https://bilal-daou.github.io/jarvis-2/'` in `features/calendar.js` (line 15), the fallback owner/repo `'bilal-daou'` / `'jarvis-2'` in `features/finance.js` (`repoEditLink`, it auto-detects on github.io), app name "Jarvis 2.0" in `manifest.json` and `index.html`, Shortcut names "Jarvis" and "Jarvis Alarm" (defaults in `calendar.js`, editable), default LBP rate 89,500 in `features/receipt.js`, "Beirut" as a one-tap city suggestion in `features/brief.js` (line 21) and in the first-run Welcome sheet (`index.html` around line 1876), Lebanese holidays and fun facts and the time-zone city map in `features/brain.js` (around lines 681 and 766-881), and the outdated description in `manifest.json` ("notes, reminders and budget"). Code comments mention "Bilal" in a few places (harmless, not user-visible). The user's name, city and currency are all set by the user, not hard-coded (name and currency in `settings`, city in `brief.loc`).
-- **`README.md` is outdated** (describes v2 only).
+- **Hard-coded or Lebanon-specific bits to review for a rename/sale:** see section 12a. Since v32 the code holds no owner link or name (one comment in the v31 mic block excepted). Still to decide: the link, the public repo and its history, and the app name "Jarvis". The user's name, city and currency are all set by the user, not hard-coded (name and currency in `settings`, city in `brief.loc`).
 - **Stale branches** `round4-wip`, `round5-wip`, `audit-wip`, `wf-test` are still on GitHub (plus `claude/project-thread-qyf2gi`, the branch this handoff was written on). They're harmless. Cloud sessions couldn't delete them through the proxy, and Bilal can delete them on GitHub.
 - **The project files folder copy is old.** The app files in `/mnt/project-files/jarvis-2/` are from 15 Nov (v2). The real, current code is only on GitHub.
 - **Updates can look "stuck".** `sw.js` is network-first for the app's own files, so this is usually the browser's HTTP cache or an old service worker still in control. Fix: bump `CACHE` in `sw.js` on every release (forces the new worker), and tell him to close and reopen the app twice.
@@ -294,6 +293,40 @@ The branches `round4-wip`, `round5-wip`, `audit-wip` and `wf-test` on GitHub are
    - On GitHub: until you approve it, it sits in a "pull request" (a proposed change you accept with one tap: open the link I send you and tap the green **Merge pull request** button, then **Confirm merge**). After that it's at https://github.com/bilal-daou/jarvis-2/blob/main/HANDOFF.md.
 4. **To continue in a new Claude Code session:** start the new session with the repository `bilal-daou/jarvis-2` selected (when Claude Code asks which repository to use, pick **jarvis-2**). Then copy this whole document and paste it as your first message, or just say: "Read HANDOFF.md in the jarvis-2 repo first, then continue." The Claude GitHub App is already installed on the repo, so the new session can save changes to it.
 5. **Your personal data** (notes, expenses, reminders, food, habits) is **not** in any of these places. It lives only inside Safari on your iPhone. To keep a copy: open Jarvis, tap the **gear icon** at the top of Home (or More → Settings), go to **Backup** and tap **Save**. A `jarvis-backup-<date>.json` file lands in Files → Downloads. To bring it back later, use the **Restore** button next to Save and pick that file.
+
+---
+
+## 12a. MAKING IT SELLABLE (brand-free link, App Store) · 20 Nov 2026, v32
+
+Goal (owner): a buyer never sees the owner's name or can link the app to him (not in the link, the app, or the code), enters their own details and it's their app. Maybe the App Store later.
+
+**Done in v32 (commits `a83c8b2`, `385411a`), tested on localhost and on the live site:**
+- `features/calendar.js`: `APP_URL` removed. `appURL()` = `location.origin + location.pathname` (minus `index.html`) feeds the Shortcut guide's `#sync=` link and the alarm Shortcut's `x-success` back link. The live link is unchanged, so the owner's Shortcuts keep working. On localhost the guide now shows the localhost link (only matters when testing on a PC).
+- `features/finance.js` `repoEditLink()`: no fallback owner/repo. Returns `''` when the app isn't on `*.github.io`, and then the "Open the feed list on GitHub" button is hidden.
+- README rewritten (current features, no owner link). Manifest description updated. Owner name removed from comments (brain.js, finance.js, the index.html name example, fetch_finance.py, workflow).
+- **`_config.yml`** (GitHub Pages `exclude`) stops publishing `HANDOFF.md`, `CLAUDE.md`, `README.md` and `scripts/` on the app's address. Before this, `<site>/HANDOFF` showed these notes (full name, GitHub login, personal habits) to anyone with the link. They're still in the public repo. **If you add another notes file at the repo root, add it to `exclude`.**
+
+**Still tied to the owner (his decisions):**
+1. The link `bilal-daou.github.io/jarvis-2`.
+2. The public repo `Bilal-Daou/jarvis-2`: its name, HANDOFF.md/CLAUDE.md, and git history (authors "Bilal Daou" and "bilaldaou2002"; 30 commits carry his university email, readable by anyone through a commit's `.patch`). History can't be cleaned without a rewrite, so the plan is a fresh repo with no history.
+3. One comment in `index.html` (~line 2064, the v31 orange-dot block: "v30 report + Bilal"). Left alone because another session owns that code. Change it to "the owner" the next time that block is edited.
+4. This PC commits with his university email (`git config user.email`). Suggested: switch to his GitHub "noreply" address (ask first).
+5. The name "Jarvis" is Iron Man's AI in Marvel films (Disney). Pick a new name before selling, above all for the App Store. A rename touches manifest.json, `<title>`, `apple-mobile-web-app-title`, the footer, many spoken replies, the "Jarvis, ..." wake-word stripping in `think()`/brain.js, Shortcut default names in calendar.js, and alarm/.ics labels. **Keep the internal storage key `jarvis2`** (changing it wipes users' data; receipt.js writes it too).
+
+**Lebanon-specific defaults** (good for the Lebanese market; they'd need to become settings for other markets): LBP rate 89,500 (`receipt.js` `DEFAULT_LBP_RATE`, and the lira-rate reply in brain.js ~668); "Beirut" one-tap city (brief.js `BEIRUT` line 21 + button ~620, Welcome sheet in index.html ~1947-1959) and "set my city to Beirut" examples; Lebanese public holidays and Mother's Day date (brain.js ~766-854); Lebanon fun facts (brain.js ~875-881); Lebanese foods and the AI food-photo prompt "The person lives in Lebanon" (food.js ~1189); receipts tuned for Lebanese dual-currency bills and DD/MM dates (receipt.js); Lebanese words (yalla, shukran); Lebanese towns in the time-zone map (brain.js ~681).
+
+**Neutral link options:**
+- **Free (recommended):** a free GitHub **organization** named after the new app. Copy only the app files into a fresh repo (one first commit, neutral author, no HANDOFF/CLAUDE; keep notes in a private repo or on the PC), turn on Pages (gh-pages) and Actions (the market bot moves with the code; turn it off in the old repo). Repo `<org>.github.io` gives `https://<org>.github.io/`. Use an organization, not a second personal account: GitHub's terms allow one free personal account per person.
+- **Paid (only on his go):** a custom domain, about $10–15/year. Turn on WHOIS privacy (usually free). Point the bare domain with A records; a `www` CNAME to `<user>.github.io` shows the GitHub account in DNS.
+
+**Moving the owner's phone to a new link** (storage is per address, so a new address starts empty):
+1. Old address: Settings → Backup → Save.
+2. New address: Settings → Backup → Restore, then re-paste the Gemini key (`jarvis2-ai` is never in backups).
+3. "Jarvis" Shortcut: replace the link in Open URLs with the Copy button in More → Connect your iPhone. "Jarvis Alarm" needs no change (its back link now comes from `appURL()`).
+4. Old address: replace its site with a small redirect page that keeps `location.hash` (so `#sync=` still arrives) for a few months. Only after step 1.
+5. Re-add any home-screen icon.
+
+**App Store (paid, only on his go):** Apple Developer Program $99/year. An individual account shows the person's legal name as the seller, so "not linked to him" needs an **organization** account (a legal entity + a free D-U-N-S number). Wrap the web app with Capacitor (free). Building needs Xcode, so a Mac, a rented cloud Mac or a cloud build service (Codemagic, GitHub Actions macOS runners). Guideline 4.2 rejects plain website wrappers, so add native value: local notifications (reminders ring when the app is closed), native speech in/out (would also end the iPhone web-voice and orange-dot problems), HealthKit directly (no Shortcut). A privacy policy URL and App Privacy labels are required (HealthKit has extra rules). Apple keeps 15% of sales under the Small Business Program. Full plain-language report: in the 20 Nov "brand-free" session.
 
 ---
 
