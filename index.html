@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en" data-theme="dark">
 <head>
-<meta name="jv-ver" content="33">
+<meta name="jv-ver" content="34">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <meta name="theme-color" content="#07090f">
@@ -685,7 +685,7 @@ body.at-home .toast{bottom:calc(92px + var(--safe-b))}
     </div>
     <div class="set-group"><div class="set-row"><div class="lbl"><b>Debug report</b><small>What the mic and voice did, for fixing problems. No words you said.</small></div><button class="btn ghost" id="dbgTest">Voice tests</button><button class="btn ghost" id="dbgShow">Show</button><button class="btn ghost" id="dbgClear">Clear</button></div>
       <pre id="dbgBox" hidden style="white-space:pre-wrap;font-size:11px;max-height:60vh;overflow:auto;margin:0;padding:10px"></pre></div>
-    <p class="jv-foot">Jarvis 2.0 · version 33<br>Your data stays on this device.</p>
+    <p class="jv-foot">Jarvis 2.0 · version 34<br>Your data stays on this device.</p>
     <input type="file" id="importFile" accept="application/json" hidden>
   </section>
 </div>
@@ -822,8 +822,11 @@ function unlockSpeech(e){
   UNLOCK_EVENTS.forEach(t=>document.removeEventListener(t, unlockSpeech, true));
   let ok = false;
   try {
-    const u = new SpeechSynthesisUtterance('.'); u.volume = 0; u.rate = 2;
+    /* v34: '.' never started on Bilal's iPhone (v33 report: 3 tries, no start, so the first reply was silent). iPhone may skip text with nothing to say. Now a real word, still at volume 0. */
+    const u = new SpeechSynthesisUtterance('Ready'); u.volume = 0; u.rate = 2;
+    const v = currentVoice(); if (v){ u.voice = v; u.lang = v.lang; }
     u.onstart = ()=>{ ok = true; speechEverStarted = true; jvLog('voice unlock: started (good)'); };
+    u.onend = ()=>jvLog('voice unlock: ended'+(ok?'':' WITHOUT starting'));
     u.onerror = ev=>jvLog('voice unlock: error '+(ev && ev.error));
     speechSynthesis.speak(u); jvLog('voice unlock: tried on a tap');
   } catch(err){ jvLog('voice unlock failed'); }
@@ -2148,6 +2151,7 @@ function startListening(){
   killFlush('real mic start'); jvLog('mic tap: start'); if (!SR){ $('live').textContent = 'Voice is not supported in this browser. Type below instead.'; return; }
   if (rec && !rec._jvStopping) return;        // already listening (or about to start)
   if (rec) finish(rec, true);                  // a stop still finishing: wrap it up first, then start fresh
+  if (speechUnlocked && !speechEverStarted) jvLog('mic start: cancels a pending voice unlock');
   try { speechSynthesis.cancel(); } catch(e){}
   clearRecTimers(); setAudioSession('auto');
   let r;
