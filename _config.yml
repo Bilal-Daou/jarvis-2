@@ -1,0 +1,7 @@
+# GitHub Pages settings. Keeps the developer notes and scripts out of the published app
+# (they stay in the repository, they just aren't served on the app's address).
+exclude:
+  - HANDOFF.md
+  - CLAUDE.md
+  - README.md
+  - scripts/
