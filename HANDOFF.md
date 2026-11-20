@@ -452,3 +452,10 @@ Goal (owner): a buyer never sees the owner's name or can link the app to him (no
   - Before selling: consider hiding the Debug report for customers (e.g. show it after 5 taps on the version line). `watchAfterX` (v30 "after X" logging) is still called from `closeSheet`; remove only together with other voice work and an iPhone test.
   - Two comments in index.html still say "Bilal" (the v34 wake-up block and the v31 dot-flush block). Change to "the owner" only when that voice code is edited anyway.
 - **Next tasks (unchanged):** the owner's "11 photos" of optional features (ask him to resend), making it sellable (section 12a), weekly backup reminder. Keep replies SHORT, one step at a time.
+
+### v37 (20 Nov 2026, late night): customers never see the Google key screen
+- Owner's point: a paying customer should never be asked to create a Google API key. Chose option B (free, now).
+- `features/food.js`: with no AI key, a photo without a barcode now opens `showNoBarcode()` (search, "Type it myself", "Scan a barcode instead", tip to say it on the mic) instead of `showAiSetup`. The same goes for the `nokey` error. The capture sheet no longer shows "Turn on AI for plates". The AI card moved into a folded `<details class="fdp-adv">` "Advanced: use your own Google AI key" at the bottom of Food. The setup sheet and the voice command still work for whoever wants their own key.
+- Tested at 375px in light and dark (no-barcode sheet, search hand-off). Not tested on iPhone yet.
+- Costs list given to the owner (domain, Apple $99/yr, Google Play $25 once, AI/voice/database usage, store cut). Plan agreed: finish the free polish first, then Capacitor apps (Android first, iPhone when he gets a Mac), then the paid "wow" parts, then the business parts. Option A (owner-run AI helper) waits for his go.
+- Next: receipts. Ask him for ONE receipt photo it got wrong + what Jarvis showed.

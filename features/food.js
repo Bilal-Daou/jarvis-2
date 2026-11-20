@@ -1299,7 +1299,7 @@ Keep names short (at most 4 words) in plain English. portion is a short everyday
         ${camLbl('fdp-big', `${I.cam}<span>Take photo</span>`)}
         <div class="fdp-two">${camLbl('fd-ghost', `${I.photo} From photos`, 'fdPhGal')}<button class="fd-ghost" data-pa="barcode">${I.scan} Scan barcode</button></div>
         ${has ? `<p class="fdp-tipline">Tip: shoot from above in good light, with the whole plate in view.</p>`
-          : `<button class="fdp-aioff" data-pa="setup"><span class="sp">✨</span><span><b>Turn on AI for plates</b><small>Free, about 2 minutes, no credit card</small></span>${I.right}</button>`}
+          : `<p class="fdp-tipline">For a plate, you can also just say or type what you ate.</p>`}
       </div>`, stopPhotoWork);
     wirePhotoSheet();
   }
@@ -1336,7 +1336,24 @@ Keep names short (at most 4 words) in plain English. portion is a short everyday
     if (my!==ph.seq || !sheetOpen()) return;
     if (code){ beep(); handleScanResult(code); return; }
     ph.pending = img;
-    showAiSetup({reason:'plate'});
+    showNoBarcode(img);
+  }
+
+  /* no AI on this phone and no barcode: never send customers to a key screen; offer search, typing or voice */
+  function showNoBarcode(img){
+    const body = openSheet(`
+      <div class="fdp-hd" style="margin-right:44px"><h4>No barcode in that photo</h4></div>
+      ${img ? `<div class="fdp-pend"><img src="${img.dataUrl}" alt=""><span>For a plate of food, just tell me what's on it.</span></div>` : ''}
+      <p class="fdp-lede">Search it, type it, or tap the mic on Home and say something like “I had fries and a steak”.</p>
+      <div class="fdp-addf"><div class="search">${I.search}<input id="fdnbQ" placeholder="Search food, e.g. hummus" autocomplete="off" enterkeyhint="search" aria-label="Search food"></div></div>
+      <button class="fd-cta fdp-wide" id="fdnbType" style="margin-top:10px">Type it myself</button>
+      <button class="fd-ghost fdp-wide" id="fdnbScan" style="margin-top:10px">Scan a barcode instead</button>`, ()=>{ stopPhotoWork(); });
+    const $ = s => body.querySelector(s);
+    const goSearch = ()=>{ const v = $('#fdnbQ').value.trim(); ph.pending = null; closeSheet(); if (J.current!=='food') J.go('food');
+      setTimeout(()=>{ const i = document.getElementById('fdSIn'); if (!i) return; i.value = v; i.dispatchEvent(new Event('input')); if (v){ const b = document.getElementById('fdSBtn'); b && b.click(); } try { i.focus(); } catch(e){} }, 80); };
+    $('#fdnbQ').onkeydown = e=>{ if (e.key==='Enter') goSearch(); };
+    $('#fdnbType').onclick = ()=>{ ph.pending = null; closeSheet(); showManual({}); };
+    $('#fdnbScan').onclick = ()=>{ ph.pending = null; closeSheet(); openScanner(); };
   }
 
   const STEPS = ['Looking at your food…', 'Spotting each item…', 'Estimating portions…', 'Counting calories…', 'Checking the numbers…'];
@@ -1366,7 +1383,7 @@ Keep names short (at most 4 words) in plain English. portion is a short everyday
     } catch(e){
       if (my!==ph.seq || e.kind==='abort') return;
       clearInterval(ph.tick); ph.tick = null; ph.ac = null;
-      if (e.kind==='nokey'){ ph.pending = img; return showAiSetup({reason:'plate'}); }
+      if (e.kind==='nokey'){ ph.pending = img; return showNoBarcode(img); }
       showPhotoError(aiErrText(e), {kind:e.kind});
     }
   }
@@ -1712,6 +1729,7 @@ Keep names short (at most 4 words) in plain English. portion is a short everyday
   .fdp-err .fdp-mini img{width:100%;height:100%;object-fit:cover;filter:saturate(.7)}
   /* setup */
   .fdp-lede{color:var(--muted);font-size:14px;margin:0 0 14px;line-height:1.5}
+  .fdp-adv{margin-top:18px}.fdp-adv>summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight:600;padding:8px 2px}.fdp-adv>.card{margin-top:8px}
   .fdp-pend{display:flex;align-items:center;gap:12px;background:var(--accent-soft);border-radius:14px;padding:8px;margin-bottom:12px;font-size:13px;font-weight:600}
   .fdp-pend img{width:46px;height:46px;border-radius:10px;object-fit:cover;flex:none}
   .fdp-steps{list-style:none;margin:0 0 14px;padding:0;display:flex;flex-direction:column;gap:2px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:6px 14px}
@@ -1768,8 +1786,7 @@ Keep names short (at most 4 words) in plain English. portion is a short everyday
       <div class="card" id="fdWater"></div>
       <div class="section-h"><h3>Last 7 days</h3><span id="fdWeekAvg" style="color:var(--muted);font-size:13px;font-weight:600"></span></div>
       <div class="card" id="fdWeek"></div>
-      <div class="section-h"><h3>AI food photos</h3></div>
-      <div class="card" id="fdAI"></div>
+      <details class="fdp-adv"><summary>Advanced: use your own Google AI key</summary><div class="card" id="fdAI"></div></details>
       <p class="fd-note">Product data from Open Food Facts (free and open). Common-food values are typical estimates. Photo estimates by Google Gemini.</p>`;
     const q = s => el.querySelector(s);
     q('#fdPrev').onclick = ()=>{ viewKey = shiftKey(viewKey, -1); renderDynamic(el); };
@@ -1826,7 +1843,7 @@ Keep names short (at most 4 words) in plain English. portion is a short everyday
     q('#fdDateL').textContent = dateLabel(viewKey);
     q('#fdDateS').textContent = keyDate(viewKey).toLocaleDateString([], {weekday:'long', month:'long', day:'numeric'});
     q('#fdNext').disabled = viewKey >= todayKey();
-    { const has = J.ai.hasKey(); q('#fdSnapSub').textContent = has ? 'Plate or product · AI counts calories' : 'Plate or product · free AI';
+    { const has = J.ai.hasKey(); q('#fdSnapSub').textContent = has ? 'Plate or product · AI counts calories' : 'Scan a product barcode';
       const ai = q('#fdAI'), sig = has ? 'on'+aiKey().slice(-4) : 'off'; if (ai.dataset.sig!==sig){ ai.dataset.sig = sig; ai.innerHTML = aiCardHTML(); } }
     const t = dayTotals(viewKey), goal = s.goal, left = goal - t.kcal, over = left < 0;
     q('#fdSum').innerHTML = `<div class="fd-sum">
