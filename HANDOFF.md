@@ -414,5 +414,41 @@ Goal (owner): a buyer never sees the owner's name or can link the app to him (no
 
 ### Where to pick up (end of the 20 Nov evening session)
 - **Voice, mic and orange dot are all fixed and confirmed on iPhone (v35).** Keep: `unlockSpeech` on touchend/click only (never pointerdown), 'Ready' at volume 0; `flushMic()` on X; the 🔈 `.say-btn` replay button (whole-bubble tap no longer replays).
-- **Optional cleanup later (one at a time, low priority):** the v30 "after X" 2-second state logging (`watchAfterX`), the Settings "Voice tests" button. calendar.js `unlock()` still starts on `pointerdown` too (AudioContext); it works now, so leave it unless the alarm sound has trouble.
+- **Optional cleanup later (one at a time, low priority):** the v30 "after X" 2-second state logging (`watchAfterX`). (The Settings "Voice tests" button was removed in v36.) calendar.js `unlock()` still starts on `pointerdown` too (AudioContext); it works now, so leave it unless the alarm sound has trouble.
 - **Next tasks:** (1) Bilal will resend "11 photos" from an older chat about optional things to add in the app. (2) Making it sellable: see section 12a (link without his name, public repo history shows his university email, the name "Jarvis", App Store costs); every paid step needs his explicit go. (3) A full check of every screen. Remind him about the weekly backup. Keep replies SHORT with one step (he got confused by a long multi-topic answer).
+
+### 20 Nov night session: full screen check → v36 (commit `867810f`)
+- **How it ran:** the owner asked to split the work into separate sessions. One session checked every screen (read-only), three fixed problems in parallel (split by file so no two touched the same file), and the starting session did the last fixes, the release and this note. Working notes with every finding, file:line and test: the side-session notes file `screen-check-handoff.md` (outside the repo, in the Claude side-session-notes folder of the session that started this).
+- **Owner's okays used:** he left with a blanket okay ("if there's anything that needs approval, you have my approval"). Used for: removing the Settings "Voice tests" button (it paused the alarm sound engine, risky for customers) and adding a Debug report **Copy** button; publishing v36. Nothing paid, nothing removed besides Voice tests.
+- **What v36 changed (no voice/mic/audio code touched):**
+  - First run: picking a city from the Welcome sheet ("Search a city" / "Use my location") now returns to the Welcome sheet (`openSetup` + callbacks in brief.js `openLocation`/`useGPS`). The Home weather tile refreshes by itself when a city is set or the forecast arrives (brief.js `homeChanged()` fires `jarvis:brief-state`).
+  - Layout: no cut-off text on Today at 375 px (2-line clamp on the calendar, receipts and brief tile texts). Settings rows can use `set-row wrap` (label on its own line, buttons below); the Debug report row uses it.
+  - Colours: new CSS var `--on-accent` (text on accent fills; dark for the blue/green/orange accents, set in `applyTheme()` via `LIGHT_ACCENT_INK`), and light-theme `--accent-ink` darker for those three (`--ink-k`). Use `var(--on-accent,#fff)` for any new white-on-accent text. Habits buttons pick dark/white text by brightness (`fillStyle()`, `goalFill`).
+  - Navigation: new hook `Jarvis.subNav[viewId] = {open, label, close, leave}` in index.html (`subNav()`, `updateBar()`, `goBack()`, `go()`): a screen's inner page closes first on the top Back, iPhone swipe back and Escape; `leave()` runs when you go to another screen. Habits uses it for habit and goal details. `renderAll()` now also calls `updateBar()`.
+  - Water: Habits' water habit and Food's glasses are one number (habits.js `waterToFood()` in `setValue()`/`putValue()`, guarded by `fromFood`; a new water habit starts at Food's glasses).
+  - Markets: 5D charts and tiles use the 5-day move (`moveFor()`); calendar labels for central-bank speeches, inflation expectations, financial stability report.
+  - Food: search/barcode retry once after 1.5 s; message no longer blames the internet when online; meal "+" clears the old search; "400 g e" → "400 g"; tapping a 7-day bar shows a "Showing …" toast.
+  - Money: Restore shows what the backup holds and asks before replacing; Money has rows to Receipts and Markets (`#moneyLinks`). More profile card opens Settings at "Your name" (`showField()`).
+  - Receipts: typed mode says "Scan instead"; saved receipts have Edit (opens the linked payment; `jarvis:expense-updated` copies changes back); blur tips hidden when the items add up.
+  - Wording: `realName()` / `greetName()` in index.html: no ", there" anywhere in replies when no name is set; "what's my name" with no name explains how to set it; no-budget hint on budget questions; "Your habit is done today".
+- **Testing gotchas learned:** in the browser pane, when the pane is hidden CSS slide animations freeze (views look shifted 34 px): inject `*{animation:none!important;transition:none!important}` before layout checks. The local python server lets the browser cache feature files: `fetch(url,{cache:'reload'})` each changed file, then reload. Screenshot coordinates are 1.5× CSS px. `navigator.clipboard` only works on a real tap (a JS `.click()` falls back). Computed colours may come back as `color(srgb r g b)` in 0–1.
+
+### Where to pick up (end of the 20 Nov night session)
+- **v36 is live.** The owner hasn't tested it on his iPhone yet. Give him the iPhone checklist below ONE step at a time.
+- **iPhone checklist (only a real iPhone can show these):**
+  1. Close and reopen Jarvis twice. Settings, at the very bottom, says "version 36".
+  2. Ask Jarvis 3 questions with the mic. Each answer is spoken, and the orange dot goes away after X (v35 behaviour must be unchanged).
+  3. Food → Snap your food: the camera opens; take a photo of a plate (needs the Gemini key).
+  4. Money → Receipts → Scan a receipt: the camera opens; scan a real receipt; check store, total and date.
+  5. Set a reminder 2 minutes ahead → "Add to Calendar (rings)": the iPhone Calendar "Add" screen appears; tap Add; it alerts in 2 minutes.
+  6. Press the Action Button: Jarvis opens, and More shows "iPhone connected · Last sync just now".
+  7. Settings → Debug report → Copy, then paste in Notes: the whole report pastes.
+- **Known, not fixed (next sessions, one at a time):**
+  - "remind me to pay rent on the 1st at 9 am" is set for TOMORROW 9 AM and keeps "on the 1st" in the text. Date parsing in `think()`/brain.js; re-test widely after any change there.
+  - Red and pink accents: white button text is 3.5–3.7:1 (4.5 wanted). Owner to decide whether to darken them. Purple (default) passes.
+  - Watchlist rows show today's % in the pill while their 5D line shows the 5-day move.
+  - After "Use my location" the Welcome chip says "Your location · Change" until the town name arrives; closing the city search by tapping the backdrop doesn't return to the Welcome sheet.
+  - Connect guide `.tg` tags ("Optional", "3 actions") are 4.1–4.4:1 contrast.
+  - Before selling: consider hiding the Debug report for customers (e.g. show it after 5 taps on the version line). `watchAfterX` (v30 "after X" logging) is still called from `closeSheet`; remove only together with other voice work and an iPhone test.
+  - Two comments in index.html still say "Bilal" (the v34 wake-up block and the v31 dot-flush block). Change to "the owner" only when that voice code is edited anyway.
+- **Next tasks (unchanged):** the owner's "11 photos" of optional features (ask him to resend), making it sellable (section 12a), weekly backup reminder. Keep replies SHORT, one step at a time.
