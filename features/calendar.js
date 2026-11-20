@@ -320,7 +320,7 @@ let actx = null;
 function ctx(){
   if (actx) return actx;
   const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null;
-  try { actx = new AC(); actx.onstatechange = ()=>jvLog('audio engine: '+actx.state); jvLog('audio engine created'); } catch(e){ actx = null; } return actx;
+  try { actx = new AC(); actx.onstatechange = ()=>jvLog('audio engine: '+actx.state); jvLog('audio engine created'); } catch(e){ actx = null; jvLog('audio engine: could not create ('+(e&&e.name)+')'); } return actx;
 }
 /** iPhone only lets a page make sound after a tap: unlock audio on the first tap anywhere */
 function unlock(){

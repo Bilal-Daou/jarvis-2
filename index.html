@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en" data-theme="dark">
 <head>
-<meta name="jv-ver" content="34">
+<meta name="jv-ver" content="35">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <meta name="theme-color" content="#07090f">
@@ -685,7 +685,7 @@ body.at-home .toast{bottom:calc(92px + var(--safe-b))}
     </div>
     <div class="set-group"><div class="set-row"><div class="lbl"><b>Debug report</b><small>What the mic and voice did, for fixing problems. No words you said.</small></div><button class="btn ghost" id="dbgTest">Voice tests</button><button class="btn ghost" id="dbgShow">Show</button><button class="btn ghost" id="dbgClear">Clear</button></div>
       <pre id="dbgBox" hidden style="white-space:pre-wrap;font-size:11px;max-height:60vh;overflow:auto;margin:0;padding:10px"></pre></div>
-    <p class="jv-foot">Jarvis 2.0 · version 34<br>Your data stays on this device.</p>
+    <p class="jv-foot">Jarvis 2.0 · version 35<br>Your data stays on this device.</p>
     <input type="file" id="importFile" accept="application/json" hidden>
   </section>
 </div>
@@ -814,7 +814,9 @@ let speechUnlocked = false, speechEverStarted = false;
 /* v25 said ' ' (a blank): iPhone didn't count it. v27 report: after ONE real tap-started voice, every later reply spoke.
    So the unlock now says '.', a real character with nothing to hear, and logs whether iPhone started it.
    If it didn't start and nothing else has spoken yet, the next tap tries again. */
-const UNLOCK_EVENTS = ['pointerdown','touchend','click'];
+/* v35: NOT 'pointerdown'. A finger landing is not a real tap for iPhone (only touchend/click count), so speech started there
+   was silently dropped (v33+v34 reports: the wake-up never started, ended or failed). pointerdown ran first and removed the others. */
+const UNLOCK_EVENTS = ['touchend','click'];
 function unlockSpeech(e){
   if (speechUnlocked || speechEverStarted || !('speechSynthesis' in window)) return;
   if (e && e.target && e.target.closest && e.target.closest('#micBtn')) return;
@@ -828,7 +830,7 @@ function unlockSpeech(e){
     u.onstart = ()=>{ ok = true; speechEverStarted = true; jvLog('voice unlock: started (good)'); };
     u.onend = ()=>jvLog('voice unlock: ended'+(ok?'':' WITHOUT starting'));
     u.onerror = ev=>jvLog('voice unlock: error '+(ev && ev.error));
-    speechSynthesis.speak(u); jvLog('voice unlock: tried on a tap');
+    speechSynthesis.speak(u); jvLog('voice unlock: tried on a tap ('+(e&&e.type)+')');
   } catch(err){ jvLog('voice unlock failed'); }
   setTimeout(()=>{ if (ok || speechEverStarted) return; jvLog('voice unlock: did not start, will retry on next tap');
     speechUnlocked = false; UNLOCK_EVENTS.forEach(t=>document.addEventListener(t, unlockSpeech, true)); }, 1500);
