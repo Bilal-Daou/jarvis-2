@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en" data-theme="dark">
 <head>
-<meta name="jv-ver" content="32">
+<meta name="jv-ver" content="33">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <meta name="theme-color" content="#07090f">
@@ -384,7 +384,9 @@ body.is-listening .hm-glow{animation-duration:1.8s}
 .msg.ai{align-self:flex-start;background:var(--card-solid);border:1px solid var(--card-border);box-shadow:var(--card-shadow);border-bottom-left-radius:6px}
 :root[data-theme="dark"] .msg.ai{background:#232329;border-color:transparent}
 .msg.ai .who{display:none}
-.msg.ai.tap-hear::after{content:'🔈 Tap to hear';display:block;font-size:12.5px;opacity:.6;margin-top:4px}
+.say-btn{display:block;margin-top:4px;padding:2px 6px 2px 0;background:none;border:0;color:inherit;font:inherit;font-size:15px;opacity:.75;cursor:pointer}
+.msg.ai.tap-hear .say-btn{opacity:.9}
+.msg.ai.tap-hear .say-btn::after{content:' Tap to hear';font-size:12.5px}
 .msg-acts{display:flex;gap:6px;flex-wrap:wrap;align-self:flex-start;margin:-2px 0 2px 2px;animation:msgIn .34s var(--spring)}
 .msg-acts .chip{min-height:36px;padding:7px 13px 7px 10px;font-size:13.5px;box-shadow:none;background:var(--fill);border-color:transparent;color:var(--accent-ink)}
 .msg-acts .chip svg{width:15px;height:15px}
@@ -683,7 +685,7 @@ body.at-home .toast{bottom:calc(92px + var(--safe-b))}
     </div>
     <div class="set-group"><div class="set-row"><div class="lbl"><b>Debug report</b><small>What the mic and voice did, for fixing problems. No words you said.</small></div><button class="btn ghost" id="dbgTest">Voice tests</button><button class="btn ghost" id="dbgShow">Show</button><button class="btn ghost" id="dbgClear">Clear</button></div>
       <pre id="dbgBox" hidden style="white-space:pre-wrap;font-size:11px;max-height:60vh;overflow:auto;margin:0;padding:10px"></pre></div>
-    <p class="jv-foot">Jarvis 2.0 · version 32<br>Your data stays on this device.</p>
+    <p class="jv-foot">Jarvis 2.0 · version 33<br>Your data stays on this device.</p>
     <input type="file" id="importFile" accept="application/json" hidden>
   </section>
 </div>
@@ -771,8 +773,10 @@ let speakSeq = 0;
 /* iPhone needs a moment after the mic stops before it can talk: speaking right away was silent every time (debug report, v23).
    So a reply waits until AFTER_MIC_MS have passed since the mic ended. */
 const AFTER_MIC_MS = 0; let lastMicEnd = 0;   // v24 tried 1000: no difference, so 0 (fast)
+let nowSayingText = '';
 function speak(text){
   if (!S.speak) return;
+  nowSayingText = text;
   const id = ++speakSeq, said = text.replace(/[•·]/g,',');
   const say = (tries)=>{
     let started = false, stopped = false;
@@ -1757,7 +1761,10 @@ document.addEventListener('click', e=>{
   if (e.target.closest('[data-set-budget]')){ openBudgetModal(); return; }
   const d = e.target.closest('[data-del]'); if (d){ e.stopPropagation(); const [col,id] = d.dataset.del.split(':'); const idx = db[col].findIndex(x=>x.id===id); if (idx<0) return; const item = db[col][idx]; db[col].splice(idx,1); if (col==='expenses') expenseEvent('removed', item); save(); renderAll(); toast('Deleted', ()=>{ db[col].splice(idx,0,item); if (col==='expenses') expenseEvent('restored', item); save(); renderAll(); }); return; }
   const p = e.target.closest('[data-pin]'); if (p){ e.stopPropagation(); const n = db.notes.find(x=>x.id===p.dataset.pin); n.pinned = !n.pinned; save(); renderAll(); toast(n.pinned?'Pinned':'Unpinned'); return; }
-  const sy = e.target.closest('[data-say]'); if (sy){ e.stopPropagation(); const was = S.speak; S.speak = true; speak(sy.dataset.say); S.speak = was; return; }
+  const sb = e.target.closest('.say-btn'); if (sb){ e.stopPropagation(); const t = ((sb.closest('[data-say]')||{}).dataset||{}).say || ''; let busy = false; try { busy = speechSynthesis.speaking; } catch(_){}
+    if (busy && nowSayingText === t){ jvLog('speaker tap: stop'); stopSpeaking(); return; }
+    jvLog('speaker tap: play (was speaking: '+busy+')'); const was = S.speak; S.speak = true; speak(t); S.speak = was; return; }
+  if (e.target.closest('.msg.ai')){ let busy = '?'; try { busy = speechSynthesis.speaking; } catch(_){} jvLog('tapped an answer (not the speaker), speaking: '+busy); }
   const dn = e.target.closest('[data-done]'); if (dn){ haptic(12); completeReminder(dn.dataset.done); return; }
   const sn = e.target.closest('[data-snooze]'); if (sn){ const r = db.reminders.find(x=>x.id===sn.dataset.snooze); r.at = Math.max(Date.now(), r.at) + 6e5; r.done=false; r.fired=false; save(); renderAll(); toast('Snoozed 10 minutes'); return; }
   const en = e.target.closest('[data-edit-note]'); if (en){ openNoteModal(db.notes.find(x=>x.id===en.dataset.editNote)); return; }
@@ -2029,8 +2036,8 @@ const chatLog = [];
 function addMsg(who, text){
   chatLog.push({who, text});
   const el = document.createElement('div'); el.className = 'msg '+who;
-  el.innerHTML = who==='ai' ? `<div class="who">Jarvis</div>${esc(text)}` : esc(text);
-  if (who==='ai') el.dataset.say = String(text);   // tap a Jarvis answer to hear it
+  el.innerHTML = who==='ai' ? `<div class="who">Jarvis</div>${esc(text)}<button class="say-btn" type="button" aria-label="Hear this answer">🔈</button>` : esc(text);
+  if (who==='ai') el.dataset.say = String(text);   // v33: only the 🔈 button speaks it (a tap anywhere on the answer used to replay it)
   $('chat').appendChild(el); $('chat').scrollTop = $('chat').scrollHeight;
   if (who==='ai' && chatLog.some(m=>m.who==='me')){ lastReply = String(text); try { renderHome(); } catch(e){} }
   if (who==='me') turnMark = {e: newestId(db.expenses), r: newestId(db.reminders), n: newestId(db.notes), done: false};
@@ -2268,7 +2275,7 @@ function saveBackup(){
 }
 $('exportBtn').onclick = saveBackup;
 $('dbgShow').onclick = ()=>{ const b=$('dbgBox'); let a=[]; try { a=JSON.parse(localStorage.getItem('jarvis2-debuglog')||'[]'); } catch(e){}
-  const c=Jarvis.calendar&&Jarvis.calendar.audio; b.textContent='v'+(document.querySelector('meta[name=jv-ver]')||{}).content+' · audio now: '+(c?c.state:'none')+' · voice unlocked: '+(speechEverStarted?'yes':'no')+String.fromCharCode(10)+(a.slice(-60).join(String.fromCharCode(10))||'(empty)'); b.hidden=false; };
+  const c=Jarvis.calendar&&Jarvis.calendar.audio; b.textContent='v'+(document.querySelector('meta[name=jv-ver]')||{}).content+' · audio now: '+(c?c.state:'none')+' · voice unlocked: '+(speechEverStarted?'yes':'no')+String.fromCharCode(10)+(a.slice(-200).join(String.fromCharCode(10))||'(empty)'); b.hidden=false; };
 $('dbgTest').onclick = ()=>{
   const eng = ()=> Jarvis.calendar && Jarvis.calendar.audio, say = t=>{ const w=S.speak; S.speak=true; speak(t); S.speak=w; };
   jvLog('voice tests: start (audio engine '+(eng()?eng().state:'none')+')'); toast('Listen: 2 short tests in the next 12 seconds');
