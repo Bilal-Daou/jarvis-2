@@ -581,7 +581,7 @@ J.css(`
 .hl-dot{width:10px;height:10px;border-radius:50%;flex:none;background:var(--good);box-shadow:0 0 0 4px rgba(34,197,94,.16)}
 .hl-dot.warn{background:var(--warn);box-shadow:0 0 0 4px rgba(245,158,11,.16)}.hl-dot.off{background:var(--faint);box-shadow:0 0 0 4px var(--line)}
 .hl-sync .lbl{flex:1;min-width:0}.hl-sync .lbl b{display:block;font-size:14px}.hl-sync .lbl small{color:var(--muted);font-size:12.5px}
-.hl-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:12px;padding:8px 13px;min-height:40px;font:inherit;font-weight:700;font-size:13.5px;cursor:pointer;background:var(--accent);color:#fff;text-decoration:none;white-space:nowrap}
+.hl-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:12px;padding:8px 13px;min-height:40px;font:inherit;font-weight:700;font-size:13.5px;cursor:pointer;background:var(--accent);color:var(--on-accent,#fff);text-decoration:none;white-space:nowrap}
 .hl-btn svg{width:16px;height:16px}
 .hl-btn.ghost{background:var(--fill,var(--card));color:var(--text);border:0}
 .hl-btn:active,.hl-card:active{transform:scale(.98)}

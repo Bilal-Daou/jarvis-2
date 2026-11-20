@@ -173,6 +173,22 @@ const plural = (n, w) => `${num(n)} ${w}${+n===1?'':'s'}`;
    --------------------------------------------------------- */
 const PAL = [['#6d5dfc','#22d3ee'],['#0ea5e9','#22d3ee'],['#22c55e','#a3e635'],['#14b8a6','#4ade80'],['#f59e0b','#facc15'],['#f97316','#f43f5e'],['#f43f5e','#fb7185'],['#ec4899','#a855f7'],['#8b5cf6','#ec4899'],['#6366f1','#a78bfa']];
 const c2of = c => (PAL.find(p=>p[0]===c)||[c,c])[1];
+/* buttons filled with a habit/goal colour: text must reach 4.5:1 (light colours like water blue failed with white) */
+const rgbOf = c => { const m = /^#([0-9a-f]{6})$/i.exec(String(c||'').trim()); if (!m) return null; const n = parseInt(m[1], 16); return [n>>16&255, n>>8&255, n&255]; };
+const lumOf = rgb => { const f = v => (v /= 255) <= .03928 ? v/12.92 : Math.pow((v+.055)/1.055, 2.4); return .2126*f(rgb[0]) + .7152*f(rgb[1]) + .0722*f(rgb[2]); };
+const onWhite = rgb => 1.05/(lumOf(rgb)+.05);
+/** the colour darkened (starting at `from`, e.g. .72) until white text reads at 4.5:1 */
+function darker(rgb, from){ let s = rgb; for (let f = from; f > .3; f -= .02){ s = rgb.map(v=>Math.round(v*f)); if (onWhite(s) >= 4.5) break; } return `rgb(${s.join(',')})`; }
+/** inline style for a button filled with colour c: white text, dark text on light colours, or a slightly darker fill */
+function fillStyle(c){
+  const rgb = rgbOf(c); if (!rgb) return `background:${c}`;
+  const w = onWhite(rgb); if (w >= 4.5) return `background:${c};color:#fff`;
+  // very light colours (blue, green, teal, amber, orange) would need a muddy fill: use dark text instead
+  if (w < 3.4 && (lumOf(rgb)+.05)/(lumOf([17,17,17])+.05) >= 4.5) return `background:${c};color:#111`;
+  return `background:${darker(rgb, 1)};color:#fff`;   // red, pink, purples: a little darker, white text
+}
+/** goal buttons: the goal colour darkened (72% or more) with white text */
+const goalFill = c => { const rgb = rgbOf(c); return rgb ? `background:${darker(rgb, .72)};color:#fff` : `background:color-mix(in srgb,${c} 72%,#000)`; };
 const TEMPLATES = [
   {key:'water',    name:'Drink water', emoji:'💧', color:'#0ea5e9', kind:'count', target:8, unit:'glasses', step:1, sched:'daily'},
   {key:'workout',  name:'Workout',     emoji:'💪', color:'#f43f5e', kind:'check', sched:'weekly', times:4},
@@ -266,7 +282,11 @@ function makeHabit(o){
   return h;
 }
 function addHabit(o){
-  const h = makeHabit(o); st().habits.push(h); syncReminder(h); return h;
+  const h = makeHabit(o); st().habits.push(h); syncReminder(h);
+  // a new "Drink water" habit starts today at the glasses Food already has
+  try { if (waterHabit()===h && J.food && J.food.today){ const g = +J.food.today().water||0, k = dkey(today0());
+    const v = isCount(h) ? unitConvert(g, 'glasses', h.unit) : (g > 0 ? 1 : 0); if (v > 0) h.hist[k] = Math.round(v*100)/100; } } catch(e){}
+  return h;
 }
 function fromTemplate(t, over){
   const o = Object.assign({}, t); delete o.key; return addHabit(Object.assign(o, over||{}));
@@ -306,12 +326,27 @@ const STREAK_LINES = {
 };
 const WEEK_LINES = {3:n=>`Three weeks in a row hitting your ${n} goal. Keep it rolling.`, 4:n=>`A full month of hitting your ${n} goal every week!`, 8:n=>`Eight straight weeks of ${n}. Rock solid.`, 12:n=>`Twelve weeks of ${n}. That's a lifestyle now.`};
 /** set or change today's value. Returns info about what happened. */
+/* the "Drink water" habit and Food's water glasses are one number: any change to today's water habit
+   is passed on to Food. Changes that come FROM Food (J.habits.logWater/unlogWater/setWater) set
+   fromFood, so they are never sent back (no loop, no double count). */
+let fromFood = false;
+const inGlasses = (h, v) => isCount(h) ? unitConvert(v, h.unit, 'glasses') : v;
+function waterToFood(h, k, prev){
+  if (fromFood || k !== dkey(today0()) || waterHabit() !== h) return;
+  try {
+    const a = inGlasses(h, prev), b = inGlasses(h, val(h,k)); if (a == null || b == null) return;
+    const n = Math.round(b) - Math.round(a);   // whole glasses, without drifting on 100 ml steps
+    if (n && J.food && typeof J.food.addWater==='function') J.food.addWater(n);
+  } catch(e){}
+}
+/** write a day's value directly (undo buttons), keeping Food's water in step */
+function putValue(h, k, v){ const prev = val(h,k); if (v) h.hist[k] = v; else delete h.hist[k]; waterToFood(h, k, prev); }
 function setValue(h, k, v){
   const wasDone = isDone(h,k), beforeAll = todayStats();
   const prev = val(h,k);
   v = Math.max(0, Math.round(v*100)/100);
   if (v) h.hist[k] = v; else delete h.hist[k];
-  if (v !== prev) lastAction = {hid:h.id, k, prev, at:Date.now()};
+  if (v !== prev){ lastAction = {hid:h.id, k, prev, at:Date.now()}; waterToFood(h, k, prev); }
   const nowDone = isDone(h,k);
   const info = {h, prev, v, wasDone, nowDone, completed: !wasDone && nowDone, line:'', perfect:false};
   if (info.completed && k===dkey(today0())){
@@ -390,6 +425,9 @@ function milestoneLine(g, m){
    --------------------------------------------------------- */
 const ui = {tab:'today', detail:null, goalDetail:null};
 try { const t = localStorage.getItem('jarvis2-habits-tab'); if (t && /^(today|all|goals)$/.test(t)) ui.tab = t; } catch(e){}
+// Habits' inner pages (a habit's or a goal's details): the top Back closes them first, and leaving Habits resets them (index.html subNav)
+(J.subNav = J.subNav || {}).habits = {label:'Habits', open:()=>!!(ui.detail || ui.goalDetail),
+  close:()=>{ ui.detail = null; ui.goalDetail = null; J.renderAll(); }, leave:()=>{ ui.detail = null; ui.goalDetail = null; }};
 const setTab = t => { ui.tab = t; ui.detail = null; ui.goalDetail = null; try { localStorage.setItem('jarvis2-habits-tab', t); } catch(e){} };
 const prevPct = {};   // ctx:id -> last rendered pct (drives ring animation)
 const pops = {};      // habit id -> timestamp of completion (check pop animation)
@@ -438,15 +476,15 @@ function celebrate(info, el){
 function afterUi(info, el){
   celebrate(info, el);
   commit();
-  if (info.wasDone && !info.nowDone){ const h = info.h, k = dkey(today0()), pv = info.prev; J.toast(`${h.name} unchecked`, ()=>{ h.hist[k] = pv; commit(); }); return; }
+  if (info.wasDone && !info.nowDone){ const h = info.h, k = dkey(today0()), pv = info.prev; J.toast(`${h.name} unchecked`, ()=>{ putValue(h, k, pv); commit(); }); return; }
   if (!info.completed) return;
-  if (info.perfect){ setTimeout(confettiRain, 250); J.toast('🎉 Perfect day — every habit done!'); J.speak(`That's everything for today, ${J.settings.name}. Perfect day!` + (info.line?' '+info.line:'')); }
+  if (info.perfect){ setTimeout(confettiRain, 250); J.toast('🎉 Perfect day — every habit done!'); J.speak(`That's everything for today${/^there$/i.test(String(J.settings.name||'').trim()) || !String(J.settings.name||'').trim() ? '' : ', '+J.settings.name}. Perfect day!` + (info.line?' '+info.line:'')); }
   else if (info.line){ J.toast('🔥 '+info.line); J.speak(info.line); }
   else J.toast(`${info.h.emoji} ${info.h.name} done${info.streak>1?` · 🔥 ${info.streak}${isWeekly(info.h)?' wk':''}`:''}`, ()=>{ undoLast(); });
 }
 function undoLast(){
   if (!lastAction) return false; const h = findHabit(lastAction.hid); if (!h) return false;
-  if (lastAction.prev) h.hist[lastAction.k] = lastAction.prev; else delete h.hist[lastAction.k];
+  putValue(h, lastAction.k, lastAction.prev);
   lastAction = null; commit(); return h;
 }
 
@@ -608,8 +646,8 @@ function detailHTML(h){
     <div class="card hb-dcard" style="--hc:${h.color}">
       <div class="hb-tile hb-dring" data-hb-ring="${h.id}" role="button" tabindex="0">${habitRing(h,'d',150)}</div>
       <div class="hb-dtoday">${J.esc(ringSub(h))}</div>
-      ${isCount(h) ? `<div class="hb-steps"><button class="btn ghost" data-hb-dec="${h.id}" aria-label="Minus">−</button><button class="btn" data-hb-ring-btn="${h.id}" style="background:${h.color}">+ ${qty(h.step,h.unit)}</button><button class="btn ghost" data-hb-log="${h.id}">Log amount</button></div>`
-        : `<div class="hb-steps"><button class="btn" data-hb-ring-btn="${h.id}" style="background:${isDone(h,k)?'var(--card)':h.color};${isDone(h,k)?'color:var(--text);border:1px solid var(--line)':''}">${isDone(h,k)?'Undo today':'Mark done'}</button></div>`}
+      ${isCount(h) ? `<div class="hb-steps"><button class="btn ghost" data-hb-dec="${h.id}" aria-label="Minus">−</button><button class="btn" data-hb-ring-btn="${h.id}" style="${fillStyle(h.color)}">+ ${qty(h.step,h.unit)}</button><button class="btn ghost" data-hb-log="${h.id}">Log amount</button></div>`
+        : `<div class="hb-steps"><button class="btn" data-hb-ring-btn="${h.id}" style="${isDone(h,k)?'background:var(--card);color:var(--text);border:1px solid var(--line)':fillStyle(h.color)}">${isDone(h,k)?'Undo today':'Mark done'}</button></div>`}
     </div>
     <div class="hb-stats">
       <div class="card stat"><div class="label">Current streak</div><div class="val">🔥 ${s}<small> ${isWeekly(h)?(s===1?'week':'weeks'):(s===1?'day':'days')}</small></div></div>
@@ -646,7 +684,7 @@ function goalCard(g){
     <div class="hb-gbar"><i style="width:${(from*100).toFixed(2)}%"${anim}></i>${pace.exp!==undefined && pct<1 ? `<em style="left:${pace.exp}%" title="Where you should be"></em>`:''}</div>
     <div class="hb-goal-nums"><b>${gQty(g,p)}</b><span>of ${gQty(g,g.target)}</span><strong>${Math.round(pct*100)}%</strong></div>
     ${np && pct<1 ? `<div class="hb-goal-need">${pace.k==='behind'?'To catch up: ':'Keep pace: '}about <b>${np}</b></div>`:''}
-    <div class="hb-goal-act"><button class="btn" data-hb-gadd="${g.id}" style="background:color-mix(in srgb,${g.color} 72%,#000)">${PLUS} Add progress</button><button class="mini" data-hb-gmenu="${g.id}" aria-label="Goal options">${DOTS}</button></div>
+    <div class="hb-goal-act"><button class="btn" data-hb-gadd="${g.id}" style="${goalFill(g.color)}">${PLUS} Add progress</button><button class="mini" data-hb-gmenu="${g.id}" aria-label="Goal options">${DOTS}</button></div>
   </div>`;
 }
 function goalsHTML(){
@@ -670,7 +708,7 @@ function goalDetailHTML(g){
       <div class="hb-ring" style="width:150px;height:150px;margin:0 auto">${ringSVG({pct, c1:g.color, c2:c2of(g.color), size:150, sw:13, gid:'hbg-gd-'+g.id, key:'gd:'+g.id})}<span class="hb-emo hb-gpct"><b>${Math.round(pct*100)}%</b><small>${g.emoji}</small></span></div>
       <div class="hb-dtoday">${ofText(g)}</div>
       <div style="text-align:center;margin-top:6px"><span class="tag ${pace.cls}">${pace.label}</span>${pace.exp!==undefined&&pct<1?` <span class="hb-hint">· you'd ideally be at ${pace.exp}%</span>`:''}</div>
-      <div class="hb-steps"><button class="btn" data-hb-gadd="${g.id}" style="background:color-mix(in srgb,${g.color} 72%,#000)">${PLUS} Add progress</button></div>
+      <div class="hb-steps"><button class="btn" data-hb-gadd="${g.id}" style="${goalFill(g.color)}">${PLUS} Add progress</button></div>
     </div>
     <div class="hb-stats">
       <div class="card stat"><div class="label">Remaining</div><div class="val">${gQty(g, Math.max(0, g.target-p))}</div></div>
@@ -767,7 +805,7 @@ function bind(root){
     if ((x = t.closest('[data-hb-day]'))){
       const h = findHabit(ui.detail); if (!h) return; const k = x.dataset.hbDay; const prev = val(h,k);
       const info = setValue(h, k, isDone(h,k) ? 0 : tgt(h)); if (info.nowDone) buzz(15);
-      commit(); return J.toast(`${kdate(k).toLocaleDateString([], {weekday:'short', month:'short', day:'numeric'})}: ${info.nowDone?'marked done':'cleared'}`, ()=>{ if (prev) h.hist[k] = prev; else delete h.hist[k]; commit(); });
+      commit(); return J.toast(`${kdate(k).toLocaleDateString([], {weekday:'short', month:'short', day:'numeric'})}: ${info.nowDone?'marked done':'cleared'}`, ()=>{ putValue(h, k, prev); commit(); });
     }
     if ((x = t.closest('[data-hb-gadd]'))){ e.stopPropagation(); return openProgress(findGoal(x.dataset.hbGadd)); }
     if ((x = t.closest('[data-hb-gmenu]'))){ e.stopPropagation(); return openGoalMenu(findGoal(x.dataset.hbGmenu)); }
@@ -982,7 +1020,7 @@ function logReply(info, how){
     if (isWeekly(h)){ const wc = weekCount(h, wkStart(today0())); s += wc > times(h) ? ` That's ${wc} this week, above your goal of ${times(h)}.` : ` That's ${wc} of ${times(h)} this week.`; }
     if (sk > 1) s += ` You're on a ${num(sk)} ${isWeekly(h)?'week':'day'} streak.`;
     if (info.line) s += ' ' + info.line;
-    if (info.perfect) s += ` And that's every habit for today. Perfect day, ${J.settings.name}!`;
+    if (info.perfect) s += ` And that's every habit for today. Perfect day${/^there$/i.test(String(J.settings.name||'').trim()) || !String(J.settings.name||'').trim() ? '' : ', '+J.settings.name}!`;
   } else if (isCount(h) && info.wasDone && info.v === info.prev){
     s = `${h.name} is already done today. ${streakBit(h)}`.trim();
   } else if (isCount(h)){
@@ -1142,8 +1180,8 @@ function goalProgressSpeech(g, amount){
 function habitsSummary(){
   const hs = habits(); if (!hs.length) return "You don't have any habits yet. Say: add a habit to drink 8 glasses of water every day.";
   const s = todayStats(), k = dkey(today0());
-  const todo = s.list.filter(h=>!isDone(h,k)).map(h=> isCount(h) && val(h,k) ? `${h.name.toLowerCase()}, ${num(val(h,k))} of ${qty(h.target,h.unit)}` : h.name.toLowerCase());
-  let r = !s.total ? 'Nothing is scheduled today.' : s.done===s.total ? `All ${s.total} habits are done today. Perfect day!` : `You've done ${s.done} of ${s.total} habits today.`;
+  const todo = s.list.filter(h=>!isDone(h,k)).map(h=> isCount(h) && val(h,k) ? `${h.name.toLowerCase()} (${num(val(h,k))} of ${qty(h.target,h.unit)})` : h.name.toLowerCase());
+  let r = !s.total ? 'Nothing is scheduled today.' : s.done===s.total ? `${s.total===1 ? 'Your habit is' : `All ${s.total} habits are`} done today. Perfect day!` : `You've done ${s.done} of ${s.total} habits today.`;
   if (todo.length) r += ` Still to go: ${todo.length>1 ? todo.slice(0,-1).join(', ')+' and '+todo[todo.length-1] : todo[0]}.`;
   const top = hs.map(h=>({h, s:streak(h)})).sort((a,b)=>b.s-a.s)[0];
   if (top && top.s > 1) r += ` Your best streak right now is ${top.h.name.toLowerCase()}, ${plural(top.s, isWeekly(top.h)?'week':'day')}.`;
@@ -1238,10 +1276,9 @@ function intent(said, t0){
     // the last thing logged was a glass of water (Food keeps it when there is no water habit): take that back instead
     try { const mem = (J.brain && J.brain.memory) || []; const w = mem.slice().reverse().find(x=>WATER_RE.test(lc(x.said||'').replace(/[.!?]+$/,'')) && /\bwater\b/i.test(x.reply||''));
       if (w && (!lastAction || w.at >= lastAction.at) && Date.now() - w.at < 30*60e3 && !waterHabit() && J.rethink) { const r = J.rethink('remove a glass of water'); if (r) return r; } } catch(e){}
-    const wh = waterHabit(), k0 = dkey(today0()), wv0 = wh ? val(wh, k0) : 0;
+    // undoing the water habit also takes the glasses off the Food screen (undoLast → putValue), so both stay the same
     const h = undoLast();
-    // undoing the water habit also takes the glasses off the Food screen, so both stay the same
-    if (h && wh && h.id === wh.id){ try { const dv = wv0 - val(wh, k0); const g = isCount(wh) ? unitConvert(dv, wh.unit, 'glasses') : 1; if (g > 0 && J.food && J.food.addWater) J.food.addWater(-Math.round(g)); } catch(e){} } return h ? `Undone. ${h.name} is back to ${isCount(h)?qty(val(h,dkey(today0())),h.unit):(isDone(h,dkey(today0()))?'done':'not done')} today.` : 'There is nothing to undo.'; }
+    return h ?`Undone. ${h.name} is back to ${isCount(h)?qty(val(h,dkey(today0())),h.unit):(isDone(h,dkey(today0()))?'done':'not done')} today.` : 'There is nothing to undo.'; }
 
   // explicit "mark X done" / "check off X"
   if ((m = t.match(/^(?:mark|check|tick|set)\s+(?:off\s+)?(?:my |the )?(.+?)\s+(?:as\s+)?(?:done|complete|completed|finished|off)(?:\s+(?:for\s+)?today)?$/)) || (m = t.match(/^(?:check off|tick off|complete)\s+(?:my |the )?(.+?)(?:\s+(?:for\s+)?today)?$/))){
@@ -1274,11 +1311,9 @@ function intent(said, t0){
       .replace(/\b(?:a|an|one|another|one more) (?:big |large |small |full )?(liters?|litres?|l|bottles?)\b/, '1 $1');
     const {amount, unit} = amountIn(tt);
     const single = /\b(a|another|one more) (glass|cup|bottle|prayer)\b/.test(t);
-    const k = dkey(today0()), before = val(h,k);
     J.go('habits');
+    // the Food screen's water glasses follow by themselves (setValue → waterToFood)
     const reply = logHabit(h, isCount(h) ? amount : null, unit, single);
-    // keep the Food screen's water glasses in step when Food offers a hook for it
-    if (key==='water'){ try { const dv = val(h,k) - before; const g = isCount(h) ? unitConvert(dv, h.unit, 'glasses') : 1; if (g > 0 && J.food && typeof J.food.addWater==='function') J.food.addWater(Math.round(g)); } catch(e){} }
     return ret(reply);
   }
   if (key && key!=='water' && key!=='read' && !generic){
@@ -1298,11 +1333,11 @@ J.habits = {
   /** log an amount toward a habit by name. Returns a spoken reply or null when no such habit. */
   log(q, amount, unit){ const h = matchHabit(q); if (!h) return null; const r = logHabit(h, amount==null?null:+amount, unit||'', false); J.save(); return stripEmoji(r); },
   /** convenience for the Food feature: log glasses of water if a water habit exists */
-  logWater(glasses){ const h = waterHabit(); if (!h) return null; const r = logHabit(h, glasses==null?null:+glasses, 'glasses', glasses==null); J.save(); return stripEmoji(r); },
+  logWater(glasses){ const h = waterHabit(); if (!h) return null; fromFood = true; try { const r = logHabit(h, glasses==null?null:+glasses, 'glasses', glasses==null); J.save(); return stripEmoji(r); } finally { fromFood = false; } },
   /** set today's water habit to n glasses (used when glasses are taken away in Food). Never adds a streak line or double counts. */
-  setWater(n){ const h = waterHabit(); if (!h) return null; const k = dkey(today0()); const v = isCount(h) ? Math.max(0, (x=>x==null?Math.max(0,+n||0):x)(unitConvert(Math.max(0, +n||0), 'glasses', h.unit))) : ((+n||0) > 0 ? 1 : 0); setValue(h, k, v); J.save(); return val(h,k); },
+  setWater(n){ const h = waterHabit(); if (!h) return null; const k = dkey(today0()); const v = isCount(h) ? Math.max(0, (x=>x==null?Math.max(0,+n||0):x)(unitConvert(Math.max(0, +n||0), 'glasses', h.unit))) : ((+n||0) > 0 ? 1 : 0); fromFood = true; try { setValue(h, k, v); } finally { fromFood = false; } J.save(); return val(h,k); },
   /** take n glasses away from today's water habit (never below zero) */
-  unlogWater(n){ const h = waterHabit(); if (!h || !(+n>0)) return null; const k = dkey(today0()); if (!isCount(h)) return null; const v = Math.max(0, val(h,k) - (x=>x==null?+n:x)(unitConvert(+n, 'glasses', h.unit))); setValue(h, k, v); J.save(); return val(h,k); },
+  unlogWater(n){ const h = waterHabit(); if (!h || !(+n>0)) return null; const k = dkey(today0()); if (!isCount(h)) return null; const v = Math.max(0, val(h,k) - (x=>x==null?+n:x)(unitConvert(+n, 'glasses', h.unit))); fromFood = true; try { setValue(h, k, v); } finally { fromFood = false; } J.save(); return val(h,k); },
   today: () => todayStats()
 };
 window.addEventListener('jarvis:water', e=>{ try { const n = e.detail && +e.detail.glasses; const r = J.habits.logWater(n||1); if (r) J.renderAll(); } catch(err){} });
@@ -1524,7 +1559,7 @@ J.css(`
 .hb-row2 input{margin-bottom:6px!important;padding:11px!important}
 .hb-days{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:6px}
 .hb-days button{aspect-ratio:1;border-radius:50%;border:1px solid var(--line);background:var(--card);font-weight:700;font-size:12.5px;cursor:pointer;color:var(--muted)}
-.hb-days button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.hb-days button.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent,#fff)}
 .hb-stepper{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:6px;margin-bottom:6px}
 .hb-stepper button{width:40px;height:40px;border-radius:11px;border:0;background:var(--accent-soft);color:var(--accent-ink);font-size:22px;font-weight:700;cursor:pointer}
 .hb-stepper b{font-size:20px;font-weight:800;min-width:20px;text-align:center}

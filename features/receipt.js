@@ -749,9 +749,10 @@
       ${rec.currency !== userCur() && rec.amount != null ? `<div class="rcpt-muted" style="text-align:right;margin-top:-6px">Logged as ${esc(J.fmt(rec.amount))}</div>` : ''}
       ${rec.items.length ? `<div class="rcpt-d-items">${rec.items.map(x=>`<div><span>${esc(x.n)}</span><b>${esc(money(x.p, rec.currency))}</b></div>`).join('')}${rec.items.length > 1 ? `<div class="rcpt-d-sum"><span>${rec.items.length} items</span><b>${esc(money(Math.round(itemSum*100)/100, rec.currency))}</b></div>` : ''}</div>` : ''}
       ${inBudget ? '' : '<div class="rcpt-note warn">This expense was removed from your budget.</div>'}
-      <div class="row"><button class="btn danger" data-rc="del" data-id="${rec.id}">Delete</button><button class="btn" data-rc="close">Done</button></div></div>`);
+      <div class="row"><button class="btn danger" data-rc="del" data-id="${rec.id}">Delete</button>${inBudget && J.editExpense ? '<button class="btn ghost" data-rc="edit">Edit</button>' : ''}<button class="btn" data-rc="close">Done</button></div></div>`);
     const box = document.getElementById('modalBox');
-    box.querySelectorAll('[data-rc]').forEach(b=>b.onclick = ()=>{ if (b.dataset.rc === 'del') removeReceipt(b.dataset.id); else J.closeModal(); });
+    // Edit opens the payment's own form (amount, name, date, category); the listener below copies the changes back to the receipt
+    box.querySelectorAll('[data-rc]').forEach(b=>b.onclick = ()=>{ if (b.dataset.rc === 'del') removeReceipt(b.dataset.id); else if (b.dataset.rc === 'edit') J.editExpense(rec.expenseId); else J.closeModal(); });
   }
 
   /* =========================================================
@@ -846,7 +847,10 @@
       : d.conf === 'low' ? ['warn', "I'm not sure about the total. Please check it."]
       : d.conf === 'medium' ? ['warn', 'Please check the total before saving.']
       : ['good', 'Looks right. Give it a quick check, then save.'];
-    const lowRead = !d.reason && (d.conf === 'none' || d.conf === 'low' || d.ocrConf < 45 || d.blurry);
+    // items that add up to the total mean the read is right, so no "blurry photo" tips then
+    const dTotal = draftAmount(d).total, itemSum = Math.round(d.items.reduce((t,x)=>t + (+x.p || 0), 0)*100)/100;
+    const itemsMatch = d.items.length > 0 && dTotal != null && near(itemSum, dTotal);
+    const lowRead = !d.reason && !itemsMatch && (d.conf === 'none' || d.conf === 'low' || d.ocrConf < 45 || d.blurry);
     const pair = (d.currency === 'LBP' && uc === 'USD') || (d.currency === 'USD' && uc === 'LBP');
     const curOpts = ['USD','LBP','EUR','GBP','AED','SAR'];
     return `<div class="card rcpt-review">
@@ -868,7 +872,7 @@
         <button class="link" data-act="additem" style="padding:6px 2px">+ Add item</button></div>
       ${lowRead ? `<div class="rcpt-tips"><div class="rcpt-tips-h">${IC.bulb}<b>${d.blurry ? 'The photo looks a little blurry' : 'Tips for a clearer scan'}</b></div><ul><li>Lay the receipt flat on a dark table</li><li>Use good light and avoid shadows</li><li>Fill the screen and hold steady</li></ul>${camLabel('btn ghost rcpt-wide', `${IC.cam} Retake photo`)}</div>` : ''}
       <button class="btn rcpt-save" data-act="save">${IC.check}<span>Save expense</span></button>
-      <div class="rcpt-hero-row">${lowRead ? '' : camLabel('rcpt-sub', `${IC.cam}<span>Retake</span>`)}<button class="rcpt-sub" data-act="discard">${IC.x}<span>Discard</span></button></div>
+      <div class="rcpt-hero-row">${lowRead ? '' : camLabel('rcpt-sub', `${IC.cam}<span>${d.reason === 'typed' ? 'Scan instead' : 'Retake'}</span>`)}<button class="rcpt-sub" data-act="discard">${IC.x}<span>Discard</span></button></div>
       ${d.rawText ? `<details class="rcpt-raw"><summary>See what I read</summary><pre>${esc(d.rawText.trim())}</pre></details>` : ''}
     </div>`;
   }
@@ -932,7 +936,7 @@
     if (s === homeSig && el.firstChild) return; homeSig = s;
     el.innerHTML = `<div class="rcpt-home" data-go="receipts" role="button" tabindex="0" aria-label="Open receipts">
       <div class="rcpt-home-ic">${IC.cam}</div>
-      <div class="rcpt-home-b"><b>Scan a receipt</b><span class="rcpt-ell">${last ? `Last: ${esc(last.merchant)} · ${esc(money(last.total != null ? last.total : (last.amount || 0), last.total != null ? last.currency : null))} · ${esc(J.ago(last.created))}` : "Snap it and I'll log the expense"}</span></div>
+      <div class="rcpt-home-b"><b>Scan a receipt</b><span>${last ? `Last: ${esc(last.merchant)} · ${esc(money(last.total != null ? last.total : (last.amount || 0), last.total != null ? last.currency : null))} · ${esc(J.ago(last.created))}` : "Snap it and I'll log the expense"}</span></div>
       ${camLabel('rcpt-home-btn', `${IC.cam}<span>Scan</span>`)}
     </div>`;
     const btn = el.querySelector('.rcpt-home-btn'); if (btn) btn.addEventListener('click', e=>e.stopPropagation());
@@ -1116,8 +1120,8 @@
   .rcpt-home-ic svg{width:22px;height:22px}
   .rcpt-home-b{flex:1;min-width:0}
   .rcpt-home-b b{display:block;font-size:15px}
-  .rcpt-home-b span{color:var(--muted);font-size:12.5px;margin-top:1px}
-  .rcpt-home-btn{flex:none;display:flex;align-items:center;gap:6px;min-height:42px;padding:0 14px;border-radius:13px;background:var(--accent);color:#fff;font-weight:700;font-size:14px;cursor:pointer;box-shadow:0 6px 16px rgba(109,93,252,.32);user-select:none;-webkit-user-select:none}
+  .rcpt-home-b span{color:var(--muted);font-size:12.5px;margin-top:1px;line-height:1.3;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;text-wrap:balance;overflow-wrap:anywhere}
+  .rcpt-home-btn{flex:none;display:flex;align-items:center;gap:6px;min-height:42px;padding:0 14px;border-radius:13px;background:var(--accent);color:var(--on-accent,#fff);font-weight:700;font-size:14px;cursor:pointer;box-shadow:0 6px 16px rgba(109,93,252,.32);user-select:none;-webkit-user-select:none}
   .rcpt-home-btn svg{width:18px;height:18px}
   @media (prefers-reduced-motion: reduce){.rcpt-beam,.rcpt-pulse{animation:none}}
   `);
@@ -1146,6 +1150,16 @@
     try {
       const id = e.detail && e.detail.id; const p = id && parked[id]; if (!p) return;
       delete parked[id]; const R = store(); if (!R.list.some(x=>x.id === p[1].id)) R.list.splice(Math.min(p[0], R.list.length), 0, p[1]); ver++; J.save();
+    } catch(err){ console.error('receipts', err); }
+  });
+  // a payment edited in Money (or from a receipt's Edit button) updates its receipt too; a total in another currency stays as read
+  window.addEventListener('jarvis:expense-updated', e=>{
+    try {
+      const x = e.detail && e.detail.expense; if (!x || !x.id || x.type === 'income') return;
+      const rec = store().list.find(r=>r.expenseId === x.id); if (!rec) return;
+      if (rec.amount == null || rec.amount === rec.total) rec.total = x.amount;   // not converted, so the total is the payment
+      rec.amount = x.amount; rec.merchant = x.desc || rec.merchant; rec.cat = x.cat || rec.cat; rec.at = x.at || rec.at;
+      ver++; J.save();
     } catch(err){ console.error('receipts', err); }
   });
   // tidy up receipts left behind by older versions (their expense was deleted before this link existed)

@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en" data-theme="dark">
 <head>
-<meta name="jv-ver" content="35">
+<meta name="jv-ver" content="36">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <meta name="theme-color" content="#07090f">
@@ -24,6 +24,7 @@
    ===================================================================== */
 :root{
   --accent:#6d5dfc; --accent2:#22d3ee; --accent-soft:rgba(109,93,252,.16);
+  --on-accent:#fff; /* text on accent-filled buttons; applyTheme() makes it dark for the light accents (blue, green, orange) */
   --good:#22c55e; --warn:#f59e0b; --bad:#f43f5e;
   --radius:20px; --r-lg:24px; --r-md:16px; --r-sm:12px;
   --ease:cubic-bezier(.2,.8,.2,1); --spring:cubic-bezier(.32,1.28,.54,1);
@@ -46,7 +47,7 @@
   --fill:rgba(118,118,128,.1); --fill2:rgba(118,118,128,.16); --sep:rgba(60,60,67,.1);
   --text:#0c0c10; --muted:#606067; --faint:#a9a9b1; --glass:rgba(250,250,252,.8); --shadow:0 18px 44px rgba(20,24,48,.14);
   --card-shadow:0 1px 2px rgba(16,24,40,.04),0 6px 20px rgba(16,24,40,.045); --card-border:rgba(60,60,67,.06); --press:rgba(0,0,0,.04);
-  --accent-ink:color-mix(in srgb,var(--accent) 84%,#000); --good-ink:#11753a; --bad-ink:#d61f45; --warn-ink:#b45309; --faint-ink:#68686f;
+  --accent-ink:color-mix(in srgb,var(--accent) var(--ink-k,84%),#000); --good-ink:#11753a; --bad-ink:#d61f45; --warn-ink:#b45309; --faint-ink:#68686f;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%}
@@ -197,7 +198,7 @@ h2{font-size:32px;line-height:1.12;font-weight:750;letter-spacing:-.032em;margin
 /* ---------- More: profile card + grouped menu ---------- */
 .jv-me{display:flex;align-items:center;gap:14px;width:100%;padding:16px;border-radius:var(--radius);border:1px solid var(--card-border);background:var(--card);box-shadow:var(--card-shadow);cursor:pointer;text-align:left;transition:transform .15s var(--ease)}
 .jv-me:active{transform:scale(.985)}
-.jv-av{flex:none;width:56px;height:56px;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:23px;font-weight:700;letter-spacing:-.02em;background:linear-gradient(140deg,color-mix(in srgb,var(--accent) 80%,#fff),var(--accent) 50%,color-mix(in srgb,var(--accent2) 70%,var(--accent)));box-shadow:0 8px 20px -6px color-mix(in srgb,var(--accent) 60%,transparent)}
+.jv-av{flex:none;width:56px;height:56px;border-radius:50%;display:grid;place-items:center;color:var(--on-accent);font-size:23px;font-weight:700;letter-spacing:-.02em;background:linear-gradient(140deg,color-mix(in srgb,var(--accent) 80%,#fff),var(--accent) 50%,color-mix(in srgb,var(--accent2) 70%,var(--accent)));box-shadow:0 8px 20px -6px color-mix(in srgb,var(--accent) 60%,transparent)}
 .jv-me b{display:block;font-size:19px;font-weight:700;letter-spacing:-.025em}
 .jv-me small{display:block;color:var(--muted);font-size:13.5px;margin-top:2px}
 
@@ -275,7 +276,7 @@ body.at-home .app{padding-bottom:calc(98px + var(--safe-b))}
 .hm-greet{font-size:26px;font-weight:750;letter-spacing:-.032em;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hm-date{color:var(--muted);font-size:14px;font-weight:500;margin-top:3px;letter-spacing:-.005em}
 .hm-top .icon-btn{flex:none;width:42px;height:42px;color:var(--text);background:var(--fill)}
-.hm-av{flex:none;width:42px;height:42px;border-radius:50%;border:0;padding:0;display:grid;place-items:center;color:#fff;font-weight:700;font-size:17px;cursor:pointer;background:linear-gradient(140deg,color-mix(in srgb,var(--accent) 80%,#fff),var(--accent) 50%,color-mix(in srgb,var(--accent2) 70%,var(--accent)));box-shadow:0 6px 16px -6px color-mix(in srgb,var(--accent) 70%,transparent);transition:transform .15s var(--ease)}
+.hm-av{flex:none;width:42px;height:42px;border-radius:50%;border:0;padding:0;display:grid;place-items:center;color:var(--on-accent);font-weight:700;font-size:17px;cursor:pointer;background:linear-gradient(140deg,color-mix(in srgb,var(--accent) 80%,#fff),var(--accent) 50%,color-mix(in srgb,var(--accent2) 70%,var(--accent)));box-shadow:0 6px 16px -6px color-mix(in srgb,var(--accent) 70%,transparent);transition:transform .15s var(--ease)}
 .hm-av:active{transform:scale(.92)}
 .hm-stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px 0 22px;min-height:0}
 .hm-orb{--sz:clamp(94px,calc(100vh - var(--safe-t) - var(--safe-b) - 600px),164px);--sz:clamp(94px,calc(100svh - var(--safe-t) - var(--safe-b) - 600px),164px);position:relative;width:var(--sz);height:var(--sz);flex:none;border:0;padding:0;background:none;cursor:pointer;border-radius:50%;display:grid;place-items:center;color:#fff;transition:transform .35s var(--spring)}
@@ -347,7 +348,7 @@ body.is-listening .hm-glow{animation-duration:1.8s}
 @keyframes hmShim{to{background-position:-200% 0}}
 .t-val.sm{font-size:22px;letter-spacing:-.03em}.t-val.xs{font-size:18px;letter-spacing:-.02em}
 :root[data-theme="light"] .t-sub.warn{color:#b45309}
-.hm-brief.ready .pb{background:var(--accent);color:#fff;box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 22%,transparent)}
+.hm-brief.ready .pb{background:var(--accent);color:var(--on-accent);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 22%,transparent)}
 .hm-brief.ready .pb::after{content:"";position:absolute;top:-1px;right:-1px;width:10px;height:10px;border-radius:50%;background:#ffb020;border:2px solid var(--bg)}
 .hm-brief .pb{position:relative}
 @media (max-height:760px){
@@ -380,7 +381,7 @@ body.is-listening .hm-glow{animation-duration:1.8s}
 .chat{flex:1;overflow-y:auto;padding:8px 16px 12px;display:flex;flex-direction:column;gap:8px;overscroll-behavior:contain}
 .msg{max-width:82%;padding:10px 14px;border-radius:20px;font-size:16px;line-height:1.38;letter-spacing:-.012em;animation:msgIn .34s var(--spring);word-wrap:break-word}
 @keyframes msgIn{from{opacity:0;transform:translateY(8px) scale(.97)}to{opacity:1;transform:none}}
-.msg.me{align-self:flex-end;background:var(--accent);color:#fff;border-bottom-right-radius:6px}
+.msg.me{align-self:flex-end;background:var(--accent);color:var(--on-accent);border-bottom-right-radius:6px}
 .msg.ai{align-self:flex-start;background:var(--card-solid);border:1px solid var(--card-border);box-shadow:var(--card-shadow);border-bottom-left-radius:6px}
 :root[data-theme="dark"] .msg.ai{background:#232329;border-color:transparent}
 .msg.ai .who{display:none}
@@ -403,8 +404,8 @@ body.is-listening .hm-glow{animation-duration:1.8s}
 .round{flex:none;width:46px;height:46px;border-radius:50%;display:grid;place-items:center;cursor:pointer;background:var(--fill);border:0;transition:transform .15s var(--ease)}
 .round:active{transform:scale(.9)}
 .round svg{width:21px;height:21px}
-.round.primary{background:var(--accent);color:#fff;box-shadow:0 8px 18px color-mix(in srgb,var(--accent) 40%,transparent)}
-.round.rec{background:var(--bad);animation:pulse 1.3s infinite}
+.round.primary{background:var(--accent);color:var(--on-accent);box-shadow:0 8px 18px color-mix(in srgb,var(--accent) 40%,transparent)}
+.round.rec{background:var(--bad);color:#fff;animation:pulse 1.3s infinite}
 @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(244,63,94,.55)}70%{box-shadow:0 0 0 18px rgba(244,63,94,0)}100%{box-shadow:0 0 0 0 rgba(244,63,94,0)}}
 .suggest{display:flex;gap:8px;overflow-x:auto;padding:0 16px 8px;scrollbar-width:none}
 .suggest::-webkit-scrollbar{display:none}
@@ -435,13 +436,16 @@ input[type=range]{width:120px;accent-color:var(--accent)}
 @media (max-width:380px){.swatches{gap:7px}.swatches button{width:24px;height:24px}.set-row input[type=number],.set-row input[type=text]{width:100px}}
 .swatches button{width:28px;height:28px;border-radius:50%;border:0;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);transition:transform .2s var(--spring)}
 .swatches button.on{box-shadow:0 0 0 2px var(--bg2),0 0 0 4px currentColor;transform:scale(.9)}
-.btn{border:0;border-radius:14px;padding:12px 16px;min-height:44px;font-weight:650;font-size:15px;letter-spacing:-.012em;cursor:pointer;background:var(--accent);color:#fff;transition:transform .15s var(--ease),opacity .2s}
+.btn{border:0;border-radius:14px;padding:12px 16px;min-height:44px;font-weight:650;font-size:15px;letter-spacing:-.012em;cursor:pointer;background:var(--accent);color:var(--on-accent);transition:transform .15s var(--ease),opacity .2s}
 .btn:active{transform:scale(.97)}
 .btn:disabled{opacity:.45;cursor:default}
 .btn.ghost{background:var(--fill);color:var(--text);border:0}
 .btn.danger{background:rgba(244,63,94,.13);color:var(--bad-ink)}
 :root[data-theme="light"] .btn.danger{color:#b4123a}
 .set-row .btn{min-height:36px;padding:8px 14px;border-radius:999px;font-size:14px}
+/* a row with several buttons: the label gets its own line, the buttons go underneath */
+.set-row.wrap{flex-wrap:wrap;gap:10px 8px}
+.set-row.wrap .lbl{flex-basis:100%}
 .voice-list{max-height:280px;overflow-y:auto}
 .vrow{position:relative;display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;min-height:52px}
 .vrow+.vrow::before{content:"";position:absolute;top:0;right:0;left:48px;border-top:1px solid var(--sep)}
@@ -635,6 +639,7 @@ body.at-home .toast{bottom:calc(92px + var(--safe-b))}
     <div class="month-nav"><button class="icon-btn" id="prevM" aria-label="Previous month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7"/></svg></button><b id="monthLabel"></b><button class="icon-btn" id="nextM" aria-label="Next month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg></button></div>
     <div class="grid2" id="budgetStats"></div>
     <div class="card" style="margin-top:12px" id="budgetGoal"></div>
+    <div id="moneyLinks"></div>
     <div class="section-h"><h3>Where it went</h3></div>
     <div class="card" id="donutCard"></div>
     <div class="section-h"><h3>Daily spending</h3></div>
@@ -683,9 +688,9 @@ body.at-home .toast{bottom:calc(92px + var(--safe-b))}
       <div class="set-row"><div class="set-ic" style="background:#0a84ff"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18.5a4.5 4.5 0 0 1-.6-9 6 6 0 0 1 11.4 1.6 3.8 3.8 0 0 1-.3 7.4z"/><path d="M12 16v-5M9.8 13 12 10.8l2.2 2.2"/></svg></div><div class="lbl"><b>Backup</b><small>Save or restore all your data</small></div><button class="btn ghost" id="exportBtn">Save</button><button class="btn ghost" id="importBtn">Restore</button></div>
       <div class="set-row"><div class="set-ic" style="background:#ff3b30"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></div><div class="lbl"><b>Erase everything</b><small>Notes, money, food, habits…</small></div><button class="btn danger" id="wipeBtn">Erase</button></div>
     </div>
-    <div class="set-group"><div class="set-row"><div class="lbl"><b>Debug report</b><small>What the mic and voice did, for fixing problems. No words you said.</small></div><button class="btn ghost" id="dbgTest">Voice tests</button><button class="btn ghost" id="dbgShow">Show</button><button class="btn ghost" id="dbgClear">Clear</button></div>
+    <div class="set-group"><div class="set-row wrap"><div class="lbl"><b>Debug report</b><small>What the mic and voice did, for fixing problems. No words you said.</small></div><button class="btn ghost" id="dbgShow">Show</button><button class="btn ghost" id="dbgCopy">Copy</button><button class="btn ghost" id="dbgClear">Clear</button></div>
       <pre id="dbgBox" hidden style="white-space:pre-wrap;font-size:11px;max-height:60vh;overflow:auto;margin:0;padding:10px"></pre></div>
-    <p class="jv-foot">Jarvis 2.0 · version 35<br>Your data stays on this device.</p>
+    <p class="jv-foot">Jarvis 2.0 · version 36<br>Your data stays on this device.</p>
     <input type="file" id="importFile" accept="application/json" hidden>
   </section>
 </div>
@@ -1087,9 +1092,9 @@ function think(said, depth){
   { const b = brainHook('early', said, t, depth); if (b) return b; }
   for (const fn of plugins.intents){ try { const r = fn(said, t); if (r) return r; } catch(e){ console.error(e); } }
 
-  if (/^(hi|hello|hey|hey there|hi there|good (morning|afternoon|evening)|afternoon|evening)( jarvis)?$/.test(t)) { turnKind = 'chat'; return `${greeting()}, ${S.name}. What can I do for you?`; }
+  if (/^(hi|hello|hey|hey there|hi there|good (morning|afternoon|evening)|afternoon|evening)( jarvis)?$/.test(t)) { turnKind = 'chat'; return `${greetName()}. What can I do for you?`; }
   if (/^(help|help me|i need (some )?help|can you help( me)?|what can you do|what else can you do|how can you help( me)?|what do you do)( jarvis| please)?$|^(i'm|i am) (lost|confused)$/.test(t)) { turnKind = 'chat'; return HELP_TEXT; }
-  if (/\b(thanks|thank you)\b/.test(t) && t.split(' ').length <= 6) { turnKind = 'chat'; return `Anytime, ${S.name}.`; }
+  if (/\b(thanks|thank you)\b/.test(t) && t.split(' ').length <= 6) { turnKind = 'chat'; return `Anytime${realName() ? ', '+realName() : ''}.`; }
 
   // budget goal
   if ((m = t.match(/(?:set|change|make|update|put|raise|lower|increase|decrease)(?: my| the| a)?(?: monthly)? budget(?: for the month| for this month)? (?:to|at|is|of|as|=)?\s*\$?(\d+(?:\.\d+)?)/)) || (m = t.match(/my (?:monthly )?budget (?:is|should be|will be) \$?(\d+(?:\.\d+)?)/)) || (m = t.match(/^(?:i want|i'd like|i would like) (?:my |a )?(?:monthly )?budget (?:to be |of )?\$?(\d+(?:\.\d+)?)/))){
@@ -1120,19 +1125,20 @@ function think(said, depth){
   // "am I over budget?", "how much do I have left?"
   if (/^(am i|are we) (over|under|on|within|still (under|within|on)|close to|near) (my |the )?budget\b|^how much (money )?(is |do i have |have i got |have i )?(left|remaining)( in| on| of)?( my| the)?( budget| this month| for the month)?$|^how much (money )?(can i (still )?spend|is left (in|on|of) (my |the )?budget)\b|^what('s| is) (left (in|of) )?my budget$|^what('s| is) my (monthly )?budget( at| set to)?$/.test(t)){
     go('budget'); const tot = sum(inMonth(key));
-    if (!S.budget) return `You haven't set a budget yet. You've spent ${fmt(tot)} this month. Say: set my budget to 2000.`;
+    if (!S.budget) return `You haven't set a budget yet. You've spent ${fmt(tot)} this month. Say “set my budget to 1500”.`;
     return tot > S.budget ? `Yes, you're ${fmt(tot-S.budget)} over your ${fmt(S.budget)} budget this month.` : `You're within budget. You've spent ${fmt(tot)} of ${fmt(S.budget)}, so ${fmt(S.budget-tot)} is left this month.`;
   }
   if (/how much (did|have|do) i (spend|spent)|what (did|have) i (spend|spent)|my spending|spending summary|budget summary|how('s| is) my (budget|month|spending)|how am i doing( with| on)?( my)? (money|budget|spending|finances)|^how am i doing( this month)?$|where('s| is| did| does| has)( all)? my money( been)?( go| gone| going| spent)?\b|what are my expenses|\btotal (spending|spent|expenses)\b|^(my |show me my |show my )?(expenses|spending)$|^budget$|^(show|open|show me|go to|take me to) (my |the )?(budget|spending|expenses|money)( page| screen)?$/.test(t)){
     go('budget');
-    const tot = sum(spentIn); if (!tot) return `No spending recorded ${perWord}${per && per.to ? '' : ' yet'}.`;
+    const noBudget = !S.budget && /\bbudget\b/.test(t) ? ` You haven't set a budget yet. Say “set my budget to 1500”.` : '';   // "how am I doing on my budget" with none set
+    const tot = sum(spentIn); if (!tot) return `No spending recorded ${perWord}${per && per.to ? '' : ' yet'}.${noBudget}`;
     const byCat = {}; spentIn.forEach(e=>byCat[e.cat]=(byCat[e.cat]||0)+e.amount);
     const top = Object.entries(byCat).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([c,v])=>`${c} ${fmt(v)}`).join(', ');
     const past = per && per.to;
     let s = `${cap(perWord)} you${past?'':"'ve"} spent ${fmt(tot)}. Top categories: ${top}.`;
     if (past && per.label === 'last month' && S.budget) s += tot > S.budget ? ` That was ${fmt(tot-S.budget)} over your ${fmt(S.budget)} budget.` : ` That was ${fmt(S.budget-tot)} under your ${fmt(S.budget)} budget.`;
     else if (S.budget && !past && per?.label !== 'this year'){ const mt = sum(inMonth(key)); s += mt > S.budget ? ` That's ${fmt(mt-S.budget)} over your monthly budget.` : ` You have ${fmt(S.budget-mt)} left in your budget this month.`; }
-    return s;
+    return s + noBudget;
   }
   if (/(what('s| is) my balance|(how much|what) (money )?(did i|have i) (earn|earned|made|make|get paid|got paid|receive|received)\b(?! (?:from|for|on|at) [a-z])|my income|how much (money )?(came|has come) in)/.test(t)){
     go('budget');
@@ -1254,12 +1260,12 @@ function saveThat(){
   addNote(lastTurn.reply); go('notes'); turnKind = 'saved'; return "Done, I saved my last answer as a note.";
 }
 function smallTalk(t, said){
-  const now = new Date(), N = S.name;
+  const now = new Date(), N = realName(), cN = N ? ', '+N : '', sN = N ? ' '+N : '';   // no "Anytime, there." while no name is set
   const chat = r => { turnKind = 'chat'; return r; };
   // "save that" / "note that" / "write that down": you asked, so it's saved
   if (/^(save|keep|store) (that|this|it)( as a note| to my notes| in my notes| for me| for later)?$|^(add|put) (that|this|it) (to|in|into) (my )?notes$|^(note|write|jot) (that|this|it)( down)?$|^(note|write|jot) down (that|this)$|^remember (that|this)$|^make (that|this|it) a note$|^save (that|this|it) as a note$/.test(t)) return saveThat();
   { const cf = brainHook('confirm', t); if (cf) return cf; }   // "Should I log $18 for lunch?" "Yes." / "Sure." / "Yalla." (before the chit-chat below)
-  if (/^(can you |do you |you )?hear me( now| okay| ok| alright)?$|^(are )?you (there|listening|awake|on|with me)( now)?$|^(is )?(this|it|this thing|the mic|the microphone) (working|on)( now)?$|^(test|testing|mic check)( test| testing| 1| 2| 3| 1 2 3| 123)*$|^hello hello$|^(hello )+(are you there|anyone there)$/.test(t)) return chat(`Yes, I can hear you loud and clear, ${N}. What can I do for you?`);
+  if (/^(can you |do you |you )?hear me( now| okay| ok| alright)?$|^(are )?you (there|listening|awake|on|with me)( now)?$|^(is )?(this|it|this thing|the mic|the microphone) (working|on)( now)?$|^(test|testing|mic check)( test| testing| 1| 2| 3| 1 2 3| 123)*$|^hello hello$|^(hello )+(are you there|anyone there)$/.test(t)) return chat(`Yes, I can hear you loud and clear${cN}. What can I do for you?`);
   if (/^(help|help me|what can you do|what else can you do|what are you able to do|what do you do|what are your (features|skills|options)|how do (i|you) use (you|this|this app|jarvis)|how does this (work|app work)|what can i (ask|say|tell)( you| jarvis)?|what should i (ask|say)( you)?|show me what you can do|options|commands|features)$/.test(t)) return chat(HELP_TEXT);
   if (/^(right now |so )?(what('s| is) the time|what time is it|what time it is|time|the time|tell me the time|current time|got the time|do you have the time|have you got the time)( now| right now| please)?$/.test(t)) return chat(`It's ${now.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})}.`);
   if (/^(what('s| is) (the |today's )?date|today's date|the date|date|what day is (it|today)|what('s| is) (the )?day( today)?|which day is (it|today)|what('s| is) today|what month is it|what year is it|what('s| is) the month|what day of the week is it|what('s| is) the day of the week)( today| now)?$/.test(t)) return chat(`Today is ${now.toLocaleDateString([], {weekday:'long', month:'long', day:'numeric', year:'numeric'})}.`);
@@ -1271,20 +1277,20 @@ function smallTalk(t, said){
     if (cm){ const w = (cm[1] || cm[2]).trim(); const c = /^(?:\$|dollars?|us dollars?|usd)$/.test(w) ? '$' : /^(?:euros?|eur|€)$/.test(w) ? '€' : /^(?:pounds?|sterling|gbp|british pounds?|£)$/.test(w) ? '£' : /^(?:lira|lebanese lira|lebanese pounds?|lbp|l£)$/.test(w) ? 'L£' : /^(?:dirhams?|aed|uae dirhams?)$/.test(w) ? 'AED' : /^(?:riyals?|sar|saudi riyals?)$/.test(w) ? 'SAR' : null;
       if (c){ S.currency = c; save(); renderAll(); try { syncSettings(); } catch(e){} return chat(`Done. I'll show money in ${({'$':'dollars','€':'euros','£':'pounds','L£':'Lebanese pounds','AED':'dirhams','SAR':'riyals'})[c]}. Amounts you already logged keep their numbers.`); } } }
   if (/^what did i (just )?say$/.test(t)) return chat(lastTurn ? `You said: ${lastTurn.said}.` : "You haven't said anything yet.");
-  if (/^(do you )?(know|remember) (my name|who i am)$|^what('s| is) my name$|^who am i$/.test(t)) return chat(`You're ${N}.`);
+  if (/^(do you )?(know|remember) (my name|who i am)$|^what('s| is) my name$|^who am i$/.test(t)) return chat(N ? `You're ${N}.` : "I don't know your name yet. Say “call me”, then your name.");
   if (/^(what (did|have) (we|i) (talk|talked|speak|spoke|chat|chatted) about|what (did|have) i (ask|asked)( you)?( before| earlier| today| so far)?)$/.test(t)){ const rc = brainHook('recap'); if (rc) return chat(rc); }
   if (/^do you remember\b|^remember (when|the time|what|how|who|where|if)\b/.test(t)) return chat("I only remember what we've said since you opened Jarvis. To keep something for good, say note, then what you want saved.");
-  if (/^(how are you|how are you doing|how're you|how you doing|how are things|how('s| is) it going|how('s| is) everything|how('s| is) life|how('s| is) your life|how do you do|what's up|whats up|sup|what's good|how have you been|you good|you okay|you ok|are you okay|are you ok)( today| doing| jarvis)?$/.test(t)) return chat(pick([`I'm doing great, thanks for asking, ${N}. What can I do for you?`, `All good here, ${N}. How can I help?`]));
-  if (/^(how was your day|how('s| is) your day( going)?)$/.test(t)) return chat(`Pretty good. I've been keeping an eye on your day. How's yours going, ${N}?`);
+  if (/^(how are you|how are you doing|how're you|how you doing|how are things|how('s| is) it going|how('s| is) everything|how('s| is) life|how('s| is) your life|how do you do|what's up|whats up|sup|what's good|how have you been|you good|you okay|you ok|are you okay|are you ok)( today| doing| jarvis)?$/.test(t)) return chat(pick([`I'm doing great, thanks for asking${cN}. What can I do for you?`, `All good here${cN}. How can I help?`]));
+  if (/^(how was your day|how('s| is) your day( going)?)$/.test(t)) return chat(`Pretty good. I've been keeping an eye on your day. How's yours going${cN}?`);
   if (/^(who are you|what are you|what('s| is) your name|introduce yourself|tell me about yourself|are you (real|human|a robot|a person|an ai|a bot)|who (made|built|created|designed) you)$/.test(t)) return chat(`I'm Jarvis, your personal assistant, built just for you. I can brief you on your day, the weather and markets, your money, food and habits, and save notes when you ask.`);
-  if (/^(how old are you|where are you from|where do you live|where are you)$/.test(t)) return chat(`I'm Jarvis, and I live right here on your phone, ${N}.`);
+  if (/^(how old are you|where are you from|where do you live|where are you)$/.test(t)) return chat(`I'm Jarvis, and I live right here on your phone${cN}.`);
   if (/^(tell me a joke|say something funny|make me laugh|another joke|a joke|joke|tell me another joke)$/.test(t)) return chat(pick(["Why did the stock market go to therapy? Too many emotional swings.","I told my budget a joke. It didn't find it very rich.","Why don't accountants ever get bored? They always find something to count on.","Why did the banana go to the doctor? It wasn't peeling well."]));
-  if (/^(tell me a story|sing( me)? a song|sing something)$/.test(t)) return chat(`I'm better with facts than stories, ${N}. Want a joke instead? Just say tell me a joke.`);
-  if (/^(shukran|shukran kteer|merci|merci kteer|yislamo|yislamu|tislam|teslam)( jarvis| habibi)?$/.test(t)) return chat(pick([`Tikram, ${N}. Anytime.`, `Ahla w sahla, ${N}.`]));
-  if (/^(kifak|kifik|kif halak|kifak jarvis|shu akhbarak|shu el akhbar|shu fi ma fi|ahla|marhaba|marhaba jarvis|sabah el kheir|sabah al kheir|masa el kheir|masa al kheir)$/.test(t)) return chat(/^(sabah)/.test(t) ? `Sabah el noor, ${N}. Want your brief?` : /^(masa)/.test(t) ? `Masa el noor, ${N}. What can I do for you?` : `Mnih, thanks ${N}! What can I do for you?`);
-  if (/^(yalla|yallah|yalla let's go|yalla let us go|let's go|let us go|yalla bye|yalla bye bye)$/.test(t)) return chat(/bye/.test(t) ? `Yalla, talk soon ${N}.` : `Yalla! What do you need, ${N}?`);
-  if (/^(thanks|thank you|thank you so much|thanks a lot|thanks so much|thx|cheers|much appreciated|appreciate it|(awesome|great|perfect|ok|okay|cool|nice) (thanks|thank you)|thanks (jarvis|man|buddy|bro)|that's great thanks)$/.test(t)) return chat(pick([`Anytime, ${N}.`, `You're welcome, ${N}.`, `Happy to help.`]));
-  if (/^(ok|okay|cool|nice|great|awesome|perfect|got it|alright|all right|sure|good|wow|fine|sounds good|sounds great|okay cool|ok cool|i see|makes sense|interesting|lovely|amazing)$/.test(t)) return chat(`Anything else, ${N}?`);
+  if (/^(tell me a story|sing( me)? a song|sing something)$/.test(t)) return chat(`I'm better with facts than stories${cN}. Want a joke instead? Just say tell me a joke.`);
+  if (/^(shukran|shukran kteer|merci|merci kteer|yislamo|yislamu|tislam|teslam)( jarvis| habibi)?$/.test(t)) return chat(pick([`Tikram${cN}. Anytime.`, `Ahla w sahla${cN}.`]));
+  if (/^(kifak|kifik|kif halak|kifak jarvis|shu akhbarak|shu el akhbar|shu fi ma fi|ahla|marhaba|marhaba jarvis|sabah el kheir|sabah al kheir|masa el kheir|masa al kheir)$/.test(t)) return chat(/^(sabah)/.test(t) ? `Sabah el noor${cN}. Want your brief?` : /^(masa)/.test(t) ? `Masa el noor${cN}. What can I do for you?` : `Mnih, thanks${sN}! What can I do for you?`);
+  if (/^(yalla|yallah|yalla let's go|yalla let us go|let's go|let us go|yalla bye|yalla bye bye)$/.test(t)) return chat(/bye/.test(t) ? `Yalla, talk soon${sN}.` : `Yalla! What do you need${cN}?`);
+  if (/^(thanks|thank you|thank you so much|thanks a lot|thanks so much|thx|cheers|much appreciated|appreciate it|(awesome|great|perfect|ok|okay|cool|nice) (thanks|thank you)|thanks (jarvis|man|buddy|bro)|that's great thanks)$/.test(t)) return chat(pick([`Anytime${cN}.`, `You're welcome${cN}.`, `Happy to help.`]));
+  if (/^(ok|okay|cool|nice|great|awesome|perfect|got it|alright|all right|sure|good|wow|fine|sounds good|sounds great|okay cool|ok cool|i see|makes sense|interesting|lovely|amazing)$/.test(t)) return chat(`Anything else${cN}?`);
   if (/^(yes|yeah|yep|yup|yes please|please|sure thing|of course|definitely)$/.test(t)) return chat(`Great. What would you like me to do?`);
   if (/^(no|nope|nah|no thanks|no thank you|nothing|nothing else|never ?mind( that| it)?|forget it|forget about it|stop|cancel|that's it|that's all|thats all|that's all for now|i'm good|im good|i'm fine|all good|that's fine|khalas|khalas khalas|bas|bas khalas|that's enough|enough|shut up|be quiet|quiet|stop talking|ok stop|okay stop)$/.test(t)) return chat(/^(stop|cancel|khalas( khalas)?|bas( khalas)?|that's enough|enough|shut up|be quiet|quiet|stop talking|ok stop|okay stop)$/.test(t) ? 'Okay, stopped.' : pick(['No problem.', `Okay, I'm here if you need me.`]));
   if (/^(wait|hold on|(one|1) sec(ond)?|hang on|give me a (sec|second|minute)|just a (sec|second|minute))$/.test(t)) return chat('Sure, take your time.');
@@ -1292,22 +1298,22 @@ function smallTalk(t, said){
   if (/^(sorry|my bad|oops|i'm sorry)$/.test(t)) return chat('No worries at all.');
   if (/^(really|seriously|are you sure)$/.test(t)) return chat('Yep, as far as I can tell.');
   if (/^(i don't know|i dont know|not sure|i'm not sure|dunno|idk)$/.test(t)) return chat(`No rush. You can ask for your brief, the weather, or your spending anytime.`);
-  if (/^(bye|goodbye|bye bye|good night|goodnight|night|nighty night|see you|see you later|see ya|later|talk (to you )?(later|soon)|catch you later|i'm going to sleep|going to bed)( jarvis)?$/.test(t)) return chat(/night|sleep|bed/.test(t) ? `Good night, ${N}. Sleep well.` : `Talk soon, ${N}.`);
-  if (/^(i love you|love you|you('re| are) (great|awesome|amazing|the best|smart|funny|cool|helpful|so helpful)|good job|well done|nice (one|1)|good boy|you rock|great job|nice work|good work)( jarvis)?$/.test(t)) return chat(`Thanks, ${N}! I'm here whenever you need me.`);
-  if (/^(what('s| is) your favou?rite\b|do you (sleep|eat|dream|get tired|get bored|have feelings|have a (family|girlfriend|boyfriend|wife|husband))\b|are you (happy|tired|bored|alive|single|married|awake)$|do you like (football|soccer|sports|music|movies|food|it here)\b)/.test(t)) return chat(`I'm just your assistant, so I don't have favorites, ${N}. But I always like helping you.`);
-  if (/^(lol|lmao|haha+|ha ha( ha)*|hahaha+|that's (so )?funny|funny|hilarious|that's hilarious)$/.test(t)) return chat(`Ha! Glad you're having fun, ${N}.`);
+  if (/^(bye|goodbye|bye bye|good night|goodnight|night|nighty night|see you|see you later|see ya|later|talk (to you )?(later|soon)|catch you later|i'm going to sleep|going to bed)( jarvis)?$/.test(t)) return chat(/night|sleep|bed/.test(t) ? `Good night${cN}. Sleep well.` : `Talk soon${cN}.`);
+  if (/^(i love you|love you|you('re| are) (great|awesome|amazing|the best|smart|funny|cool|helpful|so helpful)|good job|well done|nice (one|1)|good boy|you rock|great job|nice work|good work)( jarvis)?$/.test(t)) return chat(`Thanks${cN}! I'm here whenever you need me.`);
+  if (/^(what('s| is) your favou?rite\b|do you (sleep|eat|dream|get tired|get bored|have feelings|have a (family|girlfriend|boyfriend|wife|husband))\b|are you (happy|tired|bored|alive|single|married|awake)$|do you like (football|soccer|sports|music|movies|food|it here)\b)/.test(t)) return chat(`I'm just your assistant, so I don't have favorites${cN}. But I always like helping you.`);
+  if (/^(lol|lmao|haha+|ha ha( ha)*|hahaha+|that's (so )?funny|funny|hilarious|that's hilarious)$/.test(t)) return chat(`Ha! Glad you're having fun${cN}.`);
   if (/^(oh my god|oh my gosh|my god|my gosh|omg|oh wow|no way|whoa|wow really)$/.test(t)) return chat(`I know, right?`);
-  if (/^(bless you)$/.test(t)) return chat(`Thank you, ${N}.`);
+  if (/^(bless you)$/.test(t)) return chat(`Thank you${cN}.`);
   if (/^(guess what|you know what|i have news|i've got news)$/.test(t)) return chat(`What's up? I'm listening.`);
-  if (/^(i'm back|i am back|i'm home|i am home|back|i'm here|i am here)$/.test(t)) return chat(`Welcome back, ${N}. What can I do for you?`);
-  if (/^(i appreciate you|appreciate you|i appreciate it|you're a lifesaver)$/.test(t)) return chat(`Anytime, ${N}. That's what I'm here for.`);
-  if (/^do you like me$/.test(t)) return chat(`Of course. You're my favorite person to help, ${N}.`);
-  if (/^(let's talk|let's chat|talk to me|i('m| am) just (talking|chatting)( to you| with you)?|just talking|just chatting|i just want(ed)? to talk|i want to talk|keep me company)$/.test(t)) return chat(`I'm always up for a chat, ${N}. Ask me about your day, the weather or the markets anytime.`);
-  if (/^what do you think( about it| of that)?$/.test(t)) return chat(`I think you're doing great, ${N}. What would you like to know?`);
+  if (/^(i'm back|i am back|i'm home|i am home|back|i'm here|i am here)$/.test(t)) return chat(`Welcome back${cN}. What can I do for you?`);
+  if (/^(i appreciate you|appreciate you|i appreciate it|you're a lifesaver)$/.test(t)) return chat(`Anytime${cN}. That's what I'm here for.`);
+  if (/^do you like me$/.test(t)) return chat(`Of course. You're my favorite person to help${cN}.`);
+  if (/^(let's talk|let's chat|talk to me|i('m| am) just (talking|chatting)( to you| with you)?|just talking|just chatting|i just want(ed)? to talk|i want to talk|keep me company)$/.test(t)) return chat(`I'm always up for a chat${cN}. Ask me about your day, the weather or the markets anytime.`);
+  if (/^what do you think( about it| of that)?$/.test(t)) return chat(`I think you're doing great${cN}. What would you like to know?`);
   if (/^i('m| am) (so |really |very |kind of |a bit )?(bored)$/.test(t)) return chat(`Want a joke? Or I can give you a quick market update. Just ask.`);
-  if (/^i('m| am) (so |really |very |kind of |a bit )?(tired|exhausted|stressed|stressed out|sad|down|not feeling (good|great|well)|busy|swamped|overwhelmed|slammed|drained|burnt out|burned out)$|^(i had|it's been|it was|that was) (a )?(long|rough|hard|tough|busy|crazy|bad) day$/.test(t)) return chat(pick([`Sorry to hear that, ${N}. Take it easy. I'm here if you need anything.`, `That sounds tough, ${N}. Take a breather. I've got your reminders covered.`]));
+  if (/^i('m| am) (so |really |very |kind of |a bit )?(tired|exhausted|stressed|stressed out|sad|down|not feeling (good|great|well)|busy|swamped|overwhelmed|slammed|drained|burnt out|burned out)$|^(i had|it's been|it was|that was) (a )?(long|rough|hard|tough|busy|crazy|bad) day$/.test(t)) return chat(pick([`Sorry to hear that${cN}. Take it easy. I'm here if you need anything.`, `That sounds tough${cN}. Take a breather. I've got your reminders covered.`]));
   if (/^i('m| am) (so |really |very |kind of |a bit )?(hungry|starving)$/.test(t)) return chat(`Ask me what should I eat, and I'll suggest something that fits your calories.`);
-  if (/^i('m| am) (doing )?(good|great|fine|well|okay|ok|happy|excited|awesome|amazing)( today| thanks| thank you)?$|^i('m| am) (so |really |very )?happy( today)?$|^(not bad|pretty good|all good)$/.test(t)) return chat(`Love to hear that, ${N}.`);
+  if (/^i('m| am) (doing )?(good|great|fine|well|okay|ok|happy|excited|awesome|amazing)( today| thanks| thank you)?$|^i('m| am) (so |really |very )?happy( today)?$|^(not bad|pretty good|all good)$/.test(t)) return chat(`Love to hear that${cN}.`);
   return null;
 }
 let fbLast = '';
@@ -1345,6 +1351,9 @@ const clock = ts => new Date(ts).toLocaleTimeString([], {hour:'numeric', minute:
 function upcoming(){ return db.reminders.filter(r=>!r.done && r.at>=Date.now()-6e4).sort((a,b)=>a.at-b.at); }
 function overdue(){ return db.reminders.filter(r=>!r.done && r.at<Date.now()-6e4).sort((a,b)=>b.at-a.at); }
 function greeting(){ const h = new Date().getHours(); return h<5?'Good evening':h<12?'Good morning':h<18?'Good afternoon':'Good evening'; }
+/* "Good evening, Sam", or just "Good evening" while no name is set (the default name is 'there') */
+function realName(){ const n = String(S.name||'').trim(); return !n || /^there$/i.test(n) ? '' : n; }   // '' while no name is set
+function greetName(){ const n = String(S.name||'').trim(); return !n || /^there$/i.test(n) ? greeting() : `${greeting()}, ${n}`; }
 
 /* =========================================================
    SCREENS
@@ -1635,6 +1644,11 @@ function renderBudget(){
     <div class="card stat"><div class="label">Spent</div><div class="val${statSize(fmt(spent), fmt(earned))}">${fmt(spent)}</div><div class="delta" style="color:${delta===null?'var(--muted)':delta>0?'var(--bad-ink)':'var(--good-ink)'}">${delta===null?`${exp.length} payment${exp.length===1?'':'s'}`:`${delta>0?'↑':'↓'} ${Math.abs(delta)}% vs last month`}</div></div>
     <div class="card stat"><div class="label">Income</div><div class="val${statSize(fmt(spent), fmt(earned))}" style="color:var(--good-ink)">${fmt(earned)}</div><div class="delta" style="color:var(--muted)">Balance ${fmt(earned-spent)}</div></div>`;
   $('budgetGoal').innerHTML = budgetGoalHTML(spent);
+  /* Receipts and Markets also live under Money (the bottom bar lights Money for them), so they're one tap away from here */
+  const links = ['receipts','finance'].filter(id=>plugins.views.some(v=>v.id===id) && MENU[id]).map(id=>{ const m = MENU[id], t = id==='receipts' ? 'Receipts' : 'Markets';
+    return `<button class="jv-row" data-go="${id}">${ico(m.ic, m.c)}<span class="jv-rb"><span class="jv-rt">${t}</span><span class="jv-rs">${esc(m.d)}</span></span><span class="jv-rr">${IC.chev.replace('<svg ', '<svg class="jv-chev" ')}</span></button>`; });
+  const lh = links.length ? `<div class="jv-group" style="margin-top:12px">${links.join('')}</div>` : '';
+  if ($('moneyLinks').dataset.h !== lh){ $('moneyLinks').innerHTML = lh; $('moneyLinks').dataset.h = lh; }
   const byCat = {}; exp.forEach(e=>byCat[e.cat]=(byCat[e.cat]||0)+e.amount);
   const parts = Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
   $('donutCard').innerHTML = parts.length ? `<div class="donut-wrap"><div class="donut">${donutSVG(parts, spent)}<div class="center"><div><b>${fmt(spent)}</b><span>spent</span></div></div></div>
@@ -1666,6 +1680,7 @@ function renderAll(full){
   if (full===true || current==='reminders') renderReminders();
   if (full===true || current==='budget') renderBudget();
   renderPlugins(full===true);
+  try { updateBar(); } catch(e){}   // an inner page may have opened or closed (Back label)
 }
 function renderView(name){
   if (name==='home') renderHome(); else if (name==='today') renderToday(); else if (name==='notes') renderNotes(); else if (name==='reminders') renderReminders(); else if (name==='budget') renderBudget();
@@ -1684,6 +1699,7 @@ function haptic(ms){ try { const ua = navigator.userActivation; if (navigator.vi
 function go(name, opts){
   if (!name) return; opts = opts || {};
   const changed = current !== name;
+  if (changed){ try { const s = Jarvis.subNav && Jarvis.subNav[current]; if (s && s.leave) s.leave(); } catch(e){} }   // leaving a screen closes its inner page
   if (opts.fromBack) navDir = 'back';
   else if (changed){
     if (opts.tab || name==='home'){ navStack = name==='home' ? [{v:'home', tab:true}] : [{v:'home', tab:true}, {v:name, tab:true}]; navDir = 'tab'; }
@@ -1708,11 +1724,14 @@ function go(name, opts){
   if (!$('sheet').classList.contains('open')){ if (changed) window.scrollTo(0, 0); else window.scrollTo({top:0, behavior:'smooth'}); }
   onScroll(); syncTrap();
 }
+/* a screen can open an inner page (Habits -> a habit's details): the top Back, iPhone's swipe back and Escape close it first.
+   A feature registers Jarvis.subNav[viewId] = {open:()=>bool, label:'Habits', close(), leave()}; leave() runs when you go to another screen. */
+function subNav(){ try { const s = Jarvis.subNav && Jarvis.subNav[current]; return s && s.open() ? s : null; } catch(e){ return null; } }
 function updateBar(){
-  const top = navStack[navStack.length-1], prev = navStack[navStack.length-2];
-  const show = !!prev && !top.tab;
+  const top = navStack[navStack.length-1], prev = navStack[navStack.length-2], sub = subNav();
+  const show = !!sub || (!!prev && !top.tab);
   $('jvBack').hidden = !show;
-  if (show){ $('jvBackTxt').textContent = viewTitle(prev.v); $('jvBack').setAttribute('aria-label', 'Back to '+viewTitle(prev.v)); }
+  if (show){ const bt = sub ? (sub.label || viewTitle(current)) : viewTitle(prev.v); $('jvBackTxt').textContent = bt; $('jvBack').setAttribute('aria-label', 'Back to '+bt); }
   $('jvTitle').textContent = current==='home' ? '' : viewTitle(current);
   // the screen's main "add" action, always one tap away at the top right (like iPhone apps)
   const add = BAR_ADD[current], r = $('jvBarR');
@@ -1720,6 +1739,7 @@ function updateBar(){
 }
 const BAR_ADD = {budget:['Add a transaction', ()=>openExpModal()], notes:['New note', ()=>openNoteModal()], reminders:['New reminder', ()=>openRemModal()], calendar:['New reminder or alarm', ()=>openRemModal()]};
 function goBack(){
+  const sub = subNav(); if (sub){ try { sub.close(); } catch(e){} updateBar(); window.scrollTo(0, 0); syncTrap(); return true; }
   if (navStack.length <= 1) return false;
   navStack.pop(); go(navStack[navStack.length-1].v, {fromBack:true}); return true;
 }
@@ -1762,7 +1782,7 @@ document.addEventListener('keydown', e=>{ if (e.key !== 'Escape') return; const 
 /* features' own sheets (food, calendar) open and close by class: keep the Back trap in step */
 try { new MutationObserver(()=>syncTrap()).observe(document.body, {subtree:true, attributes:true, attributeFilter:['class']}); } catch(e){}
 document.addEventListener('click', e=>{
-  const g = e.target.closest('[data-go]'); if (g){ const tab = !!g.closest('.nav'); if (tab) haptic(); go(g.dataset.go, {tab}); return; }
+  const g = e.target.closest('[data-go]'); if (g){ const tab = !!g.closest('.nav'); if (tab) haptic(); go(g.dataset.go, {tab}); if (g.dataset.field) showField(g.dataset.field); return; }
   if (e.target.closest('[data-set-budget]')){ openBudgetModal(); return; }
   const d = e.target.closest('[data-del]'); if (d){ e.stopPropagation(); const [col,id] = d.dataset.del.split(':'); const idx = db[col].findIndex(x=>x.id===id); if (idx<0) return; const item = db[col][idx]; db[col].splice(idx,1); if (col==='expenses') expenseEvent('removed', item); save(); renderAll(); toast('Deleted', ()=>{ db[col].splice(idx,0,item); if (col==='expenses') expenseEvent('restored', item); save(); renderAll(); }); return; }
   const p = e.target.closest('[data-pin]'); if (p){ e.stopPropagation(); const n = db.notes.find(x=>x.id===p.dataset.pin); n.pinned = !n.pinned; save(); renderAll(); toast(n.pinned?'Pinned':'Unpinned'); return; }
@@ -1953,9 +1973,12 @@ function openBudgetModal(){
 /* ---------- first run: name, currency, city, iPhone (shown as a pill on Home until done or skipped) ---------- */
 function needsSetup(){ const n = String(S.name||'').trim(); return !S.setupDone && (!n || /^there$/i.test(n)); }
 const SETUP_CUR = [['$','$ Dollar'],['L£','L£ Lira'],['€','€ Euro'],['AED','AED']];
+let setupLeft = 0;   // +1 each time the Welcome sheet is finished, skipped or cancelled
 function openSetup(){
   let cur = S.currency;
   const W = window.Jarvis && Jarvis.weather;
+  // the city search and "Use my location" come back to this sheet when they're done (unless it was left meanwhile)
+  const left0 = setupLeft, back = ()=>{ if (setupLeft === left0) openSetup(); };
   const cityHTML = ()=>{ const l = W && W.location; return l ? `<button type="button" data-su="loc">${IC.mapPin}${esc(l.name||'Your city')} · Change</button>` : `<button type="button" data-su="beirut">Beirut</button><button type="button" data-su="gps">${IC.mapPin}Use my location</button><button type="button" data-su="loc">Search a city</button>`; };
   const commit = ()=>{ const n = $('suName').value.trim(); if (n){ S.name = cap(n); } S.currency = cur; save(); syncSettings(); renderAll(); };
   const box = formSheet({title:'Welcome to Jarvis', save:'Done',
@@ -1965,19 +1988,20 @@ function openSetup(){
       ${W ? `<div class="fs-lbl">Your city <span style="text-transform:none;letter-spacing:0;font-weight:500">· for the weather</span></div><div class="fs-chips" id="suCity">${cityHTML()}</div>` : ''}
       <div class="fs-group fs-acts"><button type="button" class="fs-act" id="suPhone">${IC.phone}<span style="flex:1;padding:9px 0">Connect my iPhone<small class="jv-sub">Steps, sleep, calendar and alarms · about 5 min</small></span>${IC.chev}</button>
         <button type="button" class="fs-act" id="suSkip" style="color:var(--muted)">${IC.close}Not now</button></div>`,
-    onSave: ()=>{ commit(); S.setupDone = true; save(); renderAll(); toast(String(S.name||'').trim() && !/^there$/i.test(S.name) ? `All set, ${String(S.name).split(/\s+/)[0]}` : 'All set'); }});
+    onSave: ()=>{ setupLeft++; commit(); S.setupDone = true; save(); renderAll(); toast(String(S.name||'').trim() && !/^there$/i.test(S.name) ? `All set, ${String(S.name).split(/\s+/)[0]}` : 'All set'); }});
   segVal(box, 'suCur', v=>{ cur = v; });
+  box.querySelector('[data-fs="cancel"]').onclick = ()=>{ setupLeft++; closeModal(); };
   if ($('suCity')) $('suCity').onclick = ev=>{ const b = ev.target.closest('[data-su]'); if (!b) return; commit(); const a = b.dataset.su;
-    try { if (a==='beirut'){ W.useBeirut(); $('suCity').innerHTML = cityHTML(); haptic(5); } else if (a==='gps'){ closeModal(); W.useGPS(); } else { W.pick(); } } catch(e){ go('today'); } };
-  $('suPhone').onclick = ()=>{ commit(); S.setupDone = true; save(); closeModal(); try { if (Jarvis.health && Jarvis.health.openConnect) return Jarvis.health.openConnect(); } catch(e){} go('calendar'); };
-  $('suSkip').onclick = ()=>{ commit(); S.setupDone = true; save(); closeModal(); renderAll(); };
+    try { if (a==='beirut'){ W.useBeirut(); $('suCity').innerHTML = cityHTML(); haptic(5); } else if (a==='gps'){ closeModal(); W.useGPS(back); } else { W.pick(back); } } catch(e){ go('today'); } };
+  $('suPhone').onclick = ()=>{ setupLeft++; commit(); S.setupDone = true; save(); closeModal(); try { if (Jarvis.health && Jarvis.health.openConnect) return Jarvis.health.openConnect(); } catch(e){} go('calendar'); };
+  $('suSkip').onclick = ()=>{ setupLeft++; commit(); S.setupDone = true; save(); closeModal(); renderAll(); };
 }
 $('heroSetup').onclick = ()=>{ haptic(); openSetup(); };
 $('addNoteBtn').onclick = ()=>openNoteModal();
 $('addRemBtn').onclick = ()=>openRemModal();
 $('addExpBtn').onclick = ()=>openExpModal();
 Object.assign(Jarvis, {
-  back: ()=>goBack(), formSheet,
+  back: ()=>goBack(), formSheet, subNav: {},
   editExpense: id=>{ const x = db.expenses.find(z=>z.id===id); if (x) openExpModal(x); return !!x; },
   editReminder: id=>{ const x = db.reminders.find(z=>z.id===id); if (x) openRemModal(x); return !!x; },
   editNote: id=>{ const x = db.notes.find(z=>z.id===id); if (x) openNoteModal(x); return !!x; },
@@ -2008,6 +2032,13 @@ function iphoneRow(){
 }
 document.addEventListener('click', e=>{ const b = e.target.closest('[data-iphone]'); if (!b) return; haptic();
   try { if (b.dataset.iphone==='open' && Jarvis.health && Jarvis.health.syncedAt) return go('health'); if (Jarvis.health && Jarvis.health.openConnect) return Jarvis.health.openConnect(); } catch(x){} go('calendar'); });
+/* the More profile card opens Settings at "Your name" (Personal), not at the top; with no name yet it also puts the cursor there.
+   Focus runs inside the tap, so iPhone shows the keyboard. */
+function showField(id){
+  const f = $(id); if (!f) return;
+  (f.closest('.set-row') || f).scrollIntoView({block:'center'});
+  if (id==='sName' && !f.value) try { f.focus({preventScroll:true}); } catch(e){}
+}
 function renderMore(){
   const el = $('moreMenu'); if (!el) return;
   const views = [{id:'notes', label:'Notes'}, {id:'reminders', label:'Reminders'}, {id:'budget', label:'Budget'}, ...plugins.views.filter(v=>v.tile!==false), {id:'settings', label:'Settings'}];
@@ -2029,7 +2060,7 @@ function renderMore(){
   if (extra.length) groups.splice(3, 0, extra);
   const names = extra.length ? ['Your day', 'Money', 'Health', 'More', 'Jarvis'] : MENU_GROUPS;
   const first = /^there$/i.test(String(S.name||'').trim()) ? '' : String(S.name||'').trim(), init = (first[0]||'J').toUpperCase();
-  const html = `<button class="jv-me" data-go="settings"><span class="jv-av">${first ? esc(init) : '<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/></svg>'}</span><span style="flex:1;min-width:0"><b>${esc(first||'You')}</b><small>${first ? 'Name, voice, theme and backup' : 'Tap to add your name, voice and theme'}</small></span>${IC.chev.replace('<svg ', '<svg class="jv-chev" ')}</button>`
+  const html = `<button class="jv-me" data-go="settings" data-field="sName"><span class="jv-av">${first ? esc(init) : '<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/></svg>'}</span><span style="flex:1;min-width:0"><b>${esc(first||'You')}</b><small>${first ? 'Name, voice, theme and backup' : 'Tap to add your name, voice and theme'}</small></span>${IC.chev.replace('<svg ', '<svg class="jv-chev" ')}</button>`
     + iphoneRow()
     + groups.map((g,i)=>g.length ? `<div class="section-h"><h3>${names[i]}</h3></div><div class="jv-group">${g.join('')}</div>` : '').join('')
     + `<p class="jv-foot">Jarvis 2.0 · your data stays on this device</p>`;
@@ -2066,7 +2097,7 @@ function chatActs(m){
 }
 function openSheet(listen){
   $('sheet').classList.add('open'); $('sheetBg').classList.add('open');
-  if (!chatLog.length) addMsg('ai', `${greeting()}, ${S.name}. Tap the mic and tell me what you need.`);
+  if (!chatLog.length) addMsg('ai', `${greetName()}. Tap the mic and tell me what you need.`);
   if (listen) startListening();
 }
 /* v30 DIAGNOSTIC (orange dot): after X, log the mic/audio state every 2 s for 20 s. Changes nothing. */
@@ -2237,6 +2268,9 @@ setInterval(checkReminders, 10000);
 const ACCENTS = ['#6d5dfc','#0ea5e9','#22c55e','#f59e0b','#f43f5e','#ec4899'];
 /* each accent gets a matching second color for gradients (the orb's shimmer, progress bars), so no combination looks muddy */
 const ACCENT2 = {'#6d5dfc':'#22d3ee', '#0ea5e9':'#6d5dfc', '#22c55e':'#14b8a6', '#f59e0b':'#f43f5e', '#f43f5e':'#f59e0b', '#ec4899':'#8b5cf6'};
+/* blue, green and orange are too light for white text (under 3:1), so buttons on them get a dark text color,
+   and light theme's accent text (links, Back, "+") gets mixed with more black: the % kept of the accent, each reaching 4.5:1 */
+const LIGHT_ACCENT_INK = {'#0ea5e9':'62%', '#22c55e':'58%', '#f59e0b':'55%'};
 function applyTheme(){
   let th = S.theme; if (th==='auto') th = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
   document.documentElement.dataset.theme = th;
@@ -2244,6 +2278,9 @@ function applyTheme(){
   document.documentElement.style.setProperty('--accent', S.accent);
   document.documentElement.style.setProperty('--accent2', ACCENT2[S.accent] || '#22d3ee');
   document.documentElement.style.setProperty('--accent-soft', S.accent+'29');
+  const ink = LIGHT_ACCENT_INK[S.accent];
+  document.documentElement.style.setProperty('--on-accent', ink ? 'color-mix(in srgb,'+S.accent+' 20%,#000)' : '#fff');
+  if (ink) document.documentElement.style.setProperty('--ink-k', ink); else document.documentElement.style.removeProperty('--ink-k');
 }
 function syncSettings(){
   $('sSpeak').checked = S.speak; $('sRate').value = S.rate; $('sPitch').value = S.pitch; $('sName').value = /^there$/i.test(S.name||'') ? '' : S.name; if (![...$('sCur').options].some(o=>o.value===S.currency)) $('sCur').add(new Option(S.currency, S.currency)); $('sCur').value = S.currency; $('sBudget').value = S.budget||''; $('sTheme').value = S.theme;
@@ -2280,20 +2317,29 @@ function saveBackup(){
   toast('Backup saved. Keep the file in iCloud Drive or email it to yourself.'); renderHome();
 }
 $('exportBtn').onclick = saveBackup;
-$('dbgShow').onclick = ()=>{ const b=$('dbgBox'); let a=[]; try { a=JSON.parse(localStorage.getItem('jarvis2-debuglog')||'[]'); } catch(e){}
-  const c=Jarvis.calendar&&Jarvis.calendar.audio; b.textContent='v'+(document.querySelector('meta[name=jv-ver]')||{}).content+' · audio now: '+(c?c.state:'none')+' · voice unlocked: '+(speechEverStarted?'yes':'no')+String.fromCharCode(10)+(a.slice(-200).join(String.fromCharCode(10))||'(empty)'); b.hidden=false; };
-$('dbgTest').onclick = ()=>{
-  const eng = ()=> Jarvis.calendar && Jarvis.calendar.audio, say = t=>{ const w=S.speak; S.speak=true; speak(t); S.speak=w; };
-  jvLog('voice tests: start (audio engine '+(eng()?eng().state:'none')+')'); toast('Listen: 2 short tests in the next 12 seconds');
-  setTimeout(()=>{ jvLog('test 1: normal'); say('Test one.'); }, 3000);
-  setTimeout(()=>{ try { eng() && eng().suspend(); } catch(e){} jvLog('test 2: audio engine paused'); }, 7000);
-  setTimeout(()=>{ jvLog('test 2: speaking (engine '+(eng()?eng().state:'none')+')'); say('Test two.'); }, 9000);
-  setTimeout(()=>{ try { eng() && eng().resume(); } catch(e){} jvLog('voice tests done'); }, 13000);
-};
+/* the report text: app version, audio state, then the last 200 events */
+function dbgText(){ let a=[]; try { a=JSON.parse(localStorage.getItem('jarvis2-debuglog')||'[]'); } catch(e){}
+  const c=Jarvis.calendar&&Jarvis.calendar.audio; return 'v'+(document.querySelector('meta[name=jv-ver]')||{}).content+' · audio now: '+(c?c.state:'none')+' · voice unlocked: '+(speechEverStarted?'yes':'no')+String.fromCharCode(10)+(a.slice(-200).join(String.fromCharCode(10))||'(empty)'); }
+$('dbgShow').onclick = ()=>{ const b=$('dbgBox'); b.textContent=dbgText(); b.hidden=false; };
+/* Copy: one tap puts the whole report on the clipboard, ready to paste (selecting 200 lines on a phone is fiddly) */
+$('dbgCopy').onclick = ()=>{ const t=dbgText(), done=()=>toast('Debug report copied'), old=()=>{ try { const b=$('dbgBox'); b.textContent=t; b.hidden=false; const r=document.createRange(); r.selectNodeContents(b); const sel=getSelection(); sel.removeAllRanges(); sel.addRange(r); const ok=document.execCommand('copy'); sel.removeAllRanges(); ok ? done() : toast('Tap Show, then select the text to copy it'); } catch(e){ toast('Tap Show, then select the text to copy it'); } };
+  try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, old); else old(); } catch(e){ old(); } };
 $('dbgClear').onclick = ()=>{ try { localStorage.removeItem('jarvis2-debuglog'); } catch(e){} $('dbgBox').hidden=true; toast('Debug report cleared'); };
 $('heroBackup').onclick = ()=>{ haptic(); saveBackup(); };
 $('importBtn').onclick = ()=>$('importFile').click();
-$('importFile').onchange = async e=>{ try { const data = JSON.parse(await e.target.files[0].text()); if (!data.notes) throw 0; const next = Object.assign({notes:[],reminders:[],expenses:[]}, data); next.settings = Object.assign({...DEFAULT_SETTINGS}, data.settings||{}); localStorage.setItem(KEY, JSON.stringify(next)); try { sessionStorage.setItem('jarvis2-toast', 'Backup restored'); } catch(x){} location.reload(); } catch(err){ toast('That file is not a Jarvis backup'); } };
+/* Restore: read the file, show what it holds, and only replace this phone's data after "Restore" (an old backup would lose newer data) */
+$('importFile').onchange = async e=>{
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;   // cleared so picking the same file again still works
+  let data; try { data = JSON.parse(await f.text()); if (!data.notes) throw 0; } catch(err){ toast('That file is not a Jarvis backup'); return; }
+  const len = x=> Array.isArray(x) ? x.length : 0, n = (k, one, many)=> k ? k+' '+(k===1 ? one : many) : '';
+  const money = Array.isArray(data.expenses) ? data.expenses : [], inc = money.filter(x=>x && x.type==='income').length;
+  const parts = [n(len(data.notes),'note','notes'), n(len(data.reminders),'reminder','reminders'), n(money.length-inc,'payment','payments'), n(inc,'income entry','income entries'),
+    n(len(data.receipts && data.receipts.list),'receipt','receipts'), n(len(data.habits && data.habits.habits),'habit','habits'), n(len(data.habits && data.habits.goals),'goal','goals'),
+    n(data.food && data.food.days && typeof data.food.days==='object' ? Object.keys(data.food.days).length : 0,'day of food log','days of food log')].filter(Boolean);
+  modal(`<h4>Restore this backup?</h4><p style="color:var(--muted);margin:0 0 8px;overflow-wrap:anywhere">${esc(f.name)} has ${parts.length ? esc(parts.join(', ')) : 'no notes, reminders or payments'}.</p><p style="color:var(--muted);margin:0 0 12px">Your current data on this phone will be replaced. Save a backup first if you might want it.</p><div class="row"><button class="btn ghost" id="mCancel">Cancel</button><button class="btn danger" id="mSave">Restore</button></div>`);
+  $('mCancel').onclick = closeModal;
+  $('mSave').onclick = ()=>{ try { const next = Object.assign({notes:[],reminders:[],expenses:[]}, data); next.settings = Object.assign({...DEFAULT_SETTINGS}, data.settings||{}); localStorage.setItem(KEY, JSON.stringify(next)); try { sessionStorage.setItem('jarvis2-toast', 'Backup restored'); } catch(x){} location.reload(); } catch(err){ toast('Could not restore that backup'); } };
+};
 $('wipeBtn').onclick = ()=>{ modal(`<h4>Erase everything?</h4><p style="color:var(--muted);margin:0 0 12px">All notes, reminders, money, food, habits, goals and receipts on this device will be deleted. Your settings stay. Save a backup first if you might want them.</p><div class="row"><button class="btn ghost" id="mCancel">Cancel</button><button class="btn danger" id="mSave">Erase</button></div>`); $('mCancel').onclick=closeModal; $('mSave').onclick=()=>{ try { localStorage.setItem(KEY, JSON.stringify({notes:[], reminders:[], expenses:[], settings:S})); Object.keys(localStorage).filter(k=>k!==KEY && /^jarvis2/.test(k)).forEach(k=>localStorage.removeItem(k)); sessionStorage.setItem('jarvis2-toast', 'Everything erased'); } catch(x){} location.reload(); }; };
 
 /* ---------- start ---------- */

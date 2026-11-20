@@ -187,7 +187,7 @@
     const w = liquid ? 'ml' : 'g';
     const food = {
       src:'off', key:'c:'+code, code, name:(p.product_name||'').trim() || 'Unnamed product', brand:String(p.brands||'').split(',')[0].trim(),
-      img:p.image_front_small_url || '', emoji:'🛒', per100, servingText:(p.serving_size||'').trim(), quantity:(p.quantity||'').trim(),
+      img:p.image_front_small_url || '', emoji:'🛒', per100, servingText:(p.serving_size||'').trim(), quantity:(p.quantity||'').trim().replace(/\s*(?:\u212E|\be)$/, ''),
       nutri:/^[a-e]$/.test(p.nutriscore_grade||'') ? p.nutriscore_grade : null, nova:[1,2,3,4].includes(+p.nova_group) ? +p.nova_group : null,
       estimatedKcal, w, units:[]
     };
@@ -215,7 +215,13 @@
   }
 
   /* ---------------- network ---------------- */
-  async function getJSON(url, ms=14000){
+  /** Open Food Facts often refuses the first request (a busy reply without CORS headers, so fetch fails):
+      try once more by itself after 1.5 s before showing an error */
+  async function getJSON(url, ms){
+    try { return await getJSON1(url, ms); }
+    catch(e){ if (e.kind!=='network' && e.kind!=='server') throw e; await sleep(1500); return getJSON1(url, ms); }
+  }
+  async function getJSON1(url, ms=14000){
     if (navigator.onLine === false) { const er = new Error('offline'); er.kind='offline'; throw er; }
     const ac = ('AbortController' in window) ? new AbortController() : null;
     const tm = setTimeout(()=>{ try { ac && ac.abort(); } catch(e){} }, ms);
@@ -229,10 +235,12 @@
       throw e;
     } finally { clearTimeout(tm); }
   }
-  function errText(e){
+  function errText(e, btn){
     if (e && e.kind==='offline') return {t:"You're offline", d:'Connect to Wi-Fi or mobile data and try again.'};
     if (e && e.kind==='timeout') return {t:'That took too long', d:'The food database is slow right now. Please try again.'};
     if (e && e.kind==='server') return {t:'The food database is busy', d:'Open Food Facts did not answer properly. Try again in a minute.'};
+    // the phone says it is online, so don't blame the user's internet
+    if (navigator.onLine !== false) return {t:"The food database didn't answer", d:`It may be busy for a moment. Tap ${btn||'Try again'}.`};
     return {t:"Couldn't reach the food database", d:'Check your internet connection and try again.'};
   }
   async function lookupCode(code){
@@ -377,7 +385,7 @@
   .fd-ghost svg{width:18px;height:18px}
   .fd-search{margin:14px 0 0}
   .fd-search .search{margin-bottom:10px}
-  .fd-search .search button{border:0;background:var(--accent);color:#fff;border-radius:10px;padding:7px 11px;font-weight:700;font-size:13px;cursor:pointer;flex:none}
+  .fd-search .search button{border:0;background:var(--accent);color:var(--on-accent,#fff);border-radius:10px;padding:7px 11px;font-weight:700;font-size:13px;cursor:pointer;flex:none}
   .fd-qp{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:2px 16px 4px}
   .fd-qp::-webkit-scrollbar{display:none}
   .fd-qp .chip{gap:7px}
@@ -1006,7 +1014,7 @@
     const loc = localMatches(q);
     let online = '';
     if (srch.state==='loading') online = `<div class="fd-sub">Products</div><div class="fd-res"><div class="fd-shim"></div><div class="fd-shim" style="animation-delay:.15s"></div><div class="fd-shim" style="animation-delay:.3s"></div></div>`;
-    else if (srch.state==='error'){ const t = errText(srch.err); online = `<div class="fd-sub">Products</div><div class="fd-err"><div class="e">${srch.err&&srch.err.kind==='offline'?'📡':'⚠️'}</div><div><b>${t.t}</b><small>${t.d}</small></div><button class="btn ghost" id="fdSRetry">Retry</button></div>`; }
+    else if (srch.state==='error'){ const t = errText(srch.err, 'Retry'); online = `<div class="fd-sub">Products</div><div class="fd-err"><div class="e">${srch.err&&srch.err.kind==='offline'?'📡':'⚠️'}</div><div><b>${t.t}</b><small>${t.d}</small></div><button class="btn ghost" id="fdSRetry">Retry</button></div>`; }
     else if (srch.state==='done') online = `<div class="fd-sub">Products</div>` + (srch.results.length ? `<div class="fd-res">${srch.results.map((f,i)=>rowHTML(f, `data-sr="${i}"`)).join('')}</div>` : `<div class="empty" style="padding:18px"><div class="e-ic">🥲</div>No products found for “${esc(q)}”. Try a simpler name or the brand.</div>`);
     else online = `<button class="fd-online" id="fdSGo">${I.search} Search all products for “${esc(q)}”</button>`;
     box.innerHTML = `${loc.length?`<div class="fd-sub">Common foods</div><div class="fd-res">${loc.map(f=>rowHTML(localFood(f), `data-lf="${f.key}"`)).join('')}</div>`:''}
@@ -1024,6 +1032,9 @@
   function focusSearch(meal){
     srch.meal = meal || null;
     const inp = document.getElementById('fdSIn'); if (!inp) return;
+    // start fresh: no old search text, results or error message
+    if (srch.q || inp.value){ inp.value = ''; srch.q = ''; srch.seq++; srch.state = 'idle'; srch.results = []; srch.err = null;
+      const sb = document.getElementById('fdSBtn'); if (sb) sb.style.display = 'none'; renderSearch(); }
     inp.scrollIntoView({behavior:'smooth', block:'center'}); setTimeout(()=>{ try { inp.focus({preventScroll:true}); } catch(e){} }, 300);
   }
 
@@ -1786,7 +1797,8 @@ Keep names short (at most 4 words) in plain English. portion is a short everyday
         // the touch areas overlap a little (44 px wide for a 24 px glass): the glass nearest the finger wins
         if (e.clientX){ let best = null, bd = 1e9; b.parentNode.querySelectorAll('[data-glass]').forEach(g=>{ const r = g.getBoundingClientRect(), dd = Math.abs(r.left + r.width/2 - e.clientX) + (e.clientY < r.top || e.clientY > r.bottom ? Math.min(Math.abs(r.top - e.clientY), Math.abs(r.bottom - e.clientY)) : 0); if (dd < bd){ bd = dd; best = g; } }); if (best) b = best; }
         const i = +b.dataset.glass; const before = d.water||0; d.water = (i+1===before) ? i : i+1; syncHabitWater(d.water-before, viewKey); J.save(); J.renderAll(); return; }
-      if ((b = t.closest('[data-day]'))){ viewKey = b.dataset.day; renderDynamic(el); return; }
+      if ((b = t.closest('[data-day]'))){ const k = b.dataset.day, ch = k!==viewKey; viewKey = k; renderDynamic(el);
+        if (ch) J.toast(`Showing ${k===todayKey() ? 'today' : k===shiftKey(todayKey(),-1) ? 'yesterday' : keyDate(k).toLocaleDateString([], {weekday:'long', month:'short', day:'numeric'})}`); return; }
     });
     el.dataset.built = '1';
   }

@@ -195,6 +195,13 @@ const EXPLAIN = [
   [/fomc press|press conference/i, 'Fed press conference', "The Fed Chair explains the decision. Markets often swing during it."],
   [/federal funds|fomc statement|fomc economic|interest rate decision/i, 'Fed rate decision', 'The biggest scheduled market mover. Sets borrowing costs for everything.'],
   [/fed chair|powell|fomc member|fed .*speaks/i, 'Fed speech', 'Comments can shift what traders expect for rates.'],
+  // speeches and reports before the broad ECB/BoE/BoJ rules, so "ECB President Lagarde Speaks" is not a rate decision
+  [/\b(?:ecb|lagarde)\b.*\b(?:speaks|speech|testifies|testimony)\b/i, 'ECB speech', "Comments from Europe's central bank can move rates and the euro."],
+  [/\b(?:boe|bailey)\b.*\b(?:speaks|speech|testifies|testimony)\b/i, 'Bank of England speech', 'Comments can move UK rates and the pound.'],
+  [/\b(?:boj|ueda)\b.*\b(?:speaks|speech|testifies|testimony)\b/i, 'Bank of Japan speech', 'Comments can move Japan rates and the yen.'],
+  [/\b(?:rba|rbnz|boc|snb|pboc|buba|riksbank|norges)\b.*\b(?:speaks|speech|testifies|testimony)\b/i, 'Central bank speech', 'Comments can move rates and the currency.'],
+  [/financial stability/i, 'Financial stability report', 'A check on risks in the banking system.'],
+  [/inflation expectations/i, 'Inflation expectations', 'What people expect prices to do. Central banks watch it closely.'],
   [/main refinancing|ecb/i, 'ECB rate decision', "Europe's central bank sets rates. Moves the euro."],
   [/official bank rate|boe/i, 'Bank of England rate decision', 'UK interest rates. Moves the pound.'],
   [/boj|policy rate/i, 'Bank of Japan rate decision', 'Japan interest rates. Moves the yen and global bonds.'],
@@ -274,10 +281,16 @@ function chartSVG(vals, opt){
   s += `<polyline points="${pts.join(' ')}" fill="none" style="stroke:${col}" stroke-width="${opt.sw||1.8}" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg>`;
   return s;
 }
-function spark(q, range){ return chartSVG(series(q, range||'1d'), {dir:dir(q), base:q&&q.prev, showBase: (range||'1d')==='1d'}); }
+/** the move for a range: today's (1D), or from the start of the 5-day line to the price now (5D) */
+function moveFor(q, range){
+  if (!q || range!=='5d' || !q.d5 || q.d5.length < 2 || !q.d5[0]) return q;
+  const now = q.price!=null ? q.price : q.d5[q.d5.length-1];
+  return {price:q.price, chg:now-q.d5[0], pct:(now-q.d5[0])/q.d5[0]*100, kind:q.kind};
+}
+function spark(q, range){ return chartSVG(series(q, range||'1d'), {dir:dir(moveFor(q, range)), base:q&&q.prev, showBase: (range||'1d')==='1d'}); }
 function bigChart(sym, range, h){
   const q = quote(sym); const vals = series(q, range);
-  return `<div class="fin-chart" data-fin-chart="${J.esc(sym)}" data-range="${range}" style="height:${h}px">${chartSVG(vals, {w:300, h, pad:6, area:true, sw:2.2, dir:dir(q), base:q&&q.prev, showBase: range==='1d'})}<div class="fin-cursor"></div><div class="fin-tip"></div></div>`;
+  return `<div class="fin-chart" data-fin-chart="${J.esc(sym)}" data-range="${range}" style="height:${h}px">${chartSVG(vals, {w:300, h, pad:6, area:true, sw:2.2, dir:dir(moveFor(q, range)), base:q&&q.prev, showBase: range==='1d'})}<div class="fin-cursor"></div><div class="fin-tip"></div></div>`;
 }
 
 /* -------------------------------------------------------- styles */
@@ -339,7 +352,7 @@ J.css(`
 .fin-wait{font-size:12px;color:var(--muted);font-weight:600}
 .fin-tools{display:flex;align-items:center;gap:8px;margin-bottom:12px}
 .fin-tools .chip{padding:7px 12px;font-size:12.5px}
-.fin-tools .chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.fin-tools .chip.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent,#fff)}
 .fin-tools .grow{flex:1}
 .fin-day{font-size:12.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin:18px 4px 8px}
 .fin-day:first-child{margin-top:4px}
@@ -435,9 +448,7 @@ function skeleton(){
 function rangeToggle(){ return `<div class="fin-range">${[['1d','1D'],['5d','5D']].map(([k,l])=>`<button data-fin-range="${k}" class="${st.range===k?'on':''}">${l}</button>`).join('')}</div>`; }
 function heroHTML(sym){
   const q = quote(sym); if (!q) return '';
-  const d = dir(q); const ser = series(q, st.range);
-  const fiveChg = st.range==='5d' && ser.length > 1 ? {chg:q.price-ser[0], pct:(q.price-ser[0])/ser[0]*100, kind:q.kind} : null;
-  const shown = fiveChg || q; const dd = fiveChg ? dir(fiveChg) : d;
+  const shown = moveFor(q, st.range), fiveChg = shown !== q, dd = dir(shown);
   return `<div class="card fin-hero" data-fin-open-q="${J.esc(sym)}">
     <div class="nm"><span>${J.esc(nameOf(sym))}</span>${rangeToggle()}</div>
     <div class="px">${px(q)}</div>
@@ -448,9 +459,9 @@ function heroHTML(sym){
 }
 function tileHTML(sym){
   const q = quote(sym); if (!q) return '';
-  const d = dir(q);
-  return `<button class="fin-tile" data-fin-open-q="${J.esc(sym)}"><div class="t1"><span>${J.esc(q.kind==='index'||q.kind==='rate'||q.kind==='vol'||q.kind==='commodity'||q.kind==='fx'||sym==='BTC-USD' ? nameOf(sym) : tickerLabel(sym))}</span></div>
-    <div class="px">${px(q)}</div><div class="pc fin-${d}">${q.kind==='rate'?chgTxt(q):pctTxt(q)}${q.kind!=='rate'&&q.chg!=null?` <span style="color:var(--faint-ink);font-weight:600">${chgTxt(q)}</span>`:''}</div>
+  const m = moveFor(q, st.range), d = dir(m), five = m !== q;   // with 5D on, the tile shows the 5-day change like the big card
+  return `<button class="fin-tile" data-fin-open-q="${J.esc(sym)}"><div class="t1"><span>${J.esc(q.kind==='index'||q.kind==='rate'||q.kind==='vol'||q.kind==='commodity'||q.kind==='fx'||sym==='BTC-USD' ? nameOf(sym) : tickerLabel(sym))}</span>${five?'<span>5 days</span>':''}</div>
+    <div class="px">${px(q)}</div><div class="pc fin-${d}">${q.kind==='rate'?chgTxt(m):pctTxt(m)}${q.kind!=='rate'&&m.chg!=null?` <span style="color:var(--faint-ink);font-weight:600">${chgTxt(m)}</span>`:''}</div>
     <div class="sp">${spark(q, st.range)}</div></button>`;
 }
 function rowHTML(sym){

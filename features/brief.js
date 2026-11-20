@@ -149,7 +149,7 @@ try {
 .bf-tile .bf-tl{display:flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;opacity:.85}
 .bf-tile .bf-tl svg{width:13px;height:13px}
 .bf-tile b{font-size:17px;font-weight:800;letter-spacing:-.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.bf-tile small{font-size:12px;opacity:.88;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+.bf-tile small{font-size:12px;opacity:.88;font-weight:500;line-height:1.3;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;text-wrap:balance;overflow-wrap:anywhere}
 .bf-pill{display:inline-block;font-size:10.5px;font-weight:800;padding:1px 6px;border-radius:999px;background:rgba(255,255,255,.22);margin-left:2px;vertical-align:1px}
 .bf-play{width:100%;border:0;display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.96);border-radius:18px;padding:9px 14px 9px 9px;cursor:pointer;box-shadow:0 10px 24px -8px rgba(0,0,0,.35);transition:transform .15s var(--ease)}
 .bf-card .bf-play{color:#151b33}
@@ -281,7 +281,7 @@ try {
       if (locKey(st.loc) === wx.key){ st.wx = wx; J.save(); }
       lastErr = 0; return wx;
     }).catch(e=>{ lastErr = Date.now(); return null; })
-      .finally(()=>{ inflight = null; paint(); });
+      .finally(()=>{ inflight = null; paint(); homeChanged(); });
     paint();
     return inflight;
   }
@@ -639,6 +639,10 @@ try {
     if (sig === stateSig) return; stateSig = sig;
     try { window.dispatchEvent(new CustomEvent('jarvis:brief-state', {detail:{playing, ready}})); } catch(e){}
   }
+  // the Home weather tile reads J.weather too: same event whenever the city or the forecast changes
+  function homeChanged(){
+    try { window.dispatchEvent(new CustomEvent('jarvis:brief-state', {detail:{playing, ready, weather:true}})); } catch(e){}
+  }
   function paint(){
     notify();
     if (!cardEl) return;
@@ -662,29 +666,31 @@ try {
     const changed = locKey(l) !== locKey(st.loc);
     st.loc = {lat:+l.lat, lon:+l.lon, name:l.name || 'Your location', region:l.region || '', src:l.src || 'search'};
     if (changed){ st.wx = null; lastErr = 0; }
-    J.save(); paint(); return refresh(changed);
+    J.save(); paint(); homeChanged(); return refresh(changed);
   }
   function reverseName(lat, lon){
     // free, no key; only used to show a friendly name for GPS coordinates
     return getJSON('https://api.bigdatacloud.net/data/reverse-geocode-client?latitude='+lat.toFixed(4)+'&longitude='+lon.toFixed(4)+'&localityLanguage=en', 6000)
       .then(d=>({name: d.city || d.locality || d.principalSubdivision || '', region: d.countryName || ''})).catch(()=>null);
   }
-  function useGPS(msgEl){
+  // after (optional): called once the location step is over (the Welcome sheet uses it to come back)
+  function useGPS(msgEl, after){
     const say = (t)=>{ if (msgEl){ msgEl.textContent = t; msgEl.style.display = 'block'; } else J.toast(t); };
-    if (!('geolocation' in navigator)){ say("This browser can't share your location. Search for your city instead."); if (!msgEl) openLocation(); return; }
+    if (!('geolocation' in navigator)){ say("This browser can't share your location. Search for your city instead."); if (!msgEl) openLocation(undefined, after); return; }
     if (msgEl) say('Finding you…'); else J.toast('Finding your location…');
     navigator.geolocation.getCurrentPosition(pos=>{
       const lat = pos.coords.latitude, lon = pos.coords.longitude;
       J.closeModal();
       setLocation({lat, lon, name:'Your location', src:'gps'});
-      reverseName(lat, lon).then(r=>{ if (r && r.name && st.loc && st.loc.src === 'gps' && locKey(st.loc) === locKey({lat, lon})){ st.loc.name = r.name; st.loc.region = r.region; J.save(); paint(); } });
+      reverseName(lat, lon).then(r=>{ if (r && r.name && st.loc && st.loc.src === 'gps' && locKey(st.loc) === locKey({lat, lon})){ st.loc.name = r.name; st.loc.region = r.region; J.save(); paint(); homeChanged(); } });
+      if (after) after();
     }, err=>{
       const t = err && err.code === 1 ? "Location is blocked for this site. You can allow it in your browser settings, or just search for your city below."
         : "Couldn't find your location right now. Try again, or search for your city below.";
-      if (msgEl) say(t); else openLocation(t);
+      if (msgEl) say(t); else openLocation(t, after);
     }, {enableHighAccuracy:false, timeout:12000, maximumAge:10*60e3});
   }
-  function openLocation(message){
+  function openLocation(message, after){
     const hasGeo = 'geolocation' in navigator;
     J.modal(`<div class="bf-m"><h4>Where are you?</h4><p>Jarvis uses this only to get your local weather.</p>
       <div class="bf-msg" id="bfMsg" style="display:${message?'block':'none'}">${message ? J.esc(message) : ''}</div>
@@ -699,7 +705,7 @@ try {
       resEl.innerHTML = (note ? `<div class="bf-note">${note}</div>` : '') + list.map((r,i)=>`<button class="bf-r" data-bf-pick="${i}">${UI.pin}<span><b>${J.esc(r.name)}</b><small>${J.esc(r.region || '')}</small></span></button>`).join('');
     };
     draw(results, st.loc ? `Now: ${J.esc(placeName())}` : 'Suggested');
-    resEl.onclick = e=>{ const b = e.target.closest('[data-bf-pick]'); if (!b) return; const r = results[+b.dataset.bfPick]; if (r){ J.closeModal(); setLocation(r); J.toast(`Weather set to ${r.name}`); } };
+    resEl.onclick = e=>{ const b = e.target.closest('[data-bf-pick]'); if (!b) return; const r = results[+b.dataset.bfPick]; if (r){ J.closeModal(); setLocation(r); J.toast(`Weather set to ${r.name}`); if (after) after(); } };
     q.oninput = ()=>{
       clearTimeout(timer); const v = q.value.trim(); const my = ++seq;
       if (v.length < 2){ draw([Object.assign({}, BEIRUT)], 'Suggested'); return; }
@@ -710,8 +716,8 @@ try {
       }, 350);
     };
     q.onkeydown = e=>{ if (e.key === 'Enter'){ clearTimeout(timer); q.oninput(); } };
-    const g = document.getElementById('bfGps'); if (g) g.onclick = ()=>useGPS(document.getElementById('bfMsg'));
-    document.getElementById('bfCancel').onclick = J.closeModal;
+    const g = document.getElementById('bfGps'); if (g) g.onclick = ()=>useGPS(document.getElementById('bfMsg'), after);
+    document.getElementById('bfCancel').onclick = after ? ()=>{ J.closeModal(); after(); } : J.closeModal;
     setTimeout(()=>{ try { if (!message) q.focus(); } catch(e){} }, 60);
   }
 
@@ -879,7 +885,7 @@ try {
 
   // small API for other features
   J.weather = {get location(){ return st.loc; }, get data(){ return cached(); }, now: ()=>now(cached()), describe: desc, refresh: ()=>refresh(true),
-    pick: ()=>openLocation(), useGPS: ()=>useGPS(null), useBeirut: ()=>setLocation(Object.assign({}, BEIRUT))};
+    pick: after=>openLocation(undefined, typeof after === 'function' ? after : null), useGPS: after=>useGPS(null, typeof after === 'function' ? after : null), useBeirut: ()=>setLocation(Object.assign({}, BEIRUT))};
   // playing: the brief is being read aloud now; ready: the once-a-morning "your brief is ready" state (Home's pill shows both)
   J.brief = {compose: composeBrief, composeTomorrow, play: playBrief, get playing(){ return playing; }, get ready(){ return ready && !playing; }};
 } catch(e){ try { console.error('brief', e); } catch(_){} }

@@ -446,7 +446,7 @@ function stopAlarm(){
   // a one-time reminder that rang is done; repeating ones were already moved to the next time
   if (r && (!r.repeat || r.repeat === 'none') && r.at <= Date.now() + MIN){ r.done = true; }
   J.save(); J.renderAll();
-  if (!ring.active) setTimeout(()=>say(a.kind === 'alarm' ? `${J.greeting()}, ${S.name}. ${a.text}.` : `Reminder: ${a.text}.`), 250);
+  if (!ring.active) setTimeout(()=>say(a.kind === 'alarm' ? `${J.greeting()}${/^there$/i.test(String(S.name||'').trim()) ? '' : ', '+S.name}. ${a.text}.` : `Reminder: ${a.text}.`), 250);
 }
 function snoozeAlarm(){
   const a = closeOverlay(); if (!a) return;
@@ -861,7 +861,7 @@ J.css(`
 .cal-sync .cal-dot.warn{background:var(--warn);box-shadow:0 0 0 4px rgba(245,158,11,.16)}
 .cal-sync .cal-dot.off{background:var(--faint);box-shadow:0 0 0 4px var(--line)}
 .cal-sync .lbl{flex:1;min-width:0}.cal-sync .lbl b{display:block;font-size:14px}.cal-sync .lbl small{color:var(--muted);font-size:12.5px}
-.cal-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:14px;padding:11px 14px;font:inherit;font-weight:700;font-size:14px;cursor:pointer;background:var(--accent);color:#fff;text-decoration:none;white-space:nowrap;min-height:44px}
+.cal-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:14px;padding:11px 14px;font:inherit;font-weight:700;font-size:14px;cursor:pointer;background:var(--accent);color:var(--on-accent,#fff);text-decoration:none;white-space:nowrap;min-height:44px}
 .cal-btn.ghost{background:var(--card);color:var(--text);border:1px solid var(--line)}
 .cal-btn.sm{padding:8px 12px;font-size:13px;min-height:38px;border-radius:12px}
 .cal-btn:active,.cal-big:active{transform:scale(.97)}
@@ -913,12 +913,12 @@ J.css(`
 .cal-diag .cal-di{display:inline-grid;vertical-align:-3px;margin-right:6px;color:var(--muted)}.cal-diag .cal-di svg{width:16px;height:16px}
 .cal-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .cal-chips button{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:999px;padding:8px 12px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;min-height:38px}
-.cal-chips button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.cal-chips button.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent,#fff)}
 .cal-field{width:100%;background:var(--bg2);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:11px 12px;font:inherit;font-size:16px;margin-top:8px}
 .cal-home{display:flex;align-items:center;gap:12px;padding:14px;cursor:pointer}
 .cal-home .ic{width:44px;height:44px;border-radius:14px;flex:none;display:grid;place-items:center;font-size:21px;background:linear-gradient(135deg,#f43f5e,#7c3aed);color:#fff;box-shadow:0 8px 18px rgba(225,29,72,.25)}
 .cal-home .bd{flex:1;min-width:0}.cal-home .bd small{display:block;color:var(--muted);font-size:12px;font-weight:600}
-.cal-home .bd b{display:block;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cal-home .bd b{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;font-size:15px;line-height:1.3;overflow:hidden;text-wrap:balance;overflow-wrap:anywhere}
 .cal-home .cd{flex:none;font-weight:800;font-size:13px;color:var(--accent-ink);background:var(--accent-soft);border-radius:999px;padding:5px 10px}
 .cal-home .x{flex:none;border:0;background:none;color:var(--muted);width:36px;height:36px;border-radius:10px;font-size:16px;cursor:pointer}
 .cal-sheet-wrap{position:fixed;inset:0;z-index:45;pointer-events:none}
@@ -1052,6 +1052,7 @@ function stepHTML(n, html){ return `<div class="cal-step"><div class="n">${n}</d
 /* ---------- Part 3: one Shortcut brings calendar, Health and Clock alarms (#sync=…) ---------- */
 J.css(`
 .cal-blk{border:1px solid var(--card-border,var(--line));border-radius:16px;margin:10px 0;background:var(--fill,var(--bg2));overflow:hidden}
+[id^="cal-step"],[id^="cal-blk"]{scroll-margin-top:calc(64px + var(--safe-t,0px))}
 .cal-blk>summary{list-style:none;display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;font-weight:700;font-size:14.5px;min-height:48px}
 .cal-blk>summary::-webkit-details-marker{display:none}
 .cal-blk>summary .tg{margin-left:auto;font-size:11px;font-weight:800;padding:3px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent-ink);white-space:nowrap}
