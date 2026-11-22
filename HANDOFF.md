@@ -459,3 +459,14 @@ Goal (owner): a buyer never sees the owner's name or can link the app to him (no
 - Tested at 375px in light and dark (no-barcode sheet, search hand-off). Not tested on iPhone yet.
 - Costs list given to the owner (domain, Apple $99/yr, Google Play $25 once, AI/voice/database usage, store cut). Plan agreed: finish the free polish first, then Capacitor apps (Android first, iPhone when he gets a Mac), then the paid "wow" parts, then the business parts. Option A (owner-run AI helper) waits for his go.
 - Next: receipts. Ask him for ONE receipt photo it got wrong + what Jarvis showed.
+
+### Receipts reliability (22 Nov 2026, branch `claude/jarvis-receipts-22b8a8`, not released yet)
+- `features/receipt.js` only. No version bump, nothing pushed to `gh-pages`.
+- **AI reader (optional, free):** if the owner/customer saved a Google Gemini key (Food → Advanced), receipts are read by Gemini first (`aiRead()`, prompt + JSON schema; returns store, date, total, currency, USD+LBP dual total, rate, items). Any error or no total → the on-phone Tesseract reader runs as before. Review screen says "Read with AI". No key = no change for customers.
+- **Tesseract flow:** reads 1–2 are unchanged (grayscale, black-and-white). New read 3 = grayscale with the light evened out (fixes shadows/faded side), only if 1–2 don't check out. Then the old read 4. If every read is poor (confidence < 62), the photo is read turned 180/90/270° and kept only if clearly real (confidence ≥ 70 and 25 above the rest) → sideways/upside-down photos now work.
+- **Parser fixes:** sizes glued to numbers ("500mg", "2kg", "1L") are no longer prices; one item equal to the total no longer counts as "checks out"; a "checks out" from a low-confidence read (< 50) no longer beats a clear read; Arabic digits (٠-٩) read; "Al. Forn" → "Al Forn"; an empty Tesseract page (which reports ~95% confidence) counts as 0; a slow phone that times out on a later read keeps the earlier reads instead of failing.
+- **Tests (browser, 375 px, local harness `.claude/test/rcpt-harness.js`, not committed):** before → after (store/total/date right):
+  VCoop real photo ✅✅✅ → ✅✅✅ ($122.70, 2 Nov 2026) · clean ✅✅✅ → ✅✅✅ · faded+shadow ✅❌✅ ($500) → ✅✅✅ ($18.40) · tilted 6° ✅✅✅ → ✅✅✅ · sideways 90° ❌❌❌ → ✅✅✅ · long 21 items ✅✅✅ → ✅✅✅ · LBP-only ❌✅✅ ("Al. Forn") → ✅✅✅.
+- The AI path was tested with a stubbed `Jarvis.ai.gemini` (canned JSON + a thrown error → fallback); not yet with a real key.
+- `Jarvis._receipt.lastRuns` shows each read's confidence/total after a scan (for testing).
+- Still needed: ONE real receipt photo the owner says was wrong.

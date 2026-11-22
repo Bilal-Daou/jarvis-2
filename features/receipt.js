@@ -162,7 +162,8 @@
   }
 
   function cleanLine(l){
-    return l.replace(/[|¦]/g, ' ')
+    return l.replace(/[٠-٩]/g, c=>String(c.charCodeAt(0) - 0x660)).replace(/[۰-۹]/g, c=>String(c.charCodeAt(0) - 0x6F0)) // Arabic digits
+      .replace(/[|¦]/g, ' ')
       .replace(/[\d.,][oO]+|[oO]+[.,]\d/g, s=>s.replace(/[oO]/g,'0'))
       .replace(/(^|\s)[S§](?=\d+[.,]\d{2}\b)/g, '$1$')
       .replace(/(\d)\s+([.,])\s*(\d{2})\b/g, '$1$2$3')
@@ -180,7 +181,9 @@
     while ((m = re.exec(s))){
       const raw = m[0].replace(/[.,]+$/, '');
       const before = s.slice(Math.max(0, m.index - 4), m.index);
-      if (/\p{L}$/u.test(before) && !/(usd|lbp|l\.?l|eur|aed|sar|ttc)$/i.test(before)) continue; // "SPF50", "1000mg" style tokens
+      if (/\p{L}$/u.test(before) && !/(usd|lbp|l\.?l|eur|aed|sar|ttc)$/i.test(before)) continue; // "SPF50" style tokens
+      const after = s.slice(m.index + m[0].length, m.index + m[0].length + 4);
+      if (/^(mg|mcg|g|gr|gm|kg|ml|cl|l|lt|ltr|oz|cm|mm|pcs?|pk)(?![a-z])/i.test(after)) continue; // "500mg", "2kg", "1L": sizes, not prices
       const v = parseAmount(raw);
       if (v == null) continue;
       out.push({v, raw, dec: /[.,]\d{1,2}$/.test(raw), idx: m.index, end: m.index + m[0].length});
@@ -250,6 +253,7 @@
       name = name.replace(/(\s[^\s\d&])+$/u, '').replace(/^([^\s\d&]\s)+/u, '').trim(); // stray OCR letters at the ends
       if (name.length < 3) continue;
       if (name === name.toUpperCase() && /[A-Z]/.test(name)) name = titleCase(name);
+      name = name.replace(/(^|\s)(\p{L}{1,3})\.\s+(?=\p{L}{3})/gu, '$1$2 '); // "Al. Forn" -> "Al Forn" (OCR dot)
       res.merchant = name.slice(0, 40); merchantIdx = i;
     }
     if (brand){ const i = lines.findIndex(l=>l.toLowerCase().includes(brand[0].trim())); merchantIdx = i; }
@@ -353,7 +357,8 @@
     }
     if (res.total != null){
       const sub = res.subtotal, tx = res.tax || 0, tp = res.tip || 0;
-      const checks = [itemSum, sub, sub != null ? sub + tx : null, sub != null ? sub + tx + tp : null].filter(x=>x != null && x > 0);
+      // one item equal to the total proves little (a junk read does that), so the items must be at least two
+      const checks = [items.length >= 2 ? itemSum : null, sub, sub != null ? sub + tx : null, sub != null ? sub + tx + tp : null].filter(x=>x != null && x > 0);
       if (checks.some(x=>near(x, res.total))) res.conf = 'high';
       if (res.conf === 'low' && items.length >= 2 && near(itemSum, res.total)) res.conf = 'medium';
     }
@@ -417,38 +422,60 @@
       ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h);
       ctx.translate(w/2, h/2); ctx.rotate(-angle*Math.PI/180); ctx.drawImage(img, -w/2, -h/2, w, h); ctx.setTransform(1, 0, 0, 1, 0, 0);
     } else ctx.drawImage(img, 0, 0, w, h);
-    const g = grayOf(ctx, w, h);
+    const raw = grayOf(ctx, w, h);
     // contrast stretch between the 1st and 99th percentile
-    const lo = percentile(g, 0.01), hi = percentile(g, 0.99), span = Math.max(hi - lo, 1);
-    if (hi - lo > 12) for (let i = 0; i < n; i++) g[i] = (g[i] - lo) * 255 / span;
+    const stretch = a => { const lo = percentile(a, 0.01), hi = percentile(a, 0.99), span = Math.max(hi - lo, 1); if (hi - lo > 12) for (let i = 0; i < n; i++) a[i] = (a[i] - lo) * 255 / span; return a; };
+    const g0 = stretch(Uint8ClampedArray.from(raw));
     // sharpness estimate (variance of the Laplacian on a sparse grid)
     let lsum = 0, lsq = 0, lc = 0;
-    for (let y = 2; y < h-2; y += 2) for (let x = 2; x < w-2; x += 2){ const i = y*w + x; const L = 4*g[i] - g[i-1] - g[i+1] - g[i-w] - g[i+w]; lsum += L; lsq += L*L; lc++; }
+    for (let y = 2; y < h-2; y += 2) for (let x = 2; x < w-2; x += 2){ const i = y*w + x; const L = 4*g0[i] - g0[i-1] - g0[i+1] - g0[i-w] - g0[i+w]; lsum += L; lsq += L*L; lc++; }
     const lapVar = lc ? lsq/lc - (lsum/lc)*(lsum/lc) : 0;
-    // grayscale canvas
+    // grayscale canvas (first read; best for clear photos)
     const id = ctx.createImageData(w, h), px = id.data;
-    for (let i = 0, j = 0; i < n; i++, j += 4){ px[j] = px[j+1] = px[j+2] = g[i]; px[j+3] = 255; }
+    for (let i = 0, j = 0; i < n; i++, j += 4){ px[j] = px[j+1] = px[j+2] = g0[i]; px[j+3] = 255; }
     ctx.putImageData(id, 0, 0);
     // adaptive threshold (Bradley) on a lightly smoothed copy: handles shadows and uneven light
-    const sm3 = new Uint8ClampedArray(n);
-    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++){
-      let t = 0, c = 0;
-      for (let dy = -1; dy <= 1; dy++){ const yy = y+dy; if (yy < 0 || yy >= h) continue; for (let dx = -1; dx <= 1; dx++){ const xx = x+dx; if (xx < 0 || xx >= w) continue; t += g[yy*w+xx]; c++; } }
-      sm3[y*w+x] = t / c;
+    function threshold(src){
+      const sm3 = new Uint8ClampedArray(n);
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++){
+        let t = 0, c = 0;
+        for (let dy = -1; dy <= 1; dy++){ const yy = y+dy; if (yy < 0 || yy >= h) continue; for (let dx = -1; dx <= 1; dx++){ const xx = x+dx; if (xx < 0 || xx >= w) continue; t += src[yy*w+xx]; c++; } }
+        sm3[y*w+x] = t / c;
+      }
+      const I = integral(sm3, w, h);
+      const paper = percentile(sm3, 0.95);
+      const r = Math.max(8, Math.round(Math.max(w, h) / 40)), R = r*3, T = 0.15;
+      const bc = document.createElement('canvas'); bc.width = w; bc.height = h;
+      const bctx = bc.getContext('2d'); const bid = bctx.createImageData(w, h), bp = bid.data;
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++){
+        const i = y*w + x, j = i*4;
+        const [sm, cnt] = boxSum(I, w, h, x, y, r);
+        let v = sm3[i]*cnt < sm*(1-T) ? 0 : 255;
+        if (!v){ const [bs, bcnt] = boxSum(I, w, h, x, y, R); if (bs/bcnt < paper*0.3) v = 255; } // dark table around the paper: ignore
+        bp[j] = bp[j+1] = bp[j+2] = v; bp[j+3] = 255;
+      }
+      bctx.putImageData(bid, 0, 0);
+      return bc;
     }
-    const I = integral(sm3, w, h), paper = percentile(sm3, 0.95);
-    const r = Math.max(8, Math.round(Math.max(w, h) / 40)), R = r*3, T = 0.15;
-    const bc = document.createElement('canvas'); bc.width = w; bc.height = h;
-    const bctx = bc.getContext('2d'); const bid = bctx.createImageData(w, h), bp = bid.data;
-    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++){
-      const i = y*w + x, j = i*4;
-      const [sm, cnt] = boxSum(I, w, h, x, y, r);
-      let v = sm3[i]*cnt < sm*(1-T) ? 0 : 255;
-      if (!v){ const [bs, bcnt] = boxSum(I, w, h, x, y, R); if (bs/bcnt < paper*0.3) v = 255; } // dark table around the paper: ignore
-      bp[j] = bp[j+1] = bp[j+2] = v; bp[j+3] = 255;
-    }
-    bctx.putImageData(bid, 0, 0);
-    return {bin: bc, gray: gc, w, h, angle, blurry: lapVar < 120, lapVar};
+    const bc = threshold(g0);
+    // grayscale with the light evened out (shadows, a dark corner, a faded side): divide each pixel by the local
+    // background brightness. Tesseract's own black-and-white step works well on it. Made only if the first reads fail.
+    let flatC = null;
+    const flatGray = () => {
+      if (flatC) return flatC;
+      const Iraw = integral(raw, w, h), rawPaper = percentile(raw, 0.95), g = new Uint8ClampedArray(n), rb = Math.max(16, Math.round(Math.max(w, h) / 25));
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++){
+        const i = y*w + x, [sm, cnt] = boxSum(Iraw, w, h, x, y, rb), bg = sm/cnt;
+        g[i] = bg < rawPaper*0.3 ? raw[i] : 255 * raw[i] / Math.max(1, bg*1.1); // a dark table stays as it is
+      }
+      stretch(g);
+      flatC = document.createElement('canvas'); flatC.width = w; flatC.height = h;
+      const fx = flatC.getContext('2d'), fd = fx.createImageData(w, h), fp = fd.data;
+      for (let i = 0, j = 0; i < n; i++, j += 4){ fp[j] = fp[j+1] = fp[j+2] = g[i]; fp[j+3] = 255; }
+      fx.putImageData(fd, 0, 0);
+      return flatC;
+    };
+    return {bin: bc, gray: gc, flatGray, w, h, angle, blurry: lapVar < 120, lapVar};
   }
   function makeThumb(img){
     try {
@@ -465,6 +492,76 @@
       }
       return url;
     } catch(e){ return ''; }
+  }
+
+  // A copy of the photo turned by 90/180/270 degrees (for receipts photographed sideways or upside down).
+  function rotCanvas(img, deg){
+    const W0 = img.naturalWidth || img.width, H0 = img.naturalHeight || img.height;
+    const side = deg % 180 !== 0, c = document.createElement('canvas');
+    c.width = side ? H0 : W0; c.height = side ? W0 : H0;
+    const ctx = c.getContext('2d'); ctx.translate(c.width/2, c.height/2); ctx.rotate(deg*Math.PI/180); ctx.drawImage(img, -W0/2, -H0/2);
+    return c;
+  }
+
+  /* =========================================================
+     AI READER (optional): if the user saved a free Google Gemini key (food photos), use it for receipts too.
+     Any problem falls back to the on-phone reader below.
+     ========================================================= */
+  const AI_RCPT_PROMPT = `Read this photo of a shop or restaurant receipt so the person can log the expense.
+- store: the shop or restaurant name as printed near the top (short, no address, no "SAL"/"LLC" unless part of the name). Empty if you can't read it.
+- date: the purchase date as YYYY-MM-DD, empty if not printed. Receipts often write the day first (15/11/2026 means 15 November). time: HH:MM in 24-hour time, empty if not printed.
+- total: the final amount the customer paid (grand total / total due / net to pay / المجموع). Never the subtotal, tax, cash given, change, card slip amount, savings or loyalty points.
+- currency: the currency of that total (USD, LBP, EUR, GBP, AED or SAR).
+- Some bills print the total twice, in US dollars and in Lebanese pounds (with an exchange rate). Then give the dollar amount in total with currency USD, the pounds amount in totalLbp, and the printed rate (pounds per dollar) in lbpRate.
+- items: each bought product with its final line price (as printed, same currency as total). Skip discounts, deposits and tax lines.
+- isReceipt: false if the photo is not a receipt or bill.
+Copy numbers exactly as printed; do not guess digits you cannot see (leave the field empty or 0 instead).`;
+  const AI_RCPT_SCHEMA = {
+    type:'OBJECT',
+    properties:{
+      isReceipt:{type:'BOOLEAN'}, store:{type:'STRING'}, date:{type:'STRING'}, time:{type:'STRING'},
+      total:{type:'NUMBER'}, currency:{type:'STRING', enum:['USD','LBP','EUR','GBP','AED','SAR']},
+      totalLbp:{type:'NUMBER', nullable:true}, lbpRate:{type:'NUMBER', nullable:true},
+      subtotal:{type:'NUMBER', nullable:true}, tax:{type:'NUMBER', nullable:true},
+      items:{type:'ARRAY', items:{type:'OBJECT', properties:{name:{type:'STRING'}, price:{type:'NUMBER'}}, required:['name','price'], propertyOrdering:['name','price']}}
+    },
+    required:['isReceipt','store','date','total','currency','items'],
+    propertyOrdering:['isReceipt','store','date','time','total','currency','totalLbp','lbpRate','subtotal','tax','items']
+  };
+  const aiOn = () => !!(J.ai && J.ai.hasKey && J.ai.hasKey() && J.ai.gemini);
+  function jpegB64(img, maxSide){
+    const W0 = img.naturalWidth || img.width, H0 = img.naturalHeight || img.height, s = Math.min(1, maxSide / Math.max(W0, H0));
+    const c = document.createElement('canvas'); c.width = Math.round(W0*s); c.height = Math.round(H0*s);
+    const ctx = c.getContext('2d'); ctx.imageSmoothingQuality = 'high'; ctx.drawImage(img, 0, 0, c.width, c.height);
+    const u = c.toDataURL('image/jpeg', 0.85); return u.slice(u.indexOf(',') + 1);
+  }
+  // turn the AI's JSON into the same shape parseReceipt() returns (numbers checked)
+  function normalizeAIReceipt(j, now){
+    j = j || {}; now = now || new Date();
+    const num = v => { const x = typeof v === 'number' ? v : parseAmount(v); return isFinite(x) && x > 0 ? Math.round(x*100)/100 : null; };
+    const res = {merchant:'', date:null, total:null, currency:null, items:[], conf:'none', alt:null, subtotal:null, tax:null, tip:null, ai:true};
+    if (j.isReceipt === false) return res;
+    res.merchant = String(j.store || '').replace(/\s+/g, ' ').trim().slice(0, 40);
+    if (res.merchant === res.merchant.toUpperCase() && /[A-Z]{2}/.test(res.merchant)) res.merchant = titleCase(res.merchant);
+    const dm = String(j.date || '').match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if (dm){ const d = mkDate(+dm[1], +dm[2]-1, +dm[3]); if (plausible(d, now)){ const t = String(j.time || '').match(/^([01]?\d|2[0-3]):([0-5]\d)/); if (t) d.setHours(+t[1], +t[2], 0, 0); res.date = d; } }
+    res.total = num(j.total); res.currency = CUR_LABEL[j.currency] ? j.currency : null;
+    res.subtotal = num(j.subtotal); res.tax = num(j.tax);
+    const rate = num(j.lbpRate); if (rate && rate >= 1000 && rate <= 300000) res.rate = rate;
+    const lbp = num(j.totalLbp);
+    if (res.currency === 'USD' && lbp && lbp >= 1000){ res.alt = {total: lbp, currency: 'LBP'}; res.dual = true; }
+    res.items = (Array.isArray(j.items) ? j.items : []).map(x=>({n: String((x && x.name) || '').replace(/\s+/g, ' ').trim().slice(0, 38), p: num(x && x.price)})).filter(x=>x.n && x.p).slice(0, 40);
+    res.itemSum = Math.round(res.items.reduce((s,x)=>s+x.p, 0)*100)/100;
+    if (res.total != null){
+      const checks = [res.itemSum, res.subtotal, res.subtotal != null ? res.subtotal + (res.tax || 0) : null].filter(x=>x);
+      const dualOk = res.dual && res.rate && near(lbp, res.total * res.rate);
+      res.conf = (checks.some(x=>near(x, res.total)) || dualOk) ? 'high' : 'medium';
+    }
+    return res;
+  }
+  async function aiRead(img){
+    const r = await J.ai.gemini([{text: AI_RCPT_PROMPT}, {inline_data:{mime_type:'image/jpeg', data: jpegB64(img, 1600)}}], {schema: AI_RCPT_SCHEMA, temperature: 0.1, timeout: 45000});
+    return normalizeAIReceipt(r.json);
   }
 
   /* =========================================================
@@ -490,6 +587,8 @@
     return workerP;
   }
   function scheduleIdle(){ clearTimeout(idleTimer); idleTimer = setTimeout(async ()=>{ const p = workerP; workerP = null; try { (await p).terminate(); } catch(e){} }, 90000); }
+  // Tesseract reports ~95% confidence for an empty page, so a read with almost no text counts as 0
+  function textConf(r){ return (String(r.text || '').match(/[A-Za-z0-9]/g) || []).length < 25 ? 0 : (r.confidence || 0); }
   function withTimeout(p, ms){ return Promise.race([p, new Promise((_, rej)=>setTimeout(()=>rej(new Error('timeout')), ms))]); }
 
   /* =========================================================
@@ -556,6 +655,15 @@
     try { prep = prepImage(img); } catch(e){ prep = null; }
     if (my !== runId) return;
     if (!prep){ toManual('failed', thumb); return; }
+    // free AI reader first when the user has a Gemini key; anything wrong → the on-phone reader
+    if (aiOn() && navigator.onLine !== false){
+      progress(20, 'Reading your receipt with AI…');
+      try {
+        const parsed = await aiRead(img);
+        if (my !== runId) return;
+        if (parsed.total != null){ progress(100, 'Done!'); await new Promise(r=>setTimeout(r, 200)); if (my !== runId) return; toReview(parsed, {thumb, rawText:'', ocrConf: 90, blurry: false, viaAI: true}); return; }
+      } catch(e){ if (my !== runId) return; }
+    }
     if (navigator.onLine === false && !meta.ocrReady){ toManual('offline', thumb); return; }
     progress(3, meta.ocrReady ? 'Waking up the reader…' : 'Downloading the receipt reader…');
     st.cap = 36;
@@ -563,7 +671,7 @@
     const slowT = setTimeout(()=>{ if (my === runId && st.screen === 'scanning') setSlow(); }, 20000);
     try {
       let phase = 0;
-      const PH = [[40, 40, 'Reading your receipt…'], [80, 12, 'Taking a closer look…'], [92, 7, 'Double-checking the total…']];
+      const PH = [[40, 40, 'Reading your receipt…'], [80, 8, 'Taking a closer look…'], [88, 5, 'Evening out the light…'], [93, 5, 'Double-checking the total…']];
       onProg = m => {
         if (my !== runId) return;
         const p = typeof m.progress === 'number' ? m.progress : 0;
@@ -578,21 +686,49 @@
       meta.ocrReady = true; J.save();
       clearTimeout(slowT); clearSlow();
       progress(40, 'Reading your receipt…');
-      // Up to three reads (cleaned grayscale, then the black-and-white version two ways). Stop as soon as one checks out.
-      const passes = [[prep.gray, '6'], [prep.bin, '6'], [prep.bin, '4']], runs = [];
+      // Up to four reads: cleaned grayscale, black-and-white, grayscale with the light evened out (shadows), then another layout mode.
+      // Stop as soon as one checks out or two agree.
+      const passes = [[prep.gray, '6'], [prep.bin, '6'], [prep.flatGray, '6'], [prep.bin, '4']], runs = [];
+      let timedOut = false, turned = null, triedTurn = false;
+      const wide = prep.w > prep.h * 1.1;
+      const goodEnough = () => runs.some(x=>(x.parsed.conf === 'high' && x.ocrConf >= 55) || x.parsed.dual);
+      // a poor read may mean the photo is sideways or upside down: read it turned, and keep that only if it is clearly a real read
+      // (a sideways photo of text reads as junk at low confidence; Tesseract can't tell us the orientation without extra downloads)
+      const tryTurn = async () => {
+        triedTurn = true;
+        const bestConf = Math.max(0, ...runs.map(x=>x.ocrConf));
+        if (timedOut || goodEnough() || bestConf >= 62) return;
+        for (const deg of (wide ? [90, 270, 180] : [180, 90, 270])){
+          progress(Math.min(95, (st.pct||80) + 2), 'Turning the photo…');
+          let p2; try { p2 = prepImage(rotCanvas(img, deg)); } catch(e){ continue; }
+          await w.setParameters({tessedit_pageseg_mode: '6'});
+          let r; try { r = (await withTimeout(w.recognize(p2.gray), 90000)).data; } catch(e){ timedOut = true; try { w.terminate(); } catch(_){} workerP = null; return; }
+          if (my !== runId) return;
+          const parsed = parseReceipt(r.text), c = textConf(r);
+          if (c >= 70 && c > bestConf + 25 && parsed.total != null){ turned = {parsed, ocrConf: c, rawText: r.text}; runs.push(turned); return; }
+        }
+      };
       for (let k = 0; k < passes.length; k++){
         phase = k;
         if (k) progress(PH[k][0], PH[k][2]);
         st.cap = PH[k][0] + PH[k][1] - 2;
         await w.setParameters({tessedit_pageseg_mode: passes[k][1]});
-        const r = (await withTimeout(w.recognize(passes[k][0]), 90000)).data;
+        let r;
+        try { const src = typeof passes[k][0] === 'function' ? passes[k][0]() : passes[k][0]; r = (await withTimeout(w.recognize(src), 90000)).data; }
+        catch(e){ if (runs.length && e.message === 'timeout'){ timedOut = true; try { w.terminate(); } catch(_){} workerP = null; break; } throw e; } // slow phone: keep the reads we have
         if (my !== runId) return;
         const parsed = parseReceipt(r.text);
-        runs.push({parsed, ocrConf: r.confidence || 0, rawText: r.text});
-        if (parsed.conf === 'high' && (r.confidence || 0) >= 60) break;
-        if (k === 1 && runs[0].parsed.total != null && near(runs[0].parsed.total, parsed.total || -1)) break; // two reads agree
+        const oc = textConf(r);
+        runs.push({parsed, ocrConf: oc, rawText: r.text});
+        if ((parsed.conf === 'high' && oc >= 60) || (parsed.dual && parsed.conf === 'high')) break;
+        if (parsed.total != null && runs.slice(0, -1).some(x=>x.parsed.total != null && near(x.parsed.total, parsed.total))) break; // two reads agree
+        // junk on the first read of a wide photo: the receipt is probably sideways, so try it turned before reading more
+        if (k === 0 && oc < 55 && wide){ await tryTurn(); if (my !== runId) return; if (turned || timedOut) break; }
       }
-      const best = pickRun(runs);
+      if (!triedTurn && !turned) await tryTurn();
+      if (my !== runId) return;
+      J._receipt.lastRuns = runs.map(x=>({ocr: Math.round(x.ocrConf), conf: x.parsed.conf, total: x.parsed.total})); // for testing
+      const best = turned || pickRun(runs); // a clear read of the turned photo beats the junk read the wrong way up
       const parsed = best.parsed, ocrConf = best.ocrConf, rawText = best.rawText;
       clearInterval(creep);
       scheduleIdle();
@@ -603,6 +739,7 @@
     } catch(e){
       clearTimeout(slowT); clearInterval(creep);
       if (my !== runId) return;
+      try { console.warn('receipt read failed', e); } catch(_){}
       toManual(navigator.onLine === false ? 'offline' : 'failed', thumb);
     } finally { if (my === runId) onProg = null; }
   }
@@ -619,10 +756,12 @@
   function pickRun0(runs){
     const lvl = {none:0, low:1, medium:2, high:3};
     // a "Total ... USD x.xx" found on a Lebanese dual-currency receipt beats a guessed total
-    const rank = x => lvl[x.parsed.conf]*100 + (x.parsed.dual ? 150 : 0) + x.ocrConf/5 + Math.min(x.parsed.items.length, 10) + (x.parsed.merchant ? 4 : 0) + (x.parsed.date ? 4 : 0);
+    // a "checks out" from a blurry, low-confidence read is often luck (junk numbers that happen to add up): count it as medium
+    const L = x => x.parsed.conf === 'high' && x.ocrConf < 50 && !x.parsed.dual ? lvl.medium : lvl[x.parsed.conf];
+    const rank = x => L(x)*100 + (x.parsed.dual ? 150 : 0) + x.ocrConf/5 + Math.min(x.parsed.items.length, 10) + (x.parsed.merchant ? 4 : 0) + (x.parsed.date ? 4 : 0);
     const dual = runs.filter(x=>x.parsed.dual);
     if (dual.length) return dual.sort((a,b)=>rank(b)-rank(a))[0];
-    const highs = runs.filter(x=>x.parsed.conf === 'high');
+    const highs = runs.filter(x=>L(x) === lvl.high);
     if (highs.length) return highs.sort((a,b)=>rank(b)-rank(a))[0];
     for (const x of runs){
       if (x.parsed.total == null) continue;
@@ -846,7 +985,7 @@
       : d.conf === 'none' ? ['bad', "I couldn't find the total. Please type it in."]
       : d.conf === 'low' ? ['warn', "I'm not sure about the total. Please check it."]
       : d.conf === 'medium' ? ['warn', 'Please check the total before saving.']
-      : ['good', 'Looks right. Give it a quick check, then save.'];
+      : ['good', d.viaAI ? 'Read with AI. Give it a quick check, then save.' : 'Looks right. Give it a quick check, then save.'];
     // items that add up to the total mean the read is right, so no "blurry photo" tips then
     const dTotal = draftAmount(d).total, itemSum = Math.round(d.items.reduce((t,x)=>t + (+x.p || 0), 0)*100)/100;
     const itemsMatch = d.items.length > 0 && dTotal != null && near(itemSum, dTotal);
@@ -1171,5 +1310,5 @@
 
   // for tests
   J._receiptParse = parseReceipt;
-  J._receipt = {parse: parseReceipt, parseAmount, parseDate, pickCategory, prepImage, makeThumb, onFile};
+  J._receipt = {parse: parseReceipt, parseAmount, parseDate, pickCategory, prepImage, makeThumb, onFile, normalizeAI: normalizeAIReceipt, rotCanvas};
 })();
