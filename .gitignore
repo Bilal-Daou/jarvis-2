@@ -1,2 +1,7 @@
 __pycache__/
 *.pyc
+
+# test tools (tests/ folder)
+node_modules/
+tests/test-results/
+tests/playwright-report/

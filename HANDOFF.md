@@ -215,7 +215,7 @@ The branches `round4-wip`, `round5-wip`, `audit-wip` and `wf-test` on GitHub are
 - **Two separate copies of the data on iPhone.** The Action Button Shortcut opens Jarvis in **Safari**, and Safari's storage is separate from the home-screen icon's. We told Bilal to **use only the Action Button (Safari) version** and to move data with Backup → Restore if needed. **Fixed by cloud sync (section 12b) once the owner sets up the free Supabase project**: sign in on both copies and they share one data set.
 - **Data lives only on the phone.** There's no sync between devices and no cloud backup. If Safari website data is cleared (or iOS clears storage for a site that hasn't been opened in a while), everything is lost unless he saved a backup. Remind him to use Settings → Backup now and then. **Cloud sync (12b) adds an online copy + 30 daily backups** once set up.
 - **Never tested on a real iPhone by us.** Camera, mic, voices, Calendar "Add" screen, Shortcuts and Health sync have only been tested in desktop/emulated browsers. The Shortcut step names for Sleep and alarms are unverified.
-- **The JavaScript test suites are lost.** They lived in a session scratch folder. Only `scripts/tests/test_fetch_finance.py` (31 tests) is in the repo.
+- **JavaScript tests:** restored in `tests/` (see section 14).
 - **Very large single files.** `index.html` is ~221 KB, `features/food.js` ~185 KB, `brain.js` ~164 KB. The understanding is built from many regular expressions, so a change to phrasing can break other phrasings. Re-test widely after any change to `think()` or `brain.js`.
 - **Gemini model list will go stale.** `AI_MODELS` in `features/food.js` is a hand-made list (Nov 2026). Google renames and retires models, so update it if AI photos stop working. The free tier may let Google use photos to improve its AI. Bilal was told not to snap private things.
 - **Free data sources can break without warning.** Yahoo often blocks plain requests (that's why yfinance is used), and Nasdaq earnings is optional and sometimes blocked. The job keeps the previous values when a source fails, so the app shows older data instead of crashing.
@@ -490,3 +490,12 @@ Goal (owner): a buyer never sees the owner's name or can link the app to him (no
 - The AI path was tested with a stubbed `Jarvis.ai.gemini` (canned JSON + a thrown error → fallback); not yet with a real key.
 - `Jarvis._receipt.lastRuns` shows each read's confidence/total after a scan (for testing).
 - Still needed: ONE real receipt photo the owner says was wrong.
+---
+
+## 14. AUTOMATIC TESTS (`tests/`, added 22 Nov 2026)
+
+The JavaScript tests are back in the repo (replaces "JS suites are lost" in section 8).
+- **Run:** `cd tests`, then `npm install` (first time only), then `npm test`. Uses the installed Google Chrome, iPhone size 375×812, light + dark. 66 checks, about 2–3 minutes, all passing on v37.
+- **Covers:** load with no console errors, all 12 screens, typed brain commands (notes only when asked, expense, income, reminder, food, currency/name/theme), food search + v37 no-barcode sheet (`#fdnbQ`), receipt parser incl. `lebaneseDual()` (tested through `Jarvis._receipt.parse`, since it isn't exported), backup save/restore round trip.
+- **Gotchas:** outside internet is blocked in tests; app files are served from disk by Playwright because `python -m http.server` stalled at random on Windows under parallel load (the Python server still starts). `node_modules/` and test output are gitignored.
+- **Add a test** after every fix: copy a test in `tests/specs/`, use `app.say('...')` and `app.db()`. No app code was changed to make the tests pass (no bugs found).
