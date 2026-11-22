@@ -499,3 +499,9 @@ The JavaScript tests are back in the repo (replaces "JS suites are lost" in sect
 - **Covers:** load with no console errors, all 12 screens, typed brain commands (notes only when asked, expense, income, reminder, food, currency/name/theme), food search + v37 no-barcode sheet (`#fdnbQ`), receipt parser incl. `lebaneseDual()` (tested through `Jarvis._receipt.parse`, since it isn't exported), backup save/restore round trip.
 - **Gotchas:** outside internet is blocked in tests; app files are served from disk by Playwright because `python -m http.server` stalled at random on Windows under parallel load (the Python server still starts). `node_modules/` and test output are gitignored.
 - **Add a test** after every fix: copy a test in `tests/specs/`, use `app.say('...')` and `app.db()`. No app code was changed to make the tests pass (no bugs found).
+
+### v38 (22 Nov 2026): receipts, cloud sync (not switched on yet), automatic tests
+- Merged 3 parallel sessions: better receipt reading (`features/receipt.js`, 7/7 test receipts correct), cloud sync (`features/sync.js`, Supabase free tier; setup steps in `docs/SYNC-SETUP.md`, SQL in `docs/sync-supabase.sql`), automatic tests (`tests/`, `npm test`, 66 checks pass on the combined app).
+- Sync does nothing until the owner creates the free Supabase project and pastes its keys (walk him through `docs/SYNC-SETUP.md`, one step at a time). Not yet tried with a real Supabase project or on iPhone.
+- Alarms ringing with Jarvis closed: impossible for a web app; needs the native app (Capacitor) later.
+- Next: help the owner set up sync, then talk about "not built yet" (meeting notes, apps, accounts/payments, rebrand, paid upgrades).
