@@ -22,8 +22,8 @@ const J = window.Jarvis; if (!J) return;
    Leave them empty and the app works exactly as before (data on this device only).
    They can also be pasted from Settings → Sync → "Server details" (saved on that device only). */
 const SYNC_CONFIG = {
-  url: '',      // e.g. 'https://abcdefghijkl.supabase.co'
-  anonKey: ''   // the project's "anon public" or "publishable" key
+  url: 'https://azvrduetnqaxiamnlbho.supabase.co',      // e.g. 'https://abcdefghijkl.supabase.co'
+  anonKey: 'sb_publishable_Bckb6hUQpm7XcEhZJ53KDg_vLGYh-HG'   // the project's "anon public" or "publishable" key
 };
 /* ======================================================================================= */
 
@@ -140,9 +140,18 @@ async function freshToken(){
     takeSession(d, s.email);
   } catch(e){ if (e.status === 400 || e.status === 401 || e.status === 403){ signOut(true); } throw e; }
 }
-const sendCode = email => call('/auth/v1/otp', {method: 'POST', auth: false, body: {email, create_user: true}});
-async function verifyCode(email, token){
-  const d = await call('/auth/v1/verify', {method: 'POST', auth: false, body: {type: 'email', email, token}});
+/* email + password: sign in, or create the account the first time (needs "Confirm email" off in Supabase) */
+async function signInPw(email, password){
+  let d;
+  try { d = await call('/auth/v1/token?grant_type=password', {method: 'POST', auth: false, body: {email, password}}); }
+  catch(e){
+    if (e.status !== 400) throw e;
+    let su;
+    try { su = await call('/auth/v1/signup', {method: 'POST', auth: false, body: {email, password}}); }
+    catch(e2){ if (/registered|exists/i.test(e2.message)) throw new Error('wrong password'); throw e2; }
+    if (!su || !su.access_token) throw new Error('wrong password');
+    d = su;
+  }
   base = {}; saveBase(); meta.cursor = null; nsList().forEach(ns => { meta.stamps[ns] = meta.stamps[ns] || 0; });
   takeSession(d, email); return syncNow();
 }
@@ -258,37 +267,22 @@ function paint(){
   on('syBk', backupsSheet);
 }
 function signInSheet(){
-  let email = (meta.session && meta.session.email) || '';
-  const step1 = () => {
-    J.modal(`<h4>Keep my data safe and synced</h4><p class="sy-small">Use the same email on every copy of the app (the Action Button one and the home-screen one). We'll email you a 6-digit code. No password.</p>
-      <input type="email" id="syEmail" autocomplete="email" inputmode="email" placeholder="you@example.com" value="${esc(email)}" aria-label="Email">
-      <div class="row"><button class="btn ghost" id="mCancel">Cancel</button><button class="btn" id="mSave">Send code</button></div>`);
-    document.getElementById('mCancel').onclick = J.closeModal;
-    const go = async () => {
-      email = document.getElementById('syEmail').value.trim();
-      if (!/^\S+@\S+\.\S+$/.test(email)){ J.toast('Please enter your email'); return; }
-      const b = document.getElementById('mSave'); b.disabled = true; b.textContent = 'Sending…';
-      try { await sendCode(email); step2(); } catch(e){ b.disabled = false; b.textContent = 'Send code'; J.toast(navigator.onLine === false ? 'You’re offline. Try again when connected.' : 'Could not send the code: ' + e.message); }
-    };
-    document.getElementById('mSave').onclick = go;
-    document.getElementById('syEmail').onkeydown = e => { if (e.key === 'Enter') go(); };
+  const email = (meta.session && meta.session.email) || '';
+  J.modal(`<h4>Keep my data safe and synced</h4><p class="sy-small">Use the same email and password on every copy of the app (the Action Button one and the home-screen one). First time? This creates your account.</p>
+    <input type="email" id="syEmail" autocomplete="email" inputmode="email" placeholder="you@example.com" value="${esc(email)}" aria-label="Email">
+    <input type="password" id="syPw" autocomplete="current-password" placeholder="Password (at least 6 characters)" aria-label="Password">
+    <div class="row"><button class="btn ghost" id="mCancel">Cancel</button><button class="btn" id="mSave">Turn on sync</button></div>`);
+  document.getElementById('mCancel').onclick = J.closeModal;
+  const go = async () => {
+    const em = document.getElementById('syEmail').value.trim(), pw = document.getElementById('syPw').value;
+    if (!/^\S+@\S+\.\S+$/.test(em)){ J.toast('Please enter your email'); return; }
+    if (pw.length < 6){ J.toast('The password needs at least 6 characters'); return; }
+    const b = document.getElementById('mSave'); b.disabled = true; b.textContent = 'Checking…';
+    try { await signInPw(em, pw); J.closeModal(); J.toast(meta.err ? 'Signed in. Sync will finish when online.' : 'Sync is on. Your data is backed up.'); }
+    catch(e){ b.disabled = false; b.textContent = 'Turn on sync'; J.toast(navigator.onLine === false ? 'You’re offline. Try again when connected.' : /wrong password|invalid/i.test(e.message) ? 'Wrong password for that email. Try again.' : 'Could not sign in: ' + e.message); }
   };
-  const step2 = () => {
-    J.modal(`<h4>Enter the code</h4><p class="sy-small">We sent a code to ${esc(email)}. Open the email, copy the code, and paste it here. (iPhone often offers it above the keyboard.)</p>
-      <input type="text" id="syCode" autocomplete="one-time-code" inputmode="numeric" placeholder="123456" maxlength="10" aria-label="Code from the email">
-      <div class="row"><button class="btn ghost" id="mBack">Back</button><button class="btn" id="mSave">Turn on sync</button></div>`);
-    document.getElementById('mBack').onclick = step1;
-    const go = async () => {
-      const code = document.getElementById('syCode').value.replace(/\D/g, '');
-      if (code.length < 6){ J.toast('The code has 6 digits'); return; }
-      const b = document.getElementById('mSave'); b.disabled = true; b.textContent = 'Checking…';
-      try { await verifyCode(email, code); J.closeModal(); J.toast(meta.err ? 'Signed in. Sync will finish when online.' : 'Sync is on. Your data is backed up.'); }
-      catch(e){ b.disabled = false; b.textContent = 'Turn on sync'; J.toast(/expired|invalid/i.test(e.message) ? 'That code is wrong or expired. Try again or go Back for a new one.' : 'Could not sign in: ' + e.message); }
-    };
-    document.getElementById('mSave').onclick = go;
-    document.getElementById('syCode').onkeydown = e => { if (e.key === 'Enter') go(); };
-  };
-  step1();
+  document.getElementById('mSave').onclick = go;
+  document.getElementById('syPw').onkeydown = e => { if (e.key === 'Enter') go(); };
 }
 function cfgSheet(){
   const c = ls.get(CFG, {}) || {};

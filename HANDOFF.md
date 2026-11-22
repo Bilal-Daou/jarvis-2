@@ -505,3 +505,10 @@ The JavaScript tests are back in the repo (replaces "JS suites are lost" in sect
 - Sync does nothing until the owner creates the free Supabase project and pastes its keys (walk him through `docs/SYNC-SETUP.md`, one step at a time). Not yet tried with a real Supabase project or on iPhone.
 - Alarms ringing with Jarvis closed: impossible for a web app; needs the native app (Capacitor) later.
 - Next: help the owner set up sync, then talk about "not built yet" (meeting notes, apps, accounts/payments, rebrand, paid upgrades).
+
+### v39 (22 Nov 2026): sync switched on (Supabase project "Jarvis", eu-north-1)
+- Supabase free projects can't edit email templates without custom SMTP, so sign-in changed from email code to **email + password** (`signInPw` in `features/sync.js`: password grant, else signup). Needs "Confirm email" OFF in Auth → Sign In / Providers → Email.
+- Project URL + publishable key are in `SYNC_CONFIG` at the top of `features/sync.js` (public by design; RLS protects data, anon reads are denied, checked).
+- Tested: sign-in from the app → all 12 namespaces uploaded. Test user `jarvis.synctest.a@example.com` exists in Auth → Users; the owner can delete it.
+- The owner accidentally pasted the **secret** key in chat; told him to create a new secret key and delete the old one. It is not used anywhere in the code.
+- Next: the owner turns on sync on both copies (Action Button Safari + home-screen app) with the same email/password and confirms they match.
