@@ -212,8 +212,8 @@ The branches `round4-wip`, `round5-wip`, `audit-wip` and `wf-test` on GitHub are
 ## 8. KNOWN PROBLEMS
 
 - **Reminders can't ring by themselves when Jarvis is closed.** That's an iPhone limit for web apps. The workaround is the Calendar `.ics` alert (silent when the phone is on silent) or the "Jarvis Alarm" Shortcut (real Clock alarm, needs one-time setup). Web Push for home-screen apps would need a server, which we don't have.
-- **Two separate copies of the data on iPhone.** The Action Button Shortcut opens Jarvis in **Safari**, and Safari's storage is separate from the home-screen icon's. We told Bilal to **use only the Action Button (Safari) version** and to move data with Backup → Restore if needed.
-- **Data lives only on the phone.** There's no sync between devices and no cloud backup. If Safari website data is cleared (or iOS clears storage for a site that hasn't been opened in a while), everything is lost unless he saved a backup. Remind him to use Settings → Backup now and then.
+- **Two separate copies of the data on iPhone.** The Action Button Shortcut opens Jarvis in **Safari**, and Safari's storage is separate from the home-screen icon's. We told Bilal to **use only the Action Button (Safari) version** and to move data with Backup → Restore if needed. **Fixed by cloud sync (section 12b) once the owner sets up the free Supabase project**: sign in on both copies and they share one data set.
+- **Data lives only on the phone.** There's no sync between devices and no cloud backup. If Safari website data is cleared (or iOS clears storage for a site that hasn't been opened in a while), everything is lost unless he saved a backup. Remind him to use Settings → Backup now and then. **Cloud sync (12b) adds an online copy + 30 daily backups** once set up.
 - **Never tested on a real iPhone by us.** Camera, mic, voices, Calendar "Add" screen, Shortcuts and Health sync have only been tested in desktop/emulated browsers. The Shortcut step names for Sleep and alarms are unverified.
 - **The JavaScript test suites are lost.** They lived in a session scratch folder. Only `scripts/tests/test_fetch_finance.py` (31 tests) is in the repo.
 - **Very large single files.** `index.html` is ~221 KB, `features/food.js` ~185 KB, `brain.js` ~164 KB. The understanding is built from many regular expressions, so a change to phrasing can break other phrasings. Re-test widely after any change to `think()` or `brain.js`.
@@ -329,6 +329,26 @@ Goal (owner): a buyer never sees the owner's name or can link the app to him (no
 **App Store (paid, only on his go):** Apple Developer Program $99/year. An individual account shows the person's legal name as the seller, so "not linked to him" needs an **organization** account (a legal entity + a free D-U-N-S number). Wrap the web app with Capacitor (free). Building needs Xcode, so a Mac, a rented cloud Mac or a cloud build service (Codemagic, GitHub Actions macOS runners). Guideline 4.2 rejects plain website wrappers, so add native value: local notifications (reminders ring when the app is closed), native speech in/out (would also end the iPhone web-voice and orange-dot problems), HealthKit directly (no Shortcut). A privacy policy URL and App Privacy labels are required (HealthKit has extra rules). Apple keeps 15% of sales under the Small Business Program. Full plain-language report: in the 20 Nov "brand-free" session.
 
 ---
+
+## 12b. CLOUD SYNC + ONLINE BACKUP (`features/sync.js`) · 22 Nov 2026, not yet released
+
+**Why:** the Action Button opens Safari, the home-screen icon has its own storage, so two copies of the data; and everything was only in localStorage. **Can the Action Button open the home-screen app instead?** No supported iOS way: Shortcuts "Open URLs" always opens Safari, "Open App" doesn't list home-screen web apps, and web apps have no URL scheme. So sync is the fix.
+
+**Choice:** Supabase free tier (Postgres + email sign-in + row-level security), called with plain `fetch` (no library, nothing to load). Firebase was the alternative; Supabase wins on simple SQL security rules and a portable database. Sign-in = **6-digit email code** (`/auth/v1/otp` + `/auth/v1/verify`), not a magic link, because a link opens Safari, not the home-screen app. Free limits: 0.5 GB DB, 2 projects, **paused after 1 week unused** (restore from dashboard), built-in email is test-grade (few/hour, may only reach team members): a buyer needs custom SMTP (free tiers exist). See `docs/SYNC-SETUP.md`.
+
+**How it works:**
+- Config: the marked `SYNC_CONFIG` box at the top of `features/sync.js` (URL + anon/publishable key, both public by design). Empty = app behaves exactly as before. Per-device override: Settings → Sync → Server details (`jarvis2-sync-config`).
+- Tables (`docs/sync-supabase.sql`): `jarvis_data(user_id, ns, data jsonb, stamp, server_at)` one row per top-level `jarvis2` key; `jarvis_backups(user_id, day, data)` one full copy per day, trigger keeps 30 days. RLS: own rows only.
+- Change detection: wraps `Storage.prototype.setItem` for key `jarvis2` (catches core `save()` and receipts' direct write), debounced 1.5 s, then pull → merge → push. Pull also on load, focus, visibility, `online`, every 3 min. Pull is incremental by `server_at` (5 s overlap).
+- Merge: 3-way against the last agreed copy (`jarvis2-sync-base`). Objects merge per key; arrays of `{id}` merge per item (adds on both sides kept, deletes respected); same thing changed on both sides → newer `stamp` wins. First sign-in on a device = union (nothing lost).
+- Applying cloud data patches objects **in place** so features' `J.store()` references stay valid, then `renderAll(true)` and a `jarvis:synced` event. Theme/accent changes from another device show after the next reopen.
+- Never synced: anything outside the `jarvis2` key (Gemini key `jarvis2-ai`, caches, debug log) and `settings.voice` (per device).
+- Meta in `jarvis2-sync` (session tokens, stamps, cursor). "Erase everything" removes all `jarvis2*` keys → that device is signed out; the cloud copy is untouched. Signing in to a *different* account on a device merges that device's data into it.
+- Settings card "Sync & online backup": Turn on / Synced as … / Sync now / Online backups (restore a day: reloads and pushes to all devices) / Sign out.
+
+**Tested (22 Nov, local, 375×812):** `scripts/dev/sync_stub_server.py` (fake Supabase, code 123456) + two origins (`localhost` and `127.0.0.1` = two separate storages). Proven: sign-in UI, push, first-sign-in union, pull on focus, server down → changes wait → catch up, delete on A + add on B offline → both respected, budget setting synced, Gemini key and voice not uploaded, habits store object kept its identity, daily backup + restore. **Not tested against a real Supabase project yet** (needs the owner's account) **nor on an iPhone.**
+
+**Next:** owner follows `docs/SYNC-SETUP.md` and sends URL + key → paste into `SYNC_CONFIG`, bump `CACHE`, release, then test on the real iPhone (Action Button copy + home-screen copy).
 
 ## 13. SESSION LOG (Claude Code desktop, 17–18 Nov 2026)
 
