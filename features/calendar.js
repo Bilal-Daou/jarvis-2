@@ -860,86 +860,86 @@ J.css(`
 .cal-sync .cal-dot{width:10px;height:10px;border-radius:50%;background:var(--good);box-shadow:0 0 0 4px rgba(34,197,94,.16);flex:none}
 .cal-sync .cal-dot.warn{background:var(--warn);box-shadow:0 0 0 4px rgba(245,158,11,.16)}
 .cal-sync .cal-dot.off{background:var(--faint);box-shadow:0 0 0 4px var(--line)}
-.cal-sync .lbl{flex:1;min-width:0}.cal-sync .lbl b{display:block;font-size:14px}.cal-sync .lbl small{color:var(--muted);font-size:12.5px}
-.cal-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:14px;padding:11px 14px;font:inherit;font-weight:700;font-size:14px;cursor:pointer;background:var(--accent);color:var(--on-accent,#fff);text-decoration:none;white-space:nowrap;min-height:44px}
+.cal-sync .lbl{flex:1;min-width:0}.cal-sync .lbl b{display:block;font-size:var(--fs-sm)}.cal-sync .lbl small{color:var(--muted);font-size:var(--fs-xs)}
+.cal-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:var(--r-md);padding:11px 14px;font:inherit;font-weight:var(--fw-bold);font-size:var(--fs-sm);cursor:pointer;background:var(--accent);color:var(--on-accent,#fff);text-decoration:none;white-space:nowrap;min-height:44px}
 .cal-btn.ghost{background:var(--card);color:var(--text);border:1px solid var(--line)}
-.cal-btn.sm{padding:8px 12px;font-size:13px;min-height:38px;border-radius:12px}
+.cal-btn.sm{padding:8px 12px;font-size:var(--fs-sm);min-height:38px;border-radius:var(--r-sm)}
 .cal-btn:active,.cal-big:active{transform:scale(.97)}
-.cal-next{position:relative;overflow:hidden;border-radius:24px;padding:18px;color:#fff;background:linear-gradient(135deg,#f43f5e 0%,#e11d48 40%,#7c3aed 100%);box-shadow:0 18px 40px rgba(225,29,72,.28);margin-bottom:6px}
+.cal-next{position:relative;overflow:hidden;border-radius:var(--r-xl);padding:18px;color:var(--on-hero);background:var(--hero);box-shadow:var(--sh-hero);margin-bottom:6px}
 .cal-next::after{content:"";position:absolute;right:-50px;top:-50px;width:170px;height:170px;border-radius:50%;background:rgba(255,255,255,.12)}
-.cal-next .k{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;opacity:.85}
-.cal-next .t{font-size:21px;font-weight:800;letter-spacing:-.4px;margin:4px 0 4px;line-height:1.2;word-wrap:break-word;position:relative;z-index:1}
-.cal-next .m{font-size:13.5px;opacity:.9;position:relative;z-index:1}
-.cal-next .c{position:absolute;right:16px;bottom:16px;background:rgba(255,255,255,.2);border-radius:999px;padding:6px 11px;font-weight:800;font-size:13px;z-index:1}
+.cal-next .k{font-size:var(--fs-xs);font-weight:var(--fw-bold);letter-spacing:.06em;text-transform:uppercase;opacity:.85}
+.cal-next .t{font-size:var(--fs-xl);font-weight:var(--fw-bold);letter-spacing:-.4px;margin:4px 0 4px;line-height:1.2;word-wrap:break-word;position:relative;z-index:1}
+.cal-next .m{font-size:var(--fs-sm);opacity:.9;position:relative;z-index:1}
+.cal-next .c{position:absolute;right:16px;bottom:16px;background:rgba(255,255,255,.2);border-radius:var(--r-pill);padding:6px 11px;font-weight:var(--fw-bold);font-size:var(--fs-sm);z-index:1}
 .cal-day{margin:20px 2px 8px;display:flex;align-items:baseline;justify-content:space-between}
-.cal-day h3{margin:0;font-size:15px;font-weight:800}.cal-day span{color:var(--muted);font-size:12.5px;font-weight:600}
+.cal-day h3{margin:0;font-size:var(--fs-base);font-weight:var(--fw-bold)}.cal-day span{color:var(--muted);font-size:var(--fs-xs);font-weight:var(--fw-semi)}
 .cal-allday{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
-.cal-allday span{background:var(--accent-soft);color:var(--text);border-radius:10px;padding:6px 10px;font-size:13px;font-weight:600;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.cal-ev{display:flex;gap:12px;align-items:stretch;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:12px 14px;margin-bottom:8px}
-.cal-ev .tm{flex:none;width:72px;font-weight:800;font-size:13.5px;line-height:1.25;white-space:nowrap}
-.cal-ev .tm small{display:block;color:var(--muted);font-weight:600;font-size:11.5px}
-.cal-ev .bar{width:4px;border-radius:4px;flex:none;background:linear-gradient(180deg,#f43f5e,#7c3aed)}
+.cal-allday span{background:var(--accent-soft);color:var(--text);border-radius:var(--r-sm);padding:6px 10px;font-size:var(--fs-sm);font-weight:var(--fw-semi);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cal-ev{display:flex;gap:12px;align-items:stretch;background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);padding:12px 14px;margin-bottom:8px}
+.cal-ev .tm{flex:none;width:72px;font-weight:var(--fw-bold);font-size:var(--fs-sm);line-height:1.25;white-space:nowrap}
+.cal-ev .tm small{display:block;color:var(--muted);font-weight:var(--fw-semi);font-size:var(--fs-2xs)}
+.cal-ev .bar{width:4px;border-radius:4px;flex:none;background:var(--c-calendar)}
 .cal-ev.rem .bar{background:linear-gradient(180deg,var(--warn),#f97316)}
 .cal-ev .bd{flex:1;min-width:0}.cal-ev .bd b{display:block;font-weight:650;word-wrap:break-word}
-.cal-ev .bd small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cal-ev .bd small{display:block;color:var(--muted);font-size:var(--fs-xs);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cal-ev.past{opacity:.5}
 .cal-ev.now{border-color:rgba(244,63,94,.5);box-shadow:0 0 0 3px rgba(244,63,94,.1)}
-.cal-pill{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:2px 8px;font-size:11px;font-weight:800;vertical-align:1px;margin-left:4px}
+.cal-pill{display:inline-flex;align-items:center;gap:4px;border-radius:var(--r-pill);padding:2px 8px;font-size:var(--fs-2xs);font-weight:var(--fw-bold);vertical-align:1px;margin-left:4px}
 .cal-pill.ok{background:rgba(34,197,94,.14);color:var(--good-ink)}.cal-pill.no{background:rgba(245,158,11,.14);color:var(--warn-ink)}.cal-pill.live{background:rgba(244,63,94,.14);color:var(--bad-ink)}
 .cal-acts{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
 .cal-hero-empty{text-align:center;padding:26px 18px}
-.cal-hero-empty .big{width:68px;height:68px;margin:0 auto 12px;border-radius:22px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,#fb7185,#e11d48);box-shadow:0 14px 30px rgba(225,29,72,.28)}.cal-hero-empty .big svg{width:34px;height:34px}
+.cal-hero-empty .big{width:68px;height:68px;margin:0 auto 12px;border-radius:var(--r-xl);display:grid;place-items:center;color:#fff;background:var(--c-calendar);box-shadow:inset 0 1px 0 rgba(255,255,255,.18)}.cal-hero-empty .big svg{width:34px;height:34px}
 .cal-part-h .ic svg{width:23px;height:23px}.cal-home .ic svg{width:22px;height:22px}.cal-home .x{width:44px!important;height:44px!important;display:grid;place-items:center}.cal-home .x svg{width:17px;height:17px}.cal-btn svg{width:17px;height:17px;flex:none}
 .cal-allday span svg{width:14px;height:14px;vertical-align:-2px;margin-right:5px;color:var(--accent-ink)}.cal-loc{display:flex;align-items:center;gap:4px}.cal-loc svg{width:13px;height:13px;flex:none}
-.cal-hero-empty h3{margin:0 0 6px;font-size:18px}.cal-hero-empty p{margin:0 0 14px;color:var(--muted)}
+.cal-hero-empty h3{margin:0 0 6px;font-size:var(--fs-lg)}.cal-hero-empty p{margin:0 0 14px;color:var(--muted)}
 .cal-step{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
 .cal-step:first-of-type{border-top:0}
-.cal-step .n{flex:none;width:28px;height:28px;border-radius:50%;background:var(--accent-soft);color:var(--accent-ink);display:grid;place-items:center;font-weight:800;font-size:13px}
-.cal-step .tx{flex:1;min-width:0;font-size:14.5px;line-height:1.45}
-.cal-step .tx b{font-weight:700}
-.cal-step .tx code{font:600 13px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--bg2);border:1px solid var(--line);border-radius:7px;padding:1px 6px;word-break:break-all}
-.cal-copy{display:flex;align-items:center;gap:8px;margin-top:8px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:6px 6px 6px 12px}
+.cal-step .n{flex:none;width:28px;height:28px;border-radius:50%;background:var(--accent-soft);color:var(--accent-ink);display:grid;place-items:center;font-weight:var(--fw-bold);font-size:var(--fs-sm)}
+.cal-step .tx{flex:1;min-width:0;font-size:var(--fs-base);line-height:1.45}
+.cal-step .tx b{font-weight:var(--fw-bold)}
+.cal-step .tx code{font:600 13px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--bg2);border:1px solid var(--line);border-radius:var(--r-xs);padding:1px 6px;word-break:break-all}
+.cal-copy{display:flex;align-items:center;gap:8px;margin-top:8px;background:var(--bg2);border:1px solid var(--line);border-radius:var(--r-sm);padding:6px 6px 6px 12px}
 .cal-copy span{flex:1;min-width:0;font:600 13px ui-monospace,SFMono-Regular,Menlo,monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cal-part{margin-bottom:14px}
 .cal-part-h{display:flex;align-items:center;gap:12px;margin-bottom:6px}
-.cal-part-h .ic{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-size:22px;flex:none}
-.cal-part-h b{display:block;font-size:16px}.cal-part-h small{color:var(--muted);font-size:12.5px}
-.cal-part p{color:var(--muted);font-size:13.5px;margin:6px 0 10px}
-.cal-truth{display:grid;grid-template-columns:auto 1fr;gap:10px 12px;font-size:13.5px;align-items:start}
-.cal-truth i{font-style:normal;font-size:16px;line-height:1.3}
-.cal-truth b{font-weight:700}
+.cal-part-h .ic{width:44px;height:44px;border-radius:var(--r-md);display:grid;place-items:center;font-size:var(--fs-2xl);flex:none}
+.cal-part-h b{display:block;font-size:var(--fs-md)}.cal-part-h small{color:var(--muted);font-size:var(--fs-xs)}
+.cal-part p{color:var(--muted);font-size:var(--fs-sm);margin:6px 0 10px}
+.cal-truth{display:grid;grid-template-columns:auto 1fr;gap:10px 12px;font-size:var(--fs-sm);align-items:start}
+.cal-truth i{font-style:normal;font-size:var(--fs-md);line-height:1.3}
+.cal-truth b{font-weight:var(--fw-bold)}
 .cal-truth i svg{width:18px;height:18px;display:block;margin-top:1px;color:var(--muted)}.cal-truth i.ok svg{color:var(--good)}
 .cal-diag i svg{width:17px;height:17px;display:block;margin:auto}.cal-diag i.ok{color:var(--good)}.cal-diag i.bad{color:var(--warn)}
 .cal-diag .cal-di{display:inline-grid;vertical-align:-3px;margin-right:6px;color:var(--muted)}.cal-diag .cal-di svg{width:16px;height:16px}
 .cal-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
-.cal-chips button{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:999px;padding:8px 12px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;min-height:38px}
+.cal-chips button{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:var(--r-pill);padding:8px 12px;font:inherit;font-size:var(--fs-sm);font-weight:var(--fw-semi);cursor:pointer;min-height:38px}
 .cal-chips button.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent,#fff)}
-.cal-field{width:100%;background:var(--bg2);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:11px 12px;font:inherit;font-size:16px;margin-top:8px}
+.cal-field{width:100%;background:var(--bg2);color:var(--text);border:1px solid var(--line);border-radius:var(--r-sm);padding:11px 12px;font:inherit;font-size:var(--fs-md);margin-top:8px}
 .cal-home{display:flex;align-items:center;gap:12px;padding:14px;cursor:pointer}
-.cal-home .ic{width:44px;height:44px;border-radius:14px;flex:none;display:grid;place-items:center;font-size:21px;background:linear-gradient(135deg,#f43f5e,#7c3aed);color:#fff;box-shadow:0 8px 18px rgba(225,29,72,.25)}
-.cal-home .bd{flex:1;min-width:0}.cal-home .bd small{display:block;color:var(--muted);font-size:12px;font-weight:600}
-.cal-home .bd b{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;font-size:15px;line-height:1.3;overflow:hidden;text-wrap:balance;overflow-wrap:anywhere}
-.cal-home .cd{flex:none;font-weight:800;font-size:13px;color:var(--accent-ink);background:var(--accent-soft);border-radius:999px;padding:5px 10px}
-.cal-home .x{flex:none;border:0;background:none;color:var(--muted);width:36px;height:36px;border-radius:10px;font-size:16px;cursor:pointer}
+.cal-home .ic{width:44px;height:44px;border-radius:var(--r-md);flex:none;display:grid;place-items:center;font-size:var(--fs-xl);background:var(--c-calendar);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.18)}
+.cal-home .bd{flex:1;min-width:0}.cal-home .bd small{display:block;color:var(--muted);font-size:var(--fs-xs);font-weight:var(--fw-semi)}
+.cal-home .bd b{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;font-size:var(--fs-base);line-height:1.3;overflow:hidden;text-wrap:balance;overflow-wrap:anywhere}
+.cal-home .cd{flex:none;font-weight:var(--fw-bold);font-size:var(--fs-sm);color:var(--accent-ink);background:var(--accent-soft);border-radius:var(--r-pill);padding:5px 10px}
+.cal-home .x{flex:none;border:0;background:none;color:var(--muted);width:36px;height:36px;border-radius:var(--r-sm);font-size:var(--fs-md);cursor:pointer}
 .cal-sheet-wrap{position:fixed;inset:0;z-index:45;pointer-events:none}
 .cal-sheet-bg{position:absolute;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);opacity:0;transition:opacity .3s}
 .cal-sheet{position:absolute;left:50%;bottom:0;transform:translate(-50%,105%);width:100%;max-width:520px;max-height:92vh;overflow-y:auto;background:var(--bg2);border:1px solid var(--line);border-bottom:0;border-radius:28px 28px 0 0;padding:0 18px calc(18px + env(safe-area-inset-bottom,0px));transition:transform .42s var(--ease);box-shadow:0 -20px 60px rgba(0,0,0,.4)}
 .cal-sheet-wrap:not(.open){visibility:hidden;transition:visibility 0s linear .42s}.cal-sheet-wrap.open{pointer-events:auto}.cal-sheet-wrap.open .cal-sheet-bg{opacity:1}.cal-sheet-wrap.open .cal-sheet{transform:translate(-50%,0)}
-.cal-grab{width:42px;height:5px;border-radius:9px;background:var(--faint);opacity:.5;margin:10px auto 12px}
+.cal-grab{width:42px;height:5px;border-radius:var(--r-xs);background:var(--faint);opacity:.5;margin:10px auto 12px}
 .cal-sh-head{display:flex;gap:14px;align-items:center;margin-bottom:16px}
 .cal-sh-ic svg{width:28px;height:28px;color:#fff}.cal-big>svg{width:26px;height:26px;flex:none}
-.cal-sh-ic{width:56px;height:56px;border-radius:18px;display:grid;place-items:center;font-size:28px;flex:none;background:linear-gradient(135deg,#f43f5e,#7c3aed);box-shadow:0 10px 24px rgba(225,29,72,.3)}
-.cal-sh-t{min-width:0}.cal-sh-t h4{margin:0 0 4px;font-size:19px;font-weight:800;letter-spacing:-.3px}
-.cal-sh-sub b{display:block;font-weight:650;word-wrap:break-word}.cal-sh-sub span{color:var(--muted);font-size:13px}
+.cal-sh-ic{width:56px;height:56px;border-radius:var(--r-lg);display:grid;place-items:center;font-size:var(--fs-3xl);flex:none;background:var(--c-calendar);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.18)}
+.cal-sh-t{min-width:0}.cal-sh-t h4{margin:0 0 4px;font-size:var(--fs-xl);font-weight:var(--fw-bold);letter-spacing:-.3px}
+.cal-sh-sub b{display:block;font-weight:650;word-wrap:break-word}.cal-sh-sub span{color:var(--muted);font-size:var(--fs-sm)}
 .cal-sh-btns{display:flex;flex-direction:column;gap:10px}
-.cal-big{display:flex;align-items:center;gap:14px;text-align:left;width:100%;border:0;border-radius:20px;padding:16px;font:inherit;font-size:26px;cursor:pointer;text-decoration:none;color:#fff;background:linear-gradient(135deg,var(--accent),#4f46e5);box-shadow:0 12px 26px rgba(79,70,229,.32);transition:transform .15s var(--ease)}
-.cal-big span{display:flex;flex-direction:column;min-width:0}.cal-big b{font-size:16.5px;font-weight:800}.cal-big small{font-size:12.5px;opacity:.88;font-weight:500;margin-top:1px}
-.cal-big-alarm{background:linear-gradient(135deg,#f97316,#e11d48);box-shadow:0 12px 26px rgba(225,29,72,.3)}
+.cal-big{display:flex;align-items:center;gap:14px;text-align:left;width:100%;border:0;border-radius:var(--r-lg);padding:16px;font:inherit;font-size:var(--fs-3xl);cursor:pointer;text-decoration:none;color:var(--on-accent);background:var(--grad);box-shadow:var(--sh-accent);transition:transform .15s var(--ease)}
+.cal-big span{display:flex;flex-direction:column;min-width:0}.cal-big b{font-size:var(--fs-md);font-weight:var(--fw-bold)}.cal-big small{font-size:var(--fs-xs);opacity:.88;font-weight:var(--fw-med);margin-top:1px}
+.cal-big-alarm{color:#fff;background:linear-gradient(135deg,#f97316,var(--c-calendar));box-shadow:0 12px 26px -8px rgba(255,59,48,.5)}
 .cal-big-ghost{background:var(--card);color:var(--text);border:1px solid var(--line);box-shadow:none}
 .cal-big-ghost small{color:var(--muted);opacity:1}.cal-big-ghost>svg{color:#f97316}
-.cal-note{font-size:13px;color:var(--muted);background:var(--card);border:1px dashed var(--line);border-radius:14px;padding:10px 12px}
-.cal-link{border:0;background:none;color:var(--accent-ink);font:inherit;font-weight:650;font-size:13.5px;cursor:pointer;padding:12px 4px;min-height:44px}
-.cal-sh-honest{color:var(--muted);font-size:12.5px;margin:2px 0 12px;line-height:1.45}
+.cal-note{font-size:var(--fs-sm);color:var(--muted);background:var(--card);border:1px dashed var(--line);border-radius:var(--r-md);padding:10px 12px}
+.cal-link{border:0;background:none;color:var(--accent-ink);font:inherit;font-weight:650;font-size:var(--fs-sm);cursor:pointer;padding:12px 4px;min-height:44px}
+.cal-sh-honest{color:var(--muted);font-size:var(--fs-xs);margin:2px 0 12px;line-height:1.45}
 .cal-sh-foot{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .cal-alarm{position:fixed;inset:0;z-index:70;display:none;align-items:center;justify-content:center;padding:24px 20px calc(24px + env(safe-area-inset-bottom,0px));color:#fff;text-align:center;background:radial-gradient(120% 80% at 50% 0%,#4338ca 0%,#1e1b4b 55%,#0b0a1f 100%)}
 .cal-alarm.is-alarm{background:radial-gradient(120% 80% at 50% 0%,#f97316 0%,#be123c 45%,#2a0610 100%)}
@@ -951,25 +951,25 @@ J.css(`
 .cal-al-ring span+span{animation-delay:.9s}
 @keyframes calPulse{0%{transform:scale(.6);opacity:1}100%{transform:scale(1.6);opacity:0}}
 @keyframes calShake{0%,100%{transform:rotate(0)}10%,30%{transform:rotate(-14deg)}20%,40%{transform:rotate(14deg)}50%{transform:rotate(0)}}
-.cal-al-time{font-size:64px;font-weight:800;letter-spacing:-2px;line-height:1}
-.cal-al-kind{margin-top:8px;font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.8}
-.cal-al-text{font-size:24px;font-weight:700;margin:14px 0 26px;line-height:1.25;word-wrap:break-word;max-width:100%}
-.cal-al-sound{border:1px solid rgba(255,255,255,.4);background:rgba(255,255,255,.14);color:#fff;border-radius:999px;padding:12px 18px;font:inherit;font-weight:700;margin:-8px 0 20px;cursor:pointer}
+.cal-al-time{font-size:64px;font-weight:var(--fw-heavy);letter-spacing:-2px;line-height:1}
+.cal-al-kind{margin-top:8px;font-size:var(--fs-sm);font-weight:var(--fw-bold);letter-spacing:.08em;text-transform:uppercase;opacity:.8}
+.cal-al-text{font-size:var(--fs-2xl);font-weight:var(--fw-bold);margin:14px 0 26px;line-height:1.25;word-wrap:break-word;max-width:100%}
+.cal-al-sound{border:1px solid rgba(255,255,255,.4);background:rgba(255,255,255,.14);color:#fff;border-radius:var(--r-pill);padding:12px 18px;font:inherit;font-weight:var(--fw-bold);margin:-8px 0 20px;cursor:pointer}
 .cal-al-btns{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%}
-.cal-al-btns button{border:0;border-radius:22px;min-height:72px;font:inherit;font-size:18px;font-weight:800;cursor:pointer}
+.cal-al-btns button{border:0;border-radius:var(--r-xl);min-height:72px;font:inherit;font-size:var(--fs-lg);font-weight:var(--fw-bold);cursor:pointer}
 .cal-al-snooze{background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.3)!important}
 .cal-al-stop{background:#fff;color:#111}
 .cal-al-btns button:active{transform:scale(.97)}
-.cal-al-more{margin-top:14px;font-size:13px;opacity:.8}
+.cal-al-more{margin-top:14px;font-size:var(--fs-sm);opacity:.8}
 .cal-night{position:fixed;inset:0;z-index:65;display:none;align-items:center;justify-content:center;background:#000;color:#e5e7eb;text-align:center;padding:24px}
 .cal-night.open{display:flex}
 .cal-ns-in{max-width:420px}
 .cal-ns-time{font-size:96px;font-weight:300;letter-spacing:-4px;line-height:1;color:#fca5a5}
-.cal-ns-time small{font-size:22px;letter-spacing:0;margin-left:6px;font-weight:600}
-.cal-ns-date{margin-top:10px;color:#9ca3af;font-weight:600}
-.cal-ns-next{margin:26px 0 10px;font-size:17px;font-weight:700;color:#f3f4f6}
-.cal-night p{color:#6b7280;font-size:13px;margin:0 0 26px}
-.cal-ns-exit{border:1px solid #374151;background:#111827;color:#d1d5db;border-radius:14px;padding:12px 18px;font:inherit;font-weight:700;cursor:pointer}
+.cal-ns-time small{font-size:var(--fs-2xl);letter-spacing:0;margin-left:6px;font-weight:var(--fw-semi)}
+.cal-ns-date{margin-top:10px;color:#9ca3af;font-weight:var(--fw-semi)}
+.cal-ns-next{margin:26px 0 10px;font-size:var(--fs-lg);font-weight:var(--fw-bold);color:#f3f4f6}
+.cal-night p{color:#6b7280;font-size:var(--fs-sm);margin:0 0 26px}
+.cal-ns-exit{border:1px solid #374151;background:#111827;color:#d1d5db;border-radius:var(--r-md);padding:12px 18px;font:inherit;font-weight:var(--fw-bold);cursor:pointer}
 .cal-set-btn{white-space:nowrap}
 .cal-where .ic{background:rgba(34,197,94,.15)}.cal-where.warn{border-color:rgba(245,158,11,.45)}.cal-where.warn .ic{background:rgba(245,158,11,.16)}.cal-where p{margin:6px 0 4px}
 @media (prefers-reduced-motion: reduce){.cal-al-ring b,.cal-al-ring span{animation:none}}
@@ -999,7 +999,7 @@ function agendaHTML(){
   // not connected yet: one clear call to action (the big card), not a status bar and a card saying the same thing
   let h = !st.syncedAt && !st.local.length ? '' : syncBar();
   if (!st.syncedAt && !st.local.length){
-    h += `<div class="card cal-hero-empty"><div class="big">${gi('cal')}</div><h3>See your iPhone calendar here</h3><p>Jarvis reads your calendar each time you open it with the Action Button. Then just ask “What's on my schedule?”</p><button class="cal-btn" data-cal-tab="connect">Show me how</button></div>`;
+    h += `<div class="card cal-hero-empty"><div class="big">${gi('cal')}</div><h3>See your iPhone calendar here</h3><p>Updates each time you open Jarvis with the Action Button. Then ask “What's on my schedule?”</p><button class="cal-btn" data-cal-tab="connect">Show me how</button></div>`;
   } else {
     const nx = nextTimed();
     if (nx){
@@ -1035,7 +1035,7 @@ function alarmsHTML(){
   }).join('');
   // alarms in the iPhone Clock app, from the Action Button shortcut (features/health.js)
   try { const ca = J.health && J.health.store.alarms; if (ca){ const cl = J.health.iphoneAlarms();
-    h += `<div class="section-h"><h3>In your iPhone Clock</h3><span style="color:var(--muted);font-size:12.5px">synced ${esc(sinceText(ca.at))}</span></div>` + (cl.length ? cl.map(a=>{ const d = new Date(); d.setHours(a.h, a.m, 0, 0);
+    h += `<div class="section-h"><h3>In your iPhone Clock</h3><span style="color:var(--muted);font-size:var(--fs-xs)">synced ${esc(sinceText(ca.at))}</span></div>` + (cl.length ? cl.map(a=>{ const d = new Date(); d.setHours(a.h, a.m, 0, 0);
       return `<div class="cal-ev rem"><div class="tm">${esc(tfmt(d.getTime()))}<small>${a.on == null ? 'Clock' : a.on ? 'On' : 'Off'}</small></div><div class="bar"></div><div class="bd"><b>${esc(a.label || 'Alarm')}</b><small>${a.on === false ? 'Switched off in the Clock app' : 'Rings from your iPhone Clock app'}</small></div></div>`; }).join('') : `<div class="empty" style="padding:16px">No alarms in your Clock app at the last sync.</div>`); } } catch(e){}
   const perm = ('Notification' in window) ? Notification.permission : 'unsupported';
   h += `<div class="section-h"><h3>While Jarvis is open</h3></div>
@@ -1051,24 +1051,24 @@ function copyRow(text, label){ return `<div class="cal-copy"><span>${esc(label |
 function stepHTML(n, html){ return `<div class="cal-step"><div class="n">${n}</div><div class="tx">${html}</div></div>`; }
 /* ---------- Part 3: one Shortcut brings calendar, Health and Clock alarms (#sync=…) ---------- */
 J.css(`
-.cal-blk{border:1px solid var(--card-border,var(--line));border-radius:16px;margin:10px 0;background:var(--fill,var(--bg2));overflow:hidden}
+.cal-blk{border:1px solid var(--card-border,var(--line));border-radius:var(--r-md);margin:10px 0;background:var(--fill,var(--bg2));overflow:hidden}
 [id^="cal-step"],[id^="cal-blk"]{scroll-margin-top:calc(64px + var(--safe-t,0px))}
-.cal-blk>summary{list-style:none;display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;font-weight:700;font-size:14.5px;min-height:48px}
+.cal-blk>summary{list-style:none;display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;font-weight:var(--fw-bold);font-size:var(--fs-base);min-height:48px}
 .cal-blk>summary::-webkit-details-marker{display:none}
-.cal-blk>summary .tg{margin-left:auto;font-size:11px;font-weight:800;padding:3px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent-ink);white-space:nowrap}
+.cal-blk>summary .tg{margin-left:auto;font-size:var(--fs-2xs);font-weight:var(--fw-bold);padding:3px 8px;border-radius:var(--r-pill);background:var(--accent-soft);color:var(--accent-ink);white-space:nowrap}
 .cal-blk>summary .tg.opt{background:var(--line);color:var(--muted)}
 .cal-blk>summary .tg.ok{background:rgba(34,197,94,.14);color:var(--good-ink)}
 .cal-blk>summary::after{content:"";width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);margin:-4px 2px 0 4px;transition:transform .2s var(--ease);flex:none}
 .cal-blk[open]>summary::after{transform:rotate(-135deg);margin-top:4px}
-.cal-blk>summary .e{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;flex:none;color:#fff;font-size:16px}
+.cal-blk>summary .e{width:30px;height:30px;border-radius:var(--r-xs);display:grid;place-items:center;flex:none;color:#fff;font-size:var(--fs-md)}
 .cal-blk>summary .e svg{width:18px;height:18px}
 .cal-blk .in{padding:0 14px 6px;border-top:1px solid var(--sep,var(--line));background:var(--card-solid,var(--card))}
 .cal-blk .in>p{margin:10px 0 2px}
 .cal-diag{display:grid;gap:2px;margin-top:8px}
-.cal-diag div{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:13.5px}
+.cal-diag div{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:var(--fs-sm)}
 .cal-diag div:first-child{border-top:0}
 .cal-diag b{flex:1;min-width:0;font-weight:650}
-.cal-diag span{color:var(--muted);font-size:12.5px;text-align:right}
+.cal-diag span{color:var(--muted);font-size:var(--fs-xs);text-align:right}
 .cal-diag i{font-style:normal;width:20px;text-align:center;flex:none}
 `);
 function syncRecipeHTML(){
@@ -1138,12 +1138,12 @@ function syncRecipeHTML(){
       ${stepHTML(4, 'If an older <b>URL Encode</b> or <b>Open URLs</b> with <code>#cal=</code> is still there, delete it: touch and hold it, then <b>Delete</b>.')}
       ${stepHTML(5, 'Tap <b>Done</b>, then press your Action Button. The first time, iPhone asks to read your Calendar, Health and Clock: tap <b>Allow</b>, and in the Health screen tap <b>Turn On All</b>. Jarvis opens and tells you what arrived.')}
     </div></details>
-    <div class="cal-acts"><a class="cal-btn" href="${esc(syncLink())}">Test it: run my shortcut</a><span style="color:var(--muted);font-size:12.5px;align-self:center">${st.syncedAt || (H && H.syncedAt) ? 'Last synced ' + esc(sinceText(Math.max(st.syncedAt || 0, (H && H.syncedAt) || 0))) : 'Not synced yet'}</span></div>`;
+    <div class="cal-acts"><a class="cal-btn" href="${esc(syncLink())}">Test it: run my shortcut</a><span style="color:var(--muted);font-size:var(--fs-xs);align-self:center">${st.syncedAt || (H && H.syncedAt) ? 'Last synced ' + esc(sinceText(Math.max(st.syncedAt || 0, (H && H.syncedAt) || 0))) : 'Not synced yet'}</span></div>`;
   // what arrived last time
   if (last){
     const rows = [['calendar','cal','Calendar', g => `${plural(g.n,'event')}`], ['steps','steps','Steps', g => J.health && g.v != null ? Number(g.v).toLocaleString('en-US') : ''], ['energy','flame','Active energy', g => g.v + ' kcal'], ['heart','heart','Resting heart rate', g => g.v + ' bpm'], ['weight','scale','Weight', g => g.unit === 'lb' ? (g.v/0.45359237).toFixed(1) + ' lb' : g.v + ' kg'], ['sleep','moon','Sleep', g => g.none ? 'nothing for last night' : `${Math.floor(g.v/60)}h ${String(Math.round(g.v)%60).padStart(2,'0')}m`], ['workouts','run','Workouts', g => `${g.n} today`], ['alarms','alarm','Clock alarms', g => plural(g.n,'alarm')]];
     const why = g => g.why === 'unreadable dates' ? 'dates unreadable: use ISO 8601' : g.why === 'empty' ? 'sent, but empty' : g.why === 'unreadable' ? 'could not read it' : g.why || 'could not read it';
-    h += `<div class="section-h" style="margin-top:16px"><h3>What arrived last time</h3><span style="color:var(--muted);font-size:12.5px">${esc(sinceText(last.at))}${last.size ? ` · ${(last.size/1024).toFixed(1)} KB` : ''}</span></div><div class="cal-diag">` +
+    h += `<div class="section-h" style="margin-top:16px"><h3>What arrived last time</h3><span style="color:var(--muted);font-size:var(--fs-xs)">${esc(sinceText(last.at))}${last.size ? ` · ${(last.size/1024).toFixed(1)} KB` : ''}</span></div><div class="cal-diag">` +
       rows.map(([k, e, l, f]) => { const g = got[k]; return `<div><i class="${g ? (g.ok ? 'ok' : 'bad') : ''}">${g ? (g.ok ? gi('check') : gi('info')) : '·'}</i><b><span class="cal-di">${hi(e)}</span>${l}</b><span>${g ? (g.ok ? esc(f(g)) : esc(why(g))) : 'not sent'}</span></div>`; }).join('') + `</div>`;
     if (last.size > 8000) h += `<p style="margin-top:8px">That link is long. If syncing gets slow, change the calendar filter from 7 days to 3.</p>`;
     if (last.empty) h += `<p style="margin-top:8px">Jarvis opened, but nothing came with it. Check that <b>Open URLs</b> ends with the <b>URL Encoded Text</b> bubble.</p>`;
@@ -1176,7 +1176,7 @@ function connectHTML(){
       <i>${gi('bell')}</i><span><b>Jarvis's own alarm: only while Jarvis is open</b> on screen. Use Nightstand mode at night.</span>
     </div></div>`;
   // Part 1
-  h += `<div class="card cal-part" id="cal-step-ics"><div class="cal-part-h"><div class="ic" style="background:rgba(109,93,252,.15);color:#6d5dfc">${gi('cal')}</div><div><b>1 · Calendar alerts</b><small>No setup needed</small></div></div>
+  h += `<div class="card cal-part" id="cal-step-ics"><div class="cal-part-h"><div class="ic" style="background:var(--accent-soft);color:var(--accent-ink)">${gi('cal')}</div><div><b>1 · Calendar alerts</b><small>No setup needed</small></div></div>
     <p>After every reminder, Jarvis offers <b>Add to Calendar</b>. ${isIOS && !icsRoute.ok && navigator.canShare ? 'Tap it. In the menu that opens, tap <b>Calendar</b> if you see it. If not, tap <b>Save to Files</b>, open the <b>Files</b> app, tap the file, then tap <b>Add</b>.' : 'Tap it, then tap <b>Add</b> (or <b>Add All</b>) on the iPhone screen that appears.'}</p>
     <div class="cal-acts"><a class="cal-btn" data-cal-test="ics" href="#">Test it: alert in 2 minutes</a></div>
     <p style="margin-top:10px">No alert sound? On your iPhone open <b>Settings → Sounds & Haptics → Calendar Alerts</b> and pick a sound.</p></div>`;
@@ -1197,7 +1197,7 @@ function connectHTML(){
   h += syncRecipeHTML();
   // settings
   h += `<div class="section-h"><h3>Preferences</h3></div><div class="set-group">
-    <div class="set-row"><div class="set-ic" style="background:rgba(109,93,252,.15);color:#6d5dfc">${gi('phone')}</div><div class="lbl"><b>After a new reminder</b><small>Show “Make it ring on your iPhone”</small></div><label class="switch"><input type="checkbox" data-cal-set="sheetAfter" ${st.sheetAfter?'checked':''}><span></span></label></div>
+    <div class="set-row"><div class="set-ic" style="background:var(--accent-soft);color:var(--accent-ink)">${gi('phone')}</div><div class="lbl"><b>After a new reminder</b><small>Show “Make it ring on your iPhone”</small></div><label class="switch"><input type="checkbox" data-cal-set="sheetAfter" ${st.sheetAfter?'checked':''}><span></span></label></div>
     <div class="set-row"><div class="set-ic" style="background:rgba(249,115,22,.15);color:#ea580c">${gi('spark')}</div><div class="lbl"><b>Button shown first</b><small>Wake-up alarms always offer the iPhone alarm first</small></div><select data-cal-pref><option value="calendar" ${st.pref!=='alarm'?'selected':''}>Calendar alert</option><option value="alarm" ${st.pref==='alarm'?'selected':''} ${st.alarmReady?'':'disabled'}>iPhone alarm</option></select></div>
   </div>`;
   return h;
@@ -1266,7 +1266,7 @@ J.addHomeCard({id:'calendar', order:38, render(el){
     const nx = nextTimed();
     if (nx && nx.start - now < 3*DAY){
       const today = eventsBetween(t0, addDays(t0,1)).filter(e=>e.end > now).length;
-      html = `<div class="section-h"><h3>Calendar</h3><button class="link" data-go="calendar">Agenda</button></div><div class="card cal-home" role="button" tabindex="0"><div class="ic">📅</div><div class="bd"><small>${nx.start <= now ? 'Now' : 'Next'} · ${esc(dayLabel(nx.start))} ${esc(tfmt(nx.start))}${today > 1 ? ` · ${today} today` : ''}</small><b>${esc(nx.title)}</b></div><div class="cd">${nx.start <= now ? 'now' : esc(until(nx.start))}</div></div>`;
+      html = `<div class="section-h"><h3>Calendar</h3><button class="link" data-go="calendar">Agenda</button></div><div class="card cal-home" role="button" tabindex="0"><div class="ic">${gi('cal')}</div><div class="bd"><small>${nx.start <= now ? 'Now' : 'Next'} · ${esc(dayLabel(nx.start))} ${esc(tfmt(nx.start))}${today > 1 ? ` · ${today} today` : ''}</small><b>${esc(nx.title)}</b></div><div class="cd">${nx.start <= now ? 'now' : esc(until(nx.start))}</div></div>`;
     } else if (!st.syncedAt && st.homeTip){
       html = `<div class="card cal-home" role="button" tabindex="0" style="margin-top:16px"><div class="ic">${gi('bell')}</div><div class="bd"><small>Never miss a reminder</small><b>Make reminders ring on your iPhone</b></div><button class="x" data-cal-x aria-label="Hide this tip">${gi('close')}</button></div>`;
     }

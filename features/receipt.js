@@ -911,7 +911,7 @@ Copy numbers exactly as printed; do not guess digits you cannot see (leave the f
   function paint(){ if (!viewEl) return; lastSig = ''; render(viewEl); }
 
   function html(){
-    const head = `<div class="rcpt-head"><div><h2>Receipts</h2><p class="lede">Snap a receipt. I'll read it and log the expense.</p></div></div>`;
+    const head = `<div class="rcpt-head"><div><h2>Receipts</h2><p class="lede">Snap a receipt and I'll log the expense.</p></div></div>`;
     if (st.screen === 'scanning') return head + scanningHTML();
     if (st.screen === 'review') return head + reviewHTML();
     if (st.screen === 'capture') return head + captureHTML();
@@ -936,9 +936,9 @@ Copy numbers exactly as printed; do not guess digits you cannot see (leave the f
     let out = scanHero();
     out += `<div class="grid2 rcpt-stats">
       <div class="card stat"><div class="label">This month</div><div class="val">${esc(J.fmt(Math.round(mTot*100)/100))}</div><div class="delta" style="color:var(--muted)">${month.length} receipt${month.length === 1 ? '' : 's'}</div></div>
-      <div class="card stat"><div class="label">Top store</div><div class="val rcpt-ell" style="font-size:18px;margin-top:7px">${top ? esc(top[0]) : '—'}</div><div class="delta" style="color:var(--muted)">${top ? esc(J.fmt(Math.round(top[1]*100)/100)) + ' this month' : 'No receipts yet'}</div></div></div>`;
+      <div class="card stat"><div class="label">Top store</div><div class="val rcpt-ell" style="font-size:var(--fs-lg);margin-top:7px">${top ? esc(top[0]) : '—'}</div><div class="delta" style="color:var(--muted)">${top ? esc(J.fmt(Math.round(top[1]*100)/100)) + ' this month' : 'No receipts yet'}</div></div></div>`;
     if (!list.length){
-      out += `<div class="section-h"><h3>Your receipts</h3></div><div class="empty rcpt-empty"><div class="e-ic">${(J.icons && J.icons.receipt) || '🧾'}</div><b style="color:var(--text)">No receipts yet</b><br>Tap <b>Scan a receipt</b> or say “Scan a receipt”.<br><span style="font-size:12.5px">Everything is read on your phone. Nothing is uploaded.</span></div>`;
+      out += `<div class="section-h"><h3>Your receipts</h3></div><div class="empty rcpt-empty"><div class="e-ic">${(J.icons && J.icons.receipt) || '🧾'}</div><b style="color:var(--text)">No receipts yet</b><br>Tap <b>Scan a receipt</b> or say “Scan a receipt”.<br><span style="font-size:var(--fs-xs)">Everything is read on your phone. Nothing is uploaded.</span></div>`;
       return out;
     }
     const groups = []; const idx = {};
@@ -972,7 +972,7 @@ Copy numbers exactly as printed; do not guess digits you cannot see (leave the f
       <div class="rcpt-prog">
         <div class="rcpt-prog-top"><span class="rcpt-status">${esc(st.status || 'Getting your photo ready…')}</span><b class="rcpt-pct">${st.pct || 0}%</b></div>
         <div class="progress rcpt-bar"><i style="width:${st.pct || 0}%"></i></div>
-        ${st.first ? `<div class="rcpt-note">First scan only: I download the receipt reader (about 5 MB, one time). After that it's quicker, and it all runs on your phone.</div>` : `<div class="rcpt-muted" style="margin-top:10px;font-size:12.5px">Reading happens on your phone. Nothing is uploaded.</div>`}
+        ${st.first ? `<div class="rcpt-note">First scan only: I download the receipt reader (about 5 MB, one time). After that it's quicker, and it all runs on your phone.</div>` : `<div class="rcpt-muted" style="margin-top:10px;font-size:var(--fs-xs)">Reading happens on your phone. Nothing is uploaded.</div>`}
         <div class="rcpt-note warn rcpt-slow" ${st.slow ? '' : 'hidden'}>This is taking a while. The connection seems slow. You can keep waiting or type it in.</div>
         <button class="btn ghost rcpt-wide" data-act="manual" style="margin-top:12px">${IC.key} Type it in instead</button>
       </div></div>`;
@@ -1007,7 +1007,7 @@ Copy numbers exactly as printed; do not guess digits you cannot see (leave the f
         </div>
       </div>
       <div class="rcpt-items-h"><b>Items${d.items.length ? ` <span class="rcpt-muted">(${d.items.length})</span>` : ''}</b><span class="rcpt-muted rcpt-isum"></span></div>
-      <div class="rcpt-items">${d.items.length ? d.items.map((x,i)=>`<div class="rcpt-it" data-i="${i}"><input class="rcpt-it-n" value="${esc(x.n)}" aria-label="Item name"><input class="rcpt-it-p" inputmode="decimal" value="${esc(x.p ? numStr(x.p, d.currency) : '')}" placeholder="0.00" aria-label="Price"><button class="mini" data-act="rmitem" data-i="${i}" aria-label="Remove item">${IC.x}</button></div>`).join('') : `<div class="rcpt-muted" style="font-size:13px;padding:4px 2px 8px">${d.reason ? 'Optional.' : 'No items detected. That is fine, the total is what counts.'}</div>`}
+      <div class="rcpt-items">${d.items.length ? d.items.map((x,i)=>`<div class="rcpt-it" data-i="${i}"><input class="rcpt-it-n" value="${esc(x.n)}" aria-label="Item name"><input class="rcpt-it-p" inputmode="decimal" value="${esc(x.p ? numStr(x.p, d.currency) : '')}" placeholder="0.00" aria-label="Price"><button class="mini" data-act="rmitem" data-i="${i}" aria-label="Remove item">${IC.x}</button></div>`).join('') : `<div class="rcpt-muted" style="font-size:var(--fs-sm);padding:4px 2px 8px">${d.reason ? 'Optional.' : 'No items detected. That is fine, the total is what counts.'}</div>`}
         <button class="link" data-act="additem" style="padding:6px 2px">+ Add item</button></div>
       ${lowRead ? `<div class="rcpt-tips"><div class="rcpt-tips-h">${IC.bulb}<b>${d.blurry ? 'The photo looks a little blurry' : 'Tips for a clearer scan'}</b></div><ul><li>Lay the receipt flat on a dark table</li><li>Use good light and avoid shadows</li><li>Fill the screen and hold steady</li></ul>${camLabel('btn ghost rcpt-wide', `${IC.cam} Retake photo`)}</div>` : ''}
       <button class="btn rcpt-save" data-act="save">${IC.check}<span>Save expense</span></button>
@@ -1117,28 +1117,28 @@ Copy numbers exactly as printed; do not guess digits you cannot see (leave the f
      ========================================================= */
   J.css(`
   .rcpt-file{position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0}
-  .rcpt-muted{color:var(--muted);font-size:13px}
+  .rcpt-muted{color:var(--muted);font-size:var(--fs-sm)}
   .rcpt-ell{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
   .rcpt-head{display:flex;align-items:flex-start;justify-content:space-between}
-  .rcpt-hero{position:relative;overflow:hidden;border-radius:26px;padding:20px;background:linear-gradient(140deg,#0f766e 0%,#0d9488 38%,#0ea5e9 100%);color:#fff;box-shadow:0 18px 40px rgba(13,148,136,.32)}
+  .rcpt-hero{position:relative;overflow:hidden;border-radius:var(--r-xl);padding:20px;background:var(--hero);color:var(--on-hero);box-shadow:var(--sh-hero)}
   .rcpt-hero::before{content:"";position:absolute;right:-50px;top:-60px;width:190px;height:190px;border-radius:50%;background:rgba(255,255,255,.12)}
   .rcpt-hero::after{content:"";position:absolute;left:-40px;bottom:-70px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.07)}
-  .rcpt-hero-art{position:absolute;right:18px;top:18px;width:46px;height:46px;border-radius:14px;background:rgba(255,255,255,.18);display:grid;place-items:center;z-index:1}
+  .rcpt-hero-art{position:absolute;right:18px;top:18px;width:46px;height:46px;border-radius:var(--r-md);background:rgba(255,255,255,.18);display:grid;place-items:center;z-index:1}
   .rcpt-hero-art svg{width:24px;height:24px}
   .rcpt-hero-t{position:relative;z-index:1;padding-right:58px;margin-bottom:16px}
-  .rcpt-hero-t b{display:block;font-size:21px;font-weight:800;letter-spacing:-.4px}
-  .rcpt-hero-t span{display:block;font-size:13.5px;opacity:.88;margin-top:3px}
-  .rcpt-big{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:58px;border-radius:18px;background:#fff;color:#0f766e;font-weight:800;font-size:17px;cursor:pointer;box-shadow:0 10px 24px rgba(0,0,0,.18);transition:transform .15s var(--ease);user-select:none;-webkit-user-select:none}
+  .rcpt-hero-t b{display:block;font-size:var(--fs-xl);font-weight:var(--fw-bold);letter-spacing:-.4px}
+  .rcpt-hero-t span{display:block;font-size:var(--fs-sm);opacity:.88;margin-top:3px}
+  .rcpt-big{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:58px;border-radius:var(--r-lg);background:#fff;color:var(--hero-ink);font-weight:var(--fw-bold);font-size:var(--fs-lg);cursor:pointer;box-shadow:0 10px 24px rgba(0,0,0,.18);transition:transform .15s var(--ease);user-select:none;-webkit-user-select:none}
   .rcpt-big:active{transform:scale(.98)}
   .rcpt-big svg{width:24px;height:24px}
   .rcpt-hero-row{position:relative;z-index:1;display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
-  .rcpt-sub{display:flex;align-items:center;justify-content:center;gap:8px;min-height:46px;border-radius:14px;border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.14);color:#fff;font-weight:700;font-size:14px;cursor:pointer;padding:0 10px;user-select:none;-webkit-user-select:none}
+  .rcpt-sub{display:flex;align-items:center;justify-content:center;gap:8px;min-height:46px;border-radius:var(--r-md);border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.14);color:#fff;font-weight:var(--fw-bold);font-size:var(--fs-sm);cursor:pointer;padding:0 10px;user-select:none;-webkit-user-select:none}
   .rcpt-sub svg{width:19px;height:19px;flex:none}
   .rcpt-sub:active{transform:scale(.98)}
   .rcpt-review .rcpt-sub,.rcpt-capture .rcpt-sub{border-color:var(--line);background:var(--card);color:var(--text)}
   .rcpt-stats{margin-top:12px}
   .rcpt-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  .rcpt-tile{display:flex;flex-direction:column;text-align:left;padding:0;border:1px solid var(--line);background:var(--card);border-radius:20px;overflow:hidden;cursor:pointer;transition:transform .15s var(--ease);min-width:0}
+  .rcpt-tile{display:flex;flex-direction:column;text-align:left;padding:0;border:1px solid var(--line);background:var(--card);border-radius:var(--r-lg);overflow:hidden;cursor:pointer;transition:transform .15s var(--ease);min-width:0}
   .rcpt-tile:active{transform:scale(.97)}
   .rcpt-tile.rcpt-new{animation:rcptPop .7s var(--ease);border-color:var(--accent)}
   @keyframes rcptPop{0%{transform:scale(.9);opacity:0}60%{transform:scale(1.02);opacity:1}100%{transform:none}}
@@ -1146,30 +1146,30 @@ Copy numbers exactly as printed; do not guess digits you cannot see (leave the f
   .rcpt-thumb img{width:100%;height:100%;object-fit:cover;object-position:top;display:block}
   .rcpt-ph{display:grid;place-items:center;width:100%;height:100%;color:var(--faint-ink);background:linear-gradient(135deg,var(--accent-soft),transparent)}
   .rcpt-ph svg{width:34px;height:34px}
-  .rcpt-cat{position:absolute;left:8px;bottom:8px;width:28px;height:28px;border-radius:9px;display:grid;place-items:center;font-size:14px;box-shadow:0 4px 10px rgba(0,0,0,.25)}
+  .rcpt-cat{position:absolute;left:8px;bottom:8px;width:28px;height:28px;border-radius:var(--r-xs);display:grid;place-items:center;font-size:var(--fs-sm);box-shadow:0 4px 10px rgba(0,0,0,.25)}
   .rcpt-tile-b{padding:10px 12px 12px;min-width:0}
-  .rcpt-tile-m{font-weight:700;font-size:14px}
+  .rcpt-tile-m{font-weight:var(--fw-bold);font-size:var(--fs-sm)}
   .rcpt-tile-r{display:flex;align-items:baseline;justify-content:space-between;gap:6px;margin-top:2px}
-  .rcpt-tile-r b{font-size:15px;font-weight:800;white-space:nowrap}
-  .rcpt-tile-r span{color:var(--muted);font-size:12px;white-space:nowrap}
-  .rcpt-empty b{font-size:15px}
+  .rcpt-tile-r b{font-size:var(--fs-base);font-weight:var(--fw-bold);white-space:nowrap}
+  .rcpt-tile-r span{color:var(--muted);font-size:var(--fs-xs);white-space:nowrap}
+  .rcpt-empty b{font-size:var(--fs-base)}
   /* capture */
   .rcpt-capture{display:flex;flex-direction:column;align-items:center;text-align:center;padding:8px 0}
-  .rcpt-capture .rcpt-big{background:linear-gradient(135deg,#0d9488,#0ea5e9);color:#fff;min-height:64px;font-size:18px;box-shadow:0 14px 30px rgba(14,165,233,.35)}
+  .rcpt-capture .rcpt-big{background:var(--grad);color:var(--on-accent);min-height:64px;font-size:var(--fs-lg);box-shadow:var(--sh-accent)}
   .rcpt-capture .rcpt-hero-row{width:100%}
   .rcpt-pulse{animation:rcptPulse 2s ease-in-out infinite}
-  @keyframes rcptPulse{0%,100%{box-shadow:0 14px 30px rgba(14,165,233,.35),0 0 0 0 rgba(14,165,233,.45)}50%{box-shadow:0 14px 30px rgba(14,165,233,.35),0 0 0 12px rgba(14,165,233,0)}}
-  .rcpt-frame{position:relative;width:170px;height:210px;margin:10px auto 18px;border-radius:20px;background:var(--card);border:1px solid var(--line);display:grid;place-items:center}
+  @keyframes rcptPulse{0%,100%{box-shadow:var(--sh-accent),0 0 0 0 color-mix(in srgb,var(--accent) 45%,transparent)}50%{box-shadow:var(--sh-accent),0 0 0 12px transparent}}
+  .rcpt-frame{position:relative;width:170px;height:210px;margin:10px auto 18px;border-radius:var(--r-lg);background:var(--card);border:1px solid var(--line);display:grid;place-items:center}
   .rcpt-frame>i{position:absolute;width:28px;height:28px;border:3.5px solid var(--accent2);border-radius:4px}
   .rcpt-frame>i:nth-child(1){left:-6px;top:-6px;border-right:0;border-bottom:0;border-top-left-radius:14px}
   .rcpt-frame>i:nth-child(2){right:-6px;top:-6px;border-left:0;border-bottom:0;border-top-right-radius:14px}
   .rcpt-frame>i:nth-child(3){left:-6px;bottom:-6px;border-right:0;border-top:0;border-bottom-left-radius:14px}
   .rcpt-frame>i:nth-child(4){right:-6px;bottom:-6px;border-left:0;border-top:0;border-bottom-right-radius:14px}
   .rcpt-frame-ic{color:var(--muted)} .rcpt-frame-ic svg{width:64px;height:64px;opacity:.7}
-  .rcpt-cap-t{font-size:19px;font-weight:800;letter-spacing:-.3px}
+  .rcpt-cap-t{font-size:var(--fs-xl);font-weight:var(--fw-bold);letter-spacing:-.3px}
   /* scanning */
   .rcpt-scanning{padding:12px}
-  .rcpt-scan{position:relative;border-radius:16px;overflow:hidden;background:#05070d;height:min(52vh,420px);display:grid;place-items:center}
+  .rcpt-scan{position:relative;border-radius:var(--r-md);overflow:hidden;background:#05070d;height:min(52vh,420px);display:grid;place-items:center}
   .rcpt-scan img{max-width:100%;max-height:100%;object-fit:contain;display:block;filter:saturate(.85)}
   .rcpt-beam{position:absolute;left:0;right:0;top:0;height:90px;background:linear-gradient(180deg,transparent,rgba(34,211,238,.16) 70%,rgba(34,211,238,.38));border-bottom:2.5px solid #22d3ee;box-shadow:0 8px 24px rgba(34,211,238,.6);animation:rcptBeam 2.2s cubic-bezier(.45,0,.55,1) infinite alternate}
   @keyframes rcptBeam{from{transform:translateY(-90px)}to{transform:translateY(calc(min(52vh,420px) - 2px))}}
@@ -1180,12 +1180,12 @@ Copy numbers exactly as printed; do not guess digits you cannot see (leave the f
   .rcpt-c.c4{right:12px;bottom:12px;border-left:0;border-top:0;border-bottom-right-radius:10px}
   .rcpt-prog{padding:16px 4px 4px}
   .rcpt-prog-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
-  .rcpt-status{font-weight:700;font-size:16px}
-  .rcpt-pct{font-size:22px;font-weight:800;letter-spacing:-.4px;font-variant-numeric:tabular-nums;color:var(--accent-ink)}
+  .rcpt-status{font-weight:var(--fw-bold);font-size:var(--fs-md)}
+  .rcpt-pct{font-size:var(--fs-2xl);font-weight:var(--fw-heavy);letter-spacing:-.4px;font-variant-numeric:tabular-nums;color:var(--accent-ink)}
   .rcpt-bar{margin-top:10px} .rcpt-bar i{transition:width .35s var(--ease)}
   .rcpt-wide{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px}
   .rcpt-wide svg{width:19px;height:19px}
-  .rcpt-note{display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.4;border-radius:14px;padding:11px 13px;margin-top:12px;background:var(--accent-soft);color:var(--text)}
+  .rcpt-note{display:flex;gap:8px;align-items:flex-start;font-size:var(--fs-sm);line-height:1.4;border-radius:var(--r-md);padding:11px 13px;margin-top:12px;background:var(--accent-soft);color:var(--text)}
   .rcpt-note svg{width:17px;height:17px;flex:none;margin-top:1px}
   .rcpt-note.warn{background:rgba(245,158,11,.14);color:var(--text);box-shadow:inset 3px 0 0 var(--warn)}
   .rcpt-note.bad{background:rgba(244,63,94,.12);color:var(--text);box-shadow:inset 3px 0 0 var(--bad)}
@@ -1194,73 +1194,73 @@ Copy numbers exactly as printed; do not guess digits you cannot see (leave the f
   /* review */
   .rcpt-review{padding:16px}
   .rcpt-r-top{display:flex;gap:12px;align-items:center}
-  .rcpt-r-img{width:58px;height:74px;border-radius:12px;object-fit:cover;object-position:top;flex:none;border:1px solid var(--line);background:var(--bg2)}
+  .rcpt-r-img{width:58px;height:74px;border-radius:var(--r-sm);object-fit:cover;object-position:top;flex:none;border:1px solid var(--line);background:var(--bg2)}
   .rcpt-r-img.rcpt-ph svg{width:26px;height:26px}
-  .rcpt-r-title{font-size:18px;font-weight:800;letter-spacing:-.3px;display:block}
+  .rcpt-r-title{font-size:var(--fs-lg);font-weight:var(--fw-bold);letter-spacing:-.3px;display:block}
   .rcpt-form{display:flex;flex-direction:column;gap:12px;margin-top:14px}
-  .rcpt-field{display:flex;flex-direction:column;gap:6px;min-width:0;border-radius:14px}
-  .rcpt-field>span{font-size:12.5px;font-weight:700;color:var(--muted);letter-spacing:.2px}
-  .rcpt-field em{font-style:normal;font-weight:500;color:var(--warn-ink)}
-  .rcpt-form input,.rcpt-form select,.rcpt-it input{width:100%;max-width:none;background:var(--bg2);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:12px;font:inherit;font-size:16px;outline:none;min-width:0;-webkit-appearance:none;appearance:none}
+  .rcpt-field{display:flex;flex-direction:column;gap:6px;min-width:0;border-radius:var(--r-md)}
+  .rcpt-field>span{font-size:var(--fs-xs);font-weight:var(--fw-bold);color:var(--muted);letter-spacing:.2px}
+  .rcpt-field em{font-style:normal;font-weight:var(--fw-med);color:var(--warn-ink)}
+  .rcpt-form input,.rcpt-form select,.rcpt-it input{width:100%;max-width:none;background:var(--bg2);color:var(--text);border:1px solid var(--line);border-radius:var(--r-sm);padding:12px;font:inherit;font-size:var(--fs-md);outline:none;min-width:0;-webkit-appearance:none;appearance:none}
   .rcpt-form select{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 17px) 50%,calc(100% - 12px) 50%;background-size:5px 5px;background-repeat:no-repeat;padding-right:28px}
   .rcpt-form input:focus,.rcpt-form select:focus,.rcpt-it input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
   :root[data-theme="dark"] .rcpt-form input,:root[data-theme="dark"] .rcpt-form select{color-scheme:dark}
   .rcpt-money{display:flex;gap:8px}
-  .rcpt-money select{width:86px;flex:none;font-weight:700}
-  .rcpt-money input{flex:1;font-size:22px !important;font-weight:800;letter-spacing:-.3px;padding:10px 12px !important}
+  .rcpt-money select{width:86px;flex:none;font-weight:var(--fw-bold)}
+  .rcpt-money input{flex:1;font-size:var(--fs-2xl) !important;font-weight:var(--fw-heavy);letter-spacing:-.3px;padding:10px 12px !important}
   .rcpt-attn .rcpt-money input{border-color:var(--warn);box-shadow:0 0 0 3px rgba(245,158,11,.18)}
   .rcpt-shake{animation:rcptShake .45s}
   @keyframes rcptShake{20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
   .rcpt-alt{margin-top:-4px}
-  .rcpt-alt .link{padding:0 2px;font-size:13px}
-  .rcpt-conv{display:flex;flex-direction:column;gap:10px;background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:12px}
+  .rcpt-alt .link{padding:0 2px;font-size:var(--fs-sm)}
+  .rcpt-conv{display:flex;flex-direction:column;gap:10px;background:var(--bg2);border:1px solid var(--line);border-radius:var(--r-md);padding:12px}
   .rcpt-conv[hidden]{display:none}
-  .rcpt-rate{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--muted);font-weight:600}
-  .rcpt-form .rcpt-rate input{width:120px;flex:none;padding:8px 10px;font-size:15px;font-weight:700;background:var(--card)}
-  .rcpt-chk{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600}
+  .rcpt-rate{display:flex;align-items:center;gap:8px;font-size:var(--fs-sm);color:var(--muted);font-weight:var(--fw-semi)}
+  .rcpt-form .rcpt-rate input{width:120px;flex:none;padding:8px 10px;font-size:var(--fs-base);font-weight:var(--fw-bold);background:var(--card)}
+  .rcpt-chk{display:flex;align-items:center;gap:8px;font-size:var(--fs-sm);font-weight:var(--fw-semi)}
   .rcpt-chk input{width:20px !important;height:20px;padding:0 !important;accent-color:var(--accent);-webkit-appearance:auto !important;appearance:auto !important}
-  .rcpt-conv-out{font-size:13px;color:var(--muted)}
+  .rcpt-conv-out{font-size:var(--fs-sm);color:var(--muted)}
   .rcpt-conv-out b{color:var(--text)}
   .rcpt-row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:10px}
-  .rcpt-hint{font-size:12px;color:var(--warn-ink);font-weight:600;margin-top:-1px}
+  .rcpt-hint{font-size:var(--fs-xs);color:var(--warn-ink);font-weight:var(--fw-semi);margin-top:-1px}
   .rcpt-items-h{display:flex;justify-content:space-between;align-items:baseline;margin:18px 2px 8px;gap:8px}
-  .rcpt-isum{font-size:12.5px;text-align:right}
+  .rcpt-isum{font-size:var(--fs-xs);text-align:right}
   .rcpt-items{display:flex;flex-direction:column;gap:6px}
   .rcpt-it{display:grid;grid-template-columns:1fr 92px 36px;gap:6px;align-items:center}
   .rcpt-it .mini{width:36px;height:40px}
   .rcpt-items>.link{min-height:40px}
-  .rcpt-it input{padding:9px 10px;font-size:14.5px;border-radius:10px}
-  .rcpt-it .rcpt-it-p{text-align:right;font-weight:700}
-  .rcpt-tips{margin-top:14px;border:1px dashed var(--line);border-radius:16px;padding:12px 14px}
+  .rcpt-it input{padding:9px 10px;font-size:var(--fs-base);border-radius:var(--r-sm)}
+  .rcpt-it .rcpt-it-p{text-align:right;font-weight:var(--fw-bold)}
+  .rcpt-tips{margin-top:14px;border:1px dashed var(--line);border-radius:var(--r-md);padding:12px 14px}
   .rcpt-tips-h{display:flex;align-items:center;gap:8px} .rcpt-tips-h svg{width:18px;height:18px;color:var(--warn-ink)}
-  .rcpt-tips ul{margin:6px 0 10px;padding-left:20px;color:var(--muted);font-size:13px}
-  .rcpt-save{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;min-height:56px;font-size:17px;margin-top:18px;border-radius:16px;box-shadow:0 10px 24px rgba(109,93,252,.32)}
+  .rcpt-tips ul{margin:6px 0 10px;padding-left:20px;color:var(--muted);font-size:var(--fs-sm)}
+  .rcpt-save{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;min-height:56px;font-size:var(--fs-lg);margin-top:18px;border-radius:var(--r-md);box-shadow:var(--sh-accent)}
   .rcpt-save svg{width:20px;height:20px}
-  .rcpt-raw{margin-top:14px;font-size:13px;color:var(--muted)}
-  .rcpt-raw summary{cursor:pointer;font-weight:600;padding:4px 2px}
-  .rcpt-raw pre{white-space:pre-wrap;word-break:break-word;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:10px;max-height:220px;overflow:auto;font-size:12px;margin:8px 0 0}
+  .rcpt-raw{margin-top:14px;font-size:var(--fs-sm);color:var(--muted)}
+  .rcpt-raw summary{cursor:pointer;font-weight:var(--fw-semi);padding:4px 2px}
+  .rcpt-raw pre{white-space:pre-wrap;word-break:break-word;background:var(--bg2);border:1px solid var(--line);border-radius:var(--r-sm);padding:10px;max-height:220px;overflow:auto;font-size:var(--fs-xs);margin:8px 0 0}
   /* detail modal */
   .rcpt-detail .rcpt-d-head{display:flex;gap:12px;align-items:center;margin-bottom:12px}
-  .rcpt-d-ic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:20px;flex:none}
-  .rcpt-d-img{border-radius:14px;overflow:hidden;background:var(--card);border:1px solid var(--line);max-height:42vh;overflow-y:auto;text-align:center}
+  .rcpt-d-ic{width:42px;height:42px;border-radius:var(--r-sm);display:grid;place-items:center;font-size:var(--fs-xl);flex:none}
+  .rcpt-d-img{border-radius:var(--r-md);overflow:hidden;background:var(--card);border:1px solid var(--line);max-height:42vh;overflow-y:auto;text-align:center}
   .rcpt-d-img img{max-width:100%;display:block;margin:0 auto}
   .rcpt-d-total{display:flex;justify-content:space-between;align-items:baseline;margin:14px 2px 8px}
-  .rcpt-d-total span{color:var(--muted);font-weight:600}
-  .rcpt-d-total b{font-size:26px;font-weight:800;letter-spacing:-.5px}
-  .rcpt-d-items{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:4px 12px;max-height:24vh;overflow-y:auto;margin-bottom:6px}
-  .rcpt-d-items div{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
+  .rcpt-d-total span{color:var(--muted);font-weight:var(--fw-semi)}
+  .rcpt-d-total b{font-size:var(--fs-3xl);font-weight:var(--fw-heavy);letter-spacing:-.5px}
+  .rcpt-d-items{background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);padding:4px 12px;max-height:24vh;overflow-y:auto;margin-bottom:6px}
+  .rcpt-d-items div{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:var(--fs-sm)}
   .rcpt-d-items div:last-child{border-bottom:0}
   .rcpt-d-items span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .rcpt-d-sum{color:var(--muted)}
   /* home card */
-  .rcpt-home{display:flex;align-items:center;gap:12px;margin-top:14px;padding:12px 12px 12px 14px;border-radius:20px;background:var(--card);border:1px solid var(--line);cursor:pointer;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+  .rcpt-home{display:flex;align-items:center;gap:12px;margin-top:14px;padding:12px 12px 12px 14px;border-radius:var(--r-lg);background:var(--card);border:1px solid var(--line);cursor:pointer;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
   .rcpt-home:active{transform:scale(.99)}
-  .rcpt-home-ic{width:44px;height:44px;border-radius:14px;flex:none;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,#0d9488,#0ea5e9);box-shadow:0 8px 18px rgba(13,148,136,.3)}
+  .rcpt-home-ic{width:44px;height:44px;border-radius:var(--r-md);flex:none;display:grid;place-items:center;color:#fff;background:var(--c-receipts);box-shadow:inset 0 1px 0 rgba(255,255,255,.18)}
   .rcpt-home-ic svg{width:22px;height:22px}
   .rcpt-home-b{flex:1;min-width:0}
-  .rcpt-home-b b{display:block;font-size:15px}
-  .rcpt-home-b span{color:var(--muted);font-size:12.5px;margin-top:1px;line-height:1.3;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;text-wrap:balance;overflow-wrap:anywhere}
-  .rcpt-home-btn{flex:none;display:flex;align-items:center;gap:6px;min-height:42px;padding:0 14px;border-radius:13px;background:var(--accent);color:var(--on-accent,#fff);font-weight:700;font-size:14px;cursor:pointer;box-shadow:0 6px 16px rgba(109,93,252,.32);user-select:none;-webkit-user-select:none}
+  .rcpt-home-b b{display:block;font-size:var(--fs-base)}
+  .rcpt-home-b span{color:var(--muted);font-size:var(--fs-xs);margin-top:1px;line-height:1.3;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;text-wrap:balance;overflow-wrap:anywhere}
+  .rcpt-home-btn{flex:none;display:flex;align-items:center;gap:6px;min-height:42px;padding:0 14px;border-radius:var(--r-sm);background:var(--accent);color:var(--on-accent,#fff);font-weight:var(--fw-bold);font-size:var(--fs-sm);cursor:pointer;box-shadow:var(--sh-accent);user-select:none;-webkit-user-select:none}
   .rcpt-home-btn svg{width:18px;height:18px}
   @media (prefers-reduced-motion: reduce){.rcpt-beam,.rcpt-pulse{animation:none}}
   `);

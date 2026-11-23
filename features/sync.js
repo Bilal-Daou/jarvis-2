@@ -234,7 +234,7 @@ J.css(`.sy-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margi
 .sy-dot.ok{background:#34c759}.sy-dot.wait{background:#ff9f0a}.sy-dot.bad{background:#ff3b30}
 .sy-days{display:flex;flex-direction:column;gap:8px;max-height:50vh;overflow:auto;margin-bottom:12px}
 #syncBox .set-row.wrap .lbl{flex:1 1 calc(100% - 45px)}
-.sy-small{color:var(--muted);font-size:13px;margin:0 0 12px}`);
+.sy-small{color:var(--muted);font-size:var(--fs-sm);margin:0 0 12px}`);
 const ago = t => { const m = Math.round((now() - t) / 60e3); return m < 1 ? 'just now' : m < 60 ? m + ' min ago' : Math.round(m / 60) + ' h ago'; };
 const esc = J.esc;
 let box = null;

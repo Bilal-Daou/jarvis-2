@@ -580,65 +580,65 @@ J.css(`
 .hl-sync{display:flex;align-items:center;gap:12px;padding:12px 14px;margin-bottom:14px}
 .hl-dot{width:10px;height:10px;border-radius:50%;flex:none;background:var(--good);box-shadow:0 0 0 4px rgba(34,197,94,.16)}
 .hl-dot.warn{background:var(--warn);box-shadow:0 0 0 4px rgba(245,158,11,.16)}.hl-dot.off{background:var(--faint);box-shadow:0 0 0 4px var(--line)}
-.hl-sync .lbl{flex:1;min-width:0}.hl-sync .lbl b{display:block;font-size:14px}.hl-sync .lbl small{color:var(--muted);font-size:12.5px}
-.hl-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:12px;padding:8px 13px;min-height:40px;font:inherit;font-weight:700;font-size:13.5px;cursor:pointer;background:var(--accent);color:var(--on-accent,#fff);text-decoration:none;white-space:nowrap}
+.hl-sync .lbl{flex:1;min-width:0}.hl-sync .lbl b{display:block;font-size:var(--fs-sm)}.hl-sync .lbl small{color:var(--muted);font-size:var(--fs-xs)}
+.hl-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:var(--r-sm);padding:8px 13px;min-height:40px;font:inherit;font-weight:var(--fw-bold);font-size:var(--fs-sm);cursor:pointer;background:var(--accent);color:var(--on-accent,#fff);text-decoration:none;white-space:nowrap}
 .hl-btn svg{width:16px;height:16px}
 .hl-btn.ghost{background:var(--fill,var(--card));color:var(--text);border:0}
 .hl-btn:active,.hl-card:active{transform:scale(.98)}
 .hl-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .hl-card{position:relative;min-width:0;background:var(--card);border:1px solid var(--card-border,var(--line));box-shadow:var(--card-shadow,none);border-radius:var(--radius,20px);padding:14px;transition:transform .15s var(--ease)}
 .hl-card.wide{grid-column:1/-1}
-.hl-k{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;letter-spacing:-.005em;color:var(--muted)}
-.hl-k i{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;flex:none}
+.hl-k{display:flex;align-items:center;gap:8px;font-size:var(--fs-sm);font-weight:var(--fw-semi);letter-spacing:-.005em;color:var(--muted)}
+.hl-k i{width:26px;height:26px;border-radius:var(--r-xs);display:grid;place-items:center;flex:none}
 .hl-k i svg{width:15px;height:15px}
-.hl-v{font-size:28px;font-weight:750;letter-spacing:-.035em;line-height:1.1;margin-top:10px;font-variant-numeric:tabular-nums}
-.hl-v small{font-size:14px;font-weight:700;color:var(--muted);letter-spacing:0;margin-left:3px}
-.hl-s{font-size:12.5px;color:var(--muted);margin-top:4px;line-height:1.35}
+.hl-v{font-size:var(--fs-3xl);font-weight:var(--fw-heavy);letter-spacing:-.035em;line-height:1.1;margin-top:10px;font-variant-numeric:tabular-nums}
+.hl-v small{font-size:var(--fs-sm);font-weight:var(--fw-bold);color:var(--muted);letter-spacing:0;margin-left:3px}
+.hl-s{font-size:var(--fs-xs);color:var(--muted);margin-top:4px;line-height:1.35}
 .hl-s.good{color:var(--good-ink)}.hl-s.warn{color:var(--warn-ink)}
-.hl-miss{font-size:13px;color:var(--faint-ink);margin-top:12px;line-height:1.35}
+.hl-miss{font-size:var(--fs-sm);color:var(--faint-ink);margin-top:12px;line-height:1.35}
 .hl-steps{display:flex;gap:16px;align-items:center}
 .hl-ring{position:relative;width:96px;height:96px;flex:none}
 .hl-ring svg{width:96px;height:96px;transform:rotate(-90deg)}
-.hl-ring b{position:absolute;inset:0;display:grid;place-items:center;font-size:17px;font-weight:800;letter-spacing:-.4px}
+.hl-ring b{position:absolute;inset:0;display:grid;place-items:center;font-size:var(--fs-lg);font-weight:var(--fw-bold);letter-spacing:-.4px}
 .hl-bars{display:flex;align-items:flex-end;gap:6px;height:54px;margin-top:14px}
 .hl-bars div{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end;min-width:0}
 .hl-bars span{display:block;width:100%;max-width:26px;border-radius:6px 6px 3px 3px;background:var(--line);min-height:4px}
 .hl-bars span.on{background:linear-gradient(180deg,var(--c1),var(--c2))}
 .hl-bars span.goal{box-shadow:0 0 0 2px color-mix(in srgb,var(--good) 45%,transparent)}
-.hl-bars em{font-style:normal;font-size:10.5px;font-weight:700;color:var(--faint-ink)}
+.hl-bars em{font-style:normal;font-size:var(--fs-2xs);font-weight:var(--fw-bold);color:var(--faint-ink)}
 .hl-bars div.today em{color:var(--text)}
-.hl-stage{display:flex;height:10px;border-radius:999px;overflow:hidden;margin-top:12px;background:var(--line)}
+.hl-stage{display:flex;height:10px;border-radius:var(--r-pill);overflow:hidden;margin-top:12px;background:var(--line)}
 .hl-stage i{display:block;height:100%}
-.hl-leg{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:9px;font-size:12px;color:var(--muted)}
+.hl-leg{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:9px;font-size:var(--fs-xs);color:var(--muted)}
 .hl-leg span{display:inline-flex;align-items:center;gap:6px}.hl-leg span::before{content:"";width:8px;height:8px;border-radius:3px;background:var(--c)}
-.hl-leg b{color:var(--text);font-weight:700}
+.hl-leg b{color:var(--text);font-weight:var(--fw-bold)}
 .hl-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--sep,var(--line))}
 .hl-row:first-of-type{border-top:0}
-.hl-row .bd{flex:1;min-width:0}.hl-row .bd b{display:block;font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.hl-row .bd small{color:var(--muted);font-size:12.5px}
-.hl-row .tm{font-weight:800;font-size:17px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.hl-row .bd{flex:1;min-width:0}.hl-row .bd b{display:block;font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.hl-row .bd small{color:var(--muted);font-size:var(--fs-xs)}
+.hl-row .tm{font-weight:var(--fw-bold);font-size:var(--fs-lg);font-variant-numeric:tabular-nums;white-space:nowrap}
 .hl-row .tm.off{color:var(--faint-ink);text-decoration:line-through;text-decoration-thickness:1.5px}
 .hl-empty{text-align:center;padding:26px 18px}
-.hl-empty .big{width:68px;height:68px;margin:0 auto 12px;border-radius:22px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,#fb7185,#e11d48);box-shadow:0 14px 30px rgba(225,29,72,.3)}
+.hl-empty .big{width:68px;height:68px;margin:0 auto 12px;border-radius:var(--r-xl);display:grid;place-items:center;color:#fff;background:var(--c-health);box-shadow:inset 0 1px 0 rgba(255,255,255,.18)}
 .hl-empty .big svg{width:34px;height:34px}
-.hl-empty h3{margin:0 0 6px;font-size:19px;letter-spacing:-.3px}.hl-empty p{margin:0 0 14px;color:var(--muted);font-size:14px}
-.hl-list{margin:12px 0 0;padding:0;list-style:none;display:grid;gap:8px;text-align:left;font-size:13.5px}
+.hl-empty h3{margin:0 0 6px;font-size:var(--fs-xl);letter-spacing:-.3px}.hl-empty p{margin:0 0 14px;color:var(--muted);font-size:var(--fs-sm)}
+.hl-list{margin:12px 0 0;padding:0;list-style:none;display:grid;gap:8px;text-align:left;font-size:var(--fs-sm)}
 .hl-list li{display:flex;gap:10px;align-items:flex-start}.hl-list li i{font-style:normal;flex:none;color:var(--muted);margin-top:1px}.hl-list li i.ok{color:var(--good-ink)}.hl-list li i svg{width:18px;height:18px;display:block}
-.hl-note{font-size:12.5px;color:var(--muted);line-height:1.45;margin:14px 4px 0}
-.hl-set input{width:110px;font-size:16px!important}
+.hl-note{font-size:var(--fs-xs);color:var(--muted);line-height:1.45;margin:14px 4px 0}
+.hl-set input{width:110px;font-size:var(--fs-md)!important}
 .hl-today{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px;cursor:pointer}
 .hl-today>div{min-width:0;padding:4px 6px}
-.hl-today small{display:flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;color:var(--muted);white-space:nowrap;overflow:hidden}
+.hl-today small{display:flex;align-items:center;gap:5px;font-size:var(--fs-xs);font-weight:var(--fw-semi);color:var(--muted);white-space:nowrap;overflow:hidden}
 .hl-today small svg{width:13px;height:13px;flex:none}
-.hl-today b{display:block;font-size:21px;font-weight:750;letter-spacing:-.03em;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
-.hl-today b.na{color:var(--faint-ink);font-weight:700}
-.hl-today b .u{font-style:normal;font-size:12px;font-weight:700;color:var(--muted);margin-left:3px;letter-spacing:0}
-.hl-today span{display:block;font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hl-today b{display:block;font-size:var(--fs-xl);font-weight:var(--fw-heavy);letter-spacing:-.03em;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.hl-today b.na{color:var(--faint-ink);font-weight:var(--fw-bold)}
+.hl-today b .u{font-style:normal;font-size:var(--fs-xs);font-weight:var(--fw-bold);color:var(--muted);margin-left:3px;letter-spacing:0}
+.hl-today span{display:block;font-size:var(--fs-2xs);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hl-tip{display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer}
-.hl-tip .ic{width:40px;height:40px;border-radius:13px;display:grid;place-items:center;flex:none;color:#fff;background:linear-gradient(135deg,#fb7185,#e11d48)}
+.hl-tip .ic{width:40px;height:40px;border-radius:var(--r-sm);display:grid;place-items:center;flex:none;color:#fff;background:var(--c-health);box-shadow:inset 0 1px 0 rgba(255,255,255,.18)}
 .hl-tip .ic svg{width:21px;height:21px}
-.hl-tip .bd{flex:1;min-width:0}.hl-tip .bd small{display:block;color:var(--muted);font-size:12.5px}.hl-tip .bd b{display:block;font-size:14.5px}
-.hl-tip .x{border:0;background:none;color:var(--faint-ink);font-size:16px;padding:0;cursor:pointer;width:44px;height:44px;display:grid;place-items:center;flex:none}.hl-tip .x svg{width:17px;height:17px}
-@media (max-width:370px){.hl-v{font-size:25px}.hl-ring,.hl-ring svg{width:84px;height:84px}.hl-today b{font-size:17px}}
+.hl-tip .bd{flex:1;min-width:0}.hl-tip .bd small{display:block;color:var(--muted);font-size:var(--fs-xs)}.hl-tip .bd b{display:block;font-size:var(--fs-base)}
+.hl-tip .x{border:0;background:none;color:var(--faint-ink);font-size:var(--fs-md);padding:0;cursor:pointer;width:44px;height:44px;display:grid;place-items:center;flex:none}.hl-tip .x svg{width:17px;height:17px}
+@media (max-width:370px){.hl-v{font-size:var(--fs-3xl)}.hl-ring,.hl-ring svg{width:84px;height:84px}.hl-today b{font-size:var(--fs-lg)}}
 `);
 const C = {steps: ['#34d399', '#10b981'], sleep: ['#818cf8', '#6366f1'], heart: ['#fb7185', '#e11d48'], weight: ['#38bdf8', '#0ea5e9'], energy: ['#fb923c', '#f43f5e'], run: ['#a3e635', '#22c55e'], alarm: ['#fbbf24', '#f97316']};
 const STAGE = {deep: ['Deep', '#4338ca'], core: ['Core', '#6366f1'], rem: ['REM', '#38bdf8'], awake: ['Awake', '#f59e0b']};
@@ -656,14 +656,14 @@ function bars(list, colors, goal){
 const missing = (what, part) => `<div class="hl-miss">Not in your last sync. <button class="link" data-hl-connect="${part || ''}" style="padding:0">Add ${esc(what)} to the shortcut</button></div>`;
 
 function viewHTML(){
-  let h = `<h2>Health</h2><p class="lede">From the Health app on your iPhone</p>`;
+  let h = `<h2>Health</h2><p class="lede">From the Health app on your iPhone.</p>`;
   if (!st.syncedAt){
-    return h + `<div class="card hl-empty"><div class="big">${IC.heart}</div><h3>Bring your iPhone Health into Jarvis</h3>
-      <p>Steps, sleep, resting heart rate, weight and workouts, plus your Clock alarms and calendar, every time you press your Action Button.</p>
+    return h + `<div class="card hl-empty"><div class="big">${IC.heart}</div><h3>See your iPhone Health here</h3>
+      <p>Steps, sleep, heart rate, weight and workouts, sent by your Action Button.</p>
       <button class="hl-btn" data-hl-connect>Show me how · 5 minutes</button>
-      <ul class="hl-list"><li><i class="ok">${(J.icons && J.icons.done) || ''}</i><span><b>Automatic</b> each time your shortcut runs: the Action Button, or an automation like “when my alarm stops”.</span></li>
-      <li><i>${(J.icons && J.icons.info) || ''}</i><span><b>Not in the background.</b> A web app can't read Health by itself, so Jarvis shows what the shortcut last sent, with the time.</span></li>
-      <li><i>${(J.icons && J.icons.lock) || ''}</i><span>It stays on this phone. Nothing is uploaded.</span></li></ul></div>`;
+      <ul class="hl-list"><li><i class="ok">${(J.icons && J.icons.done) || ''}</i><span><b>Automatic</b> each time your shortcut runs.</span></li>
+      <li><i>${(J.icons && J.icons.info) || ''}</i><span>Shows the last update, with the time.</span></li>
+      <li><i>${(J.icons && J.icons.lock) || ''}</i><span>Stays on this phone. Nothing is uploaded.</span></li></ul></div>`;
   }
   const age = Date.now() - st.syncedAt, dot = age < 6*HOUR ? '' : age < 26*HOUR ? 'warn' : 'off';
   h += `<div class="card hl-sync"><span class="hl-dot ${dot}"></span><div class="lbl"><b>Synced ${esc(agoShort(st.syncedAt))}</b><small>${age < 6*HOUR ? 'From your Action Button shortcut' : 'Press your Action Button to update'}</small></div><a class="hl-btn" href="${esc(shortcutLink())}">${IC.sync}Sync now</a></div>`;
@@ -714,7 +714,7 @@ function viewHTML(){
   // Clock alarms
   if (st.alarms){
     const list = iphoneAlarms(), flags = list.some(a => a.on != null);
-    h += `<div class="section-h"><h3>Alarms in your iPhone Clock</h3><span style="color:var(--muted);font-size:12.5px">${esc(agoShort(st.alarms.at))}</span></div><div class="card" style="padding:6px 14px">`;
+    h += `<div class="section-h"><h3>Alarms in your iPhone Clock</h3><span style="color:var(--muted);font-size:var(--fs-xs)">${esc(agoShort(st.alarms.at))}</span></div><div class="card" style="padding:6px 14px">`;
     h += list.length ? list.map(a => `<div class="hl-row"><div class="hl-k" style="text-transform:none">${kic('alarm','alarm')}</div><div class="bd"><b>${esc(a.label || 'Alarm')}</b><small>${a.on == null ? 'On your iPhone' : a.on ? 'On' : 'Off'}</small></div><div class="tm ${a.on === false ? 'off' : ''}">${esc(alarmTime(a))}</div></div>`).join('') : `<div class="hl-row"><div class="bd"><b>No alarms</b><small>Your Clock app had none at the last sync</small></div></div>`;
     h += `</div>`;
     if (list.length && !flags) h += `<p class="hl-note">Your shortcut doesn't say which alarms are switched on. If your iPhone shows <b>Is Enabled</b> for alarms in Shortcuts, add it (see Connect).</p>`;

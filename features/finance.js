@@ -300,111 +300,111 @@ J.css(`
 .fin-up{color:var(--fin-up)}.fin-dn{color:var(--fin-dn)}.fin-flat{color:var(--muted)}
 .fin-svg{display:block;width:100%;height:100%;overflow:visible}
 .fin-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
-.fin-status{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--muted);font-weight:600;margin:2px 0 0;flex-wrap:wrap}
-.fin-status b{color:var(--text);font-weight:700}
+.fin-status{display:flex;align-items:center;gap:7px;font-size:var(--fs-sm);color:var(--muted);font-weight:var(--fw-semi);margin:2px 0 0;flex-wrap:wrap}
+.fin-status b{color:var(--text);font-weight:var(--fw-bold)}
 .fin-dot{width:8px;height:8px;border-radius:50%;background:var(--faint);flex:none;position:relative}
 .fin-dot.open{background:var(--fin-up);box-shadow:0 0 0 0 rgba(34,197,94,.6);animation:finPulse 2s infinite}
 .fin-dot.pre,.fin-dot.post{background:var(--warn)}
 @keyframes finPulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,.55)}70%{box-shadow:0 0 0 8px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
-.fin-upd{font-size:12px;color:var(--faint-ink);margin:6px 0 14px;font-weight:500}
+.fin-upd{font-size:var(--fs-xs);color:var(--faint-ink);margin:6px 0 14px;font-weight:var(--fw-med)}
 .fin-refresh svg{transition:transform .3s}
 .fin-refresh.spin svg{animation:finSpin .9s linear infinite}
 @keyframes finSpin{to{transform:rotate(360deg)}}
-.fin-note{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--muted);background:var(--accent-soft);border-radius:14px;padding:11px 13px;margin:0 0 14px}
+.fin-note{display:flex;gap:10px;align-items:flex-start;font-size:var(--fs-sm);color:var(--muted);background:var(--accent-soft);border-radius:var(--r-md);padding:11px 13px;margin:0 0 14px}
 .fin-note b{color:var(--text)}
 .fin-note.warn{background:rgba(245,158,11,.13)}
 .fin-ni{flex:none;color:var(--warn-ink);display:flex}.fin-ni svg{width:18px;height:18px}.fin-btns .btn svg{width:18px;height:18px;margin-right:6px;vertical-align:-3px}
 .fin-seg{position:sticky;top:calc(6px + var(--safe-t));z-index:5;background:var(--glass);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
 .fin-hero{padding:18px 18px 14px;position:relative;overflow:hidden}
-.fin-hero .nm{display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:700;color:var(--muted)}
-.fin-hero .px{font-size:34px;font-weight:800;letter-spacing:-1.2px;line-height:1.1;margin-top:4px;font-variant-numeric:tabular-nums}
-.fin-hero .ch{font-size:14px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}
-.fin-hero .ch span{color:var(--muted);font-weight:600}
-.fin-range{display:flex;gap:2px;background:var(--line);border-radius:9px;padding:2px}
-.fin-range button{border:0;background:none;color:var(--muted);font-weight:700;font-size:11.5px;padding:4px 9px;border-radius:7px;cursor:pointer}
+.fin-hero .nm{display:flex;align-items:center;justify-content:space-between;font-size:var(--fs-sm);font-weight:var(--fw-bold);color:var(--muted)}
+.fin-hero .px{font-size:var(--fs-4xl);font-weight:var(--fw-heavy);letter-spacing:-1.2px;line-height:1.1;margin-top:4px;font-variant-numeric:tabular-nums}
+.fin-hero .ch{font-size:var(--fs-sm);font-weight:var(--fw-bold);margin-top:2px;font-variant-numeric:tabular-nums}
+.fin-hero .ch span{color:var(--muted);font-weight:var(--fw-semi)}
+.fin-range{display:flex;gap:2px;background:var(--line);border-radius:var(--r-xs);padding:2px}
+.fin-range button{border:0;background:none;color:var(--muted);font-weight:var(--fw-bold);font-size:var(--fs-2xs);padding:4px 9px;border-radius:var(--r-xs);cursor:pointer}
 .fin-range button.on{background:var(--card-solid);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.18)}
 .fin-chart{position:relative;margin:12px -4px 0;touch-action:pan-y;cursor:crosshair}
 .fin-cursor{position:absolute;top:0;bottom:0;width:1px;background:var(--muted);opacity:0;pointer-events:none}
-.fin-tip{position:absolute;top:-6px;transform:translateX(-50%);background:var(--card-solid);border:1px solid var(--line);border-radius:8px;padding:3px 7px;font-size:11.5px;font-weight:700;opacity:0;pointer-events:none;white-space:nowrap;box-shadow:var(--shadow);font-variant-numeric:tabular-nums}
+.fin-tip{position:absolute;top:-6px;transform:translateX(-50%);background:var(--card-solid);border:1px solid var(--line);border-radius:var(--r-xs);padding:3px 7px;font-size:var(--fs-2xs);font-weight:var(--fw-bold);opacity:0;pointer-events:none;white-space:nowrap;box-shadow:var(--shadow);font-variant-numeric:tabular-nums}
 .fin-chart.scrub .fin-cursor,.fin-chart.scrub .fin-tip{opacity:1}
-.fin-foot{display:flex;justify-content:space-between;font-size:11.5px;color:var(--faint-ink);margin-top:8px;font-weight:600}
+.fin-foot{display:flex;justify-content:space-between;font-size:var(--fs-2xs);color:var(--faint-ink);margin-top:8px;font-weight:var(--fw-semi)}
 .fin-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
 .fin-grid > .fin-tile:last-child:nth-child(odd){grid-column:1/-1}
-.fin-tile{border:1px solid var(--line);background:var(--card);border-radius:18px;padding:12px 13px 11px;cursor:pointer;text-align:left;min-width:0;transition:transform .15s var(--ease)}
+.fin-tile{border:1px solid var(--line);background:var(--card);border-radius:var(--r-lg);padding:12px 13px 11px;cursor:pointer;text-align:left;min-width:0;transition:transform .15s var(--ease)}
 .fin-tile:active,.fin-row:active{transform:scale(.98)}
-.fin-tile .t1{display:flex;justify-content:space-between;gap:6px;font-size:12px;font-weight:700;color:var(--muted)}
+.fin-tile .t1{display:flex;justify-content:space-between;gap:6px;font-size:var(--fs-xs);font-weight:var(--fw-bold);color:var(--muted)}
 .fin-tile .t1 span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.fin-tile .px{font-size:17px;font-weight:800;letter-spacing:-.3px;margin-top:3px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.fin-tile .pc{font-size:12.5px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.fin-tile .px{font-size:var(--fs-lg);font-weight:var(--fw-bold);letter-spacing:-.3px;margin-top:3px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fin-tile .pc{font-size:var(--fs-xs);font-weight:var(--fw-bold);font-variant-numeric:tabular-nums;white-space:nowrap}
 .fin-tile .sp{height:30px;margin-top:8px}
-.fin-list{background:var(--card);border:1px solid var(--line);border-radius:20px;overflow:hidden}
+.fin-list{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden}
 .fin-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line);cursor:pointer;width:100%;background:none;border-left:0;border-right:0;border-top:0;text-align:left;transition:transform .15s var(--ease)}
 .fin-row:last-child{border-bottom:0}
 .fin-row .who{flex:1;min-width:0}
-.fin-row .tk{font-weight:800;font-size:15.5px;letter-spacing:-.2px}
-.fin-row .nm{color:var(--muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fin-row .tk{font-weight:var(--fw-bold);font-size:var(--fs-base);letter-spacing:-.2px}
+.fin-row .nm{color:var(--muted);font-size:var(--fs-xs);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fin-row .sp{width:64px;height:30px;flex:none}
 .fin-row .rt{text-align:right;flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
-.fin-row .rt b{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
-.fin-pill{display:inline-block;min-width:72px;text-align:center;padding:4px 8px;border-radius:8px;font-weight:700;font-size:12.5px;color:#fff;background:var(--faint);font-variant-numeric:tabular-nums}
+.fin-row .rt b{font-size:var(--fs-base);font-weight:var(--fw-bold);font-variant-numeric:tabular-nums}
+.fin-pill{display:inline-block;min-width:72px;text-align:center;padding:4px 8px;border-radius:var(--r-xs);font-weight:var(--fw-bold);font-size:var(--fs-xs);color:#fff;background:var(--faint);font-variant-numeric:tabular-nums}
 .fin-pill.up{background:var(--fin-pill-up)}.fin-pill.dn{background:var(--fin-pill-dn)}
-.fin-x{flex:none;width:30px;height:30px;border-radius:50%;border:0;background:rgba(244,63,94,.14);color:var(--bad-ink);display:grid;place-items:center;cursor:pointer;font-size:16px;font-weight:800}
-.fin-wait{font-size:12px;color:var(--muted);font-weight:600}
+.fin-x{flex:none;width:30px;height:30px;border-radius:50%;border:0;background:rgba(244,63,94,.14);color:var(--bad-ink);display:grid;place-items:center;cursor:pointer;font-size:var(--fs-md);font-weight:var(--fw-bold)}
+.fin-wait{font-size:var(--fs-xs);color:var(--muted);font-weight:var(--fw-semi)}
 .fin-tools{display:flex;align-items:center;gap:8px;margin-bottom:12px}
-.fin-tools .chip{padding:7px 12px;font-size:12.5px}
+.fin-tools .chip{padding:7px 12px;font-size:var(--fs-xs)}
 .fin-tools .chip.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent,#fff)}
 .fin-tools .grow{flex:1}
-.fin-day{font-size:12.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin:18px 4px 8px}
+.fin-day{font-size:var(--fs-xs);font-weight:var(--fw-bold);color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin:18px 4px 8px}
 .fin-day:first-child{margin-top:4px}
 .fin-ev{display:flex;gap:12px;padding:13px 14px;border-bottom:1px solid var(--line)}
 .fin-ev:last-child{border-bottom:0}
 .fin-ev.past{opacity:.55}
-.fin-ev .tm{flex:none;width:62px;font-weight:700;font-size:13px;font-variant-numeric:tabular-nums;padding-top:1px}
-.fin-ev .tm .wd{display:block;color:var(--accent-ink);font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.3px}
-.fin-ev .tm small{display:block;color:var(--faint-ink);font-weight:600;font-size:11px;margin-top:2px}
+.fin-ev .tm{flex:none;width:62px;font-weight:var(--fw-bold);font-size:var(--fs-sm);font-variant-numeric:tabular-nums;padding-top:1px}
+.fin-ev .tm .wd{display:block;color:var(--accent-ink);font-size:var(--fs-2xs);font-weight:var(--fw-bold);text-transform:uppercase;letter-spacing:.3px}
+.fin-ev .tm small{display:block;color:var(--faint-ink);font-weight:var(--fw-semi);font-size:var(--fs-2xs);margin-top:2px}
 .fin-ev .bd{flex:1;min-width:0}
-.fin-ev .ti{font-weight:700;font-size:14.5px;display:flex;gap:6px;align-items:flex-start}
+.fin-ev .ti{font-weight:var(--fw-bold);font-size:var(--fs-base);display:flex;gap:6px;align-items:flex-start}
 .fin-ev .ti span{flex:1}
-.fin-ev .mn{color:var(--muted);font-size:12.5px;margin-top:3px;line-height:1.4}
-.fin-ev .raw{color:var(--faint-ink);font-size:11.5px;margin-top:2px}
+.fin-ev .mn{color:var(--muted);font-size:var(--fs-xs);margin-top:3px;line-height:1.4}
+.fin-ev .raw{color:var(--faint-ink);font-size:var(--fs-2xs);margin-top:2px}
 .fin-nums{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
-.fin-nums span{font-size:11.5px;color:var(--muted);background:var(--line);border-radius:7px;padding:3px 7px;font-weight:600}
+.fin-nums span{font-size:var(--fs-2xs);color:var(--muted);background:var(--line);border-radius:var(--r-xs);padding:3px 7px;font-weight:var(--fw-semi)}
 .fin-nums span b{color:var(--text)}
-.fin-imp{flex:none;font-size:10.5px;font-weight:800;padding:3px 7px;border-radius:999px;text-transform:uppercase;letter-spacing:.4px}
+.fin-imp{flex:none;font-size:var(--fs-2xs);font-weight:var(--fw-bold);padding:3px 7px;border-radius:var(--r-pill);text-transform:uppercase;letter-spacing:.4px}
 .fin-imp.High{background:rgba(244,63,94,.15);color:var(--bad-ink)}:root[data-theme="light"] .fin-imp.High{color:#b4123a}
 .fin-imp.Medium{background:rgba(245,158,11,.16);color:var(--warn-ink)}
 .fin-imp.Holiday{background:var(--accent-soft);color:var(--accent-ink)}
 .fin-news{display:block;padding:13px 14px;border-bottom:1px solid var(--line);color:inherit;text-decoration:none}
 .fin-news:last-child{border-bottom:0}
-.fin-news .ti{font-weight:600;font-size:14.5px;line-height:1.35}
-.fin-news .mt{display:flex;gap:6px;align-items:center;color:var(--muted);font-size:12px;margin-top:5px;font-weight:500}
-.fin-news .mt .src{font-weight:700;color:var(--text);opacity:.8}
+.fin-news .ti{font-weight:var(--fw-semi);font-size:var(--fs-base);line-height:1.35}
+.fin-news .mt{display:flex;gap:6px;align-items:center;color:var(--muted);font-size:var(--fs-xs);margin-top:5px;font-weight:var(--fw-med)}
+.fin-news .mt .src{font-weight:var(--fw-bold);color:var(--text);opacity:.8}
 .fin-sample{background:rgba(245,158,11,.16);color:var(--warn-ink);letter-spacing:.4px}
-.fin-tag{font-size:10.5px;font-weight:800;padding:2px 6px;border-radius:6px;background:var(--accent-soft);color:var(--accent-ink)}
-.fin-sk{background:linear-gradient(90deg,var(--line) 0%,rgba(255,255,255,.12) 50%,var(--line) 100%);background-size:200% 100%;animation:finSh 1.3s infinite;border-radius:12px}
+.fin-tag{font-size:var(--fs-2xs);font-weight:var(--fw-bold);padding:2px 6px;border-radius:var(--r-xs);background:var(--accent-soft);color:var(--accent-ink)}
+.fin-sk{background:linear-gradient(90deg,var(--line) 0%,rgba(255,255,255,.12) 50%,var(--line) 100%);background-size:200% 100%;animation:finSh 1.3s infinite;border-radius:var(--r-sm)}
 :root[data-theme="light"] .fin-sk{background:linear-gradient(90deg,var(--line) 0%,rgba(255,255,255,.9) 50%,var(--line) 100%);background-size:200% 100%}
 @keyframes finSh{to{background-position:-200% 0}}
 .fin-hc{cursor:pointer;padding:14px}
 .fin-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .fin-strip > div{min-width:0}
-.fin-strip .n{font-size:11.5px;font-weight:700;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.fin-strip .v{font-size:16px;font-weight:800;letter-spacing:-.3px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.fin-strip .n{font-size:var(--fs-2xs);font-weight:var(--fw-bold);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fin-strip .v{font-size:var(--fs-md);font-weight:var(--fw-bold);letter-spacing:-.3px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .fin-strip .sp{height:24px;margin-top:6px}
-.fin-next{display:flex;align-items:center;gap:8px;margin-top:12px;padding-top:11px;border-top:1px solid var(--line);font-size:13px}
-.fin-next .lb{color:var(--muted);font-weight:600;flex:none}
-.fin-next .ev{flex:1;min-width:0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fin-next{display:flex;align-items:center;gap:8px;margin-top:12px;padding-top:11px;border-top:1px solid var(--line);font-size:var(--fs-sm)}
+.fin-next .lb{color:var(--muted);font-weight:var(--fw-semi);flex:none}
+.fin-next .ev{flex:1;min-width:0;font-weight:var(--fw-bold);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fin-dt-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
-.fin-dt-top h4{margin:0 !important;font-size:20px !important;letter-spacing:-.3px}
-.fin-dt-top small{display:block;color:var(--muted);font-size:13px;font-weight:600;margin-top:1px}
+.fin-dt-top h4{margin:0 !important;font-size:var(--fs-xl) !important;letter-spacing:-.3px}
+.fin-dt-top small{display:block;color:var(--muted);font-size:var(--fs-sm);font-weight:var(--fw-semi);margin-top:1px}
 .fin-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
-.fin-stats div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 10px;min-width:0}
-.fin-stats span{display:block;font-size:11px;color:var(--muted);font-weight:600}
-.fin-stats b{font-size:13.5px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.fin-stats div{background:var(--card);border:1px solid var(--line);border-radius:var(--r-sm);padding:8px 10px;min-width:0}
+.fin-stats span{display:block;font-size:var(--fs-2xs);color:var(--muted);font-weight:var(--fw-semi)}
+.fin-stats b{font-size:var(--fs-sm);font-variant-numeric:tabular-nums;white-space:nowrap}
 .fin-mbox{max-height:min(82vh,720px);overflow-y:auto;margin:-18px;padding:18px}
 .fin-btns{display:flex;gap:8px;margin-top:14px}
 .fin-btns .btn{flex:1}
 .fin-sugg{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px}
-.fin-sugg button{padding:7px 11px;font-size:12.5px}
+.fin-sugg button{padding:7px 11px;font-size:var(--fs-xs)}
 `);
 
 /* ------------------------------------------------------ view */
@@ -417,7 +417,7 @@ function updatedTxt(){
   if (data.sample_prices) return 'Prices are samples · news and calendar are live';
   const u = Date.parse(data.updated);
   if (isNaN(u)) return 'Refreshes every 30 min while the market is open';
-  return 'Updated ' + agoTxt(u) + ' · refreshes every 30 min while the market is open';
+  return 'Updated ' + agoTxt(u) + ' · every 30 min in market hours';
 }
 function staleHours(){ if (!data) return 0; const u = Date.parse(data.updated); return isNaN(u) ? 0 : (Date.now()-u)/36e5; }
 
@@ -442,8 +442,8 @@ function renderView(el){
   el.innerHTML = h;
 }
 function skeleton(){
-  return `<div class="fin-sk" style="height:42px;margin-bottom:14px"></div><div class="fin-sk" style="height:220px;border-radius:22px"></div>
-    <div class="fin-grid">${'<div class="fin-sk" style="height:98px;border-radius:18px"></div>'.repeat(4)}</div>`;
+  return `<div class="fin-sk" style="height:42px;margin-bottom:14px"></div><div class="fin-sk" style="height:220px;border-radius:var(--r-xl)"></div>
+    <div class="fin-grid">${'<div class="fin-sk" style="height:98px;border-radius:var(--r-lg)"></div>'.repeat(4)}</div>`;
 }
 function rangeToggle(){ return `<div class="fin-range">${[['1d','1D'],['5d','5D']].map(([k,l])=>`<button data-fin-range="${k}" class="${st.range===k?'on':''}">${l}</button>`).join('')}</div>`; }
 function heroHTML(sym){
@@ -461,7 +461,7 @@ function tileHTML(sym){
   const q = quote(sym); if (!q) return '';
   const m = moveFor(q, st.range), d = dir(m), five = m !== q;   // with 5D on, the tile shows the 5-day change like the big card
   return `<button class="fin-tile" data-fin-open-q="${J.esc(sym)}"><div class="t1"><span>${J.esc(q.kind==='index'||q.kind==='rate'||q.kind==='vol'||q.kind==='commodity'||q.kind==='fx'||sym==='BTC-USD' ? nameOf(sym) : tickerLabel(sym))}</span>${five?'<span>5 days</span>':''}</div>
-    <div class="px">${px(q)}</div><div class="pc fin-${d}">${q.kind==='rate'?chgTxt(m):pctTxt(m)}${q.kind!=='rate'&&m.chg!=null?` <span style="color:var(--faint-ink);font-weight:600">${chgTxt(m)}</span>`:''}</div>
+    <div class="px">${px(q)}</div><div class="pc fin-${d}">${q.kind==='rate'?chgTxt(m):pctTxt(m)}${q.kind!=='rate'&&m.chg!=null?` <span style="color:var(--faint-ink);font-weight:var(--fw-semi)">${chgTxt(m)}</span>`:''}</div>
     <div class="sp">${spark(q, st.range)}</div></button>`;
 }
 function rowHTML(sym){
@@ -514,14 +514,14 @@ function watchHTML(){
     <button class="link" data-fin-edit>${editing?'Done':'Edit'}</button><button class="link" data-fin-add>+ Add</button></div>`;
   h += list.length ? `<div class="fin-list">${list.map(rowHTML).join('')}</div>` : `<div class="empty"><div class="e-ic">${(J.icons && J.icons.chart) || '⭐'}</div>Your watchlist is empty.<br>Say “Add Nvidia to my watchlist”.</div>`;
   const pend = list.filter(s=>!quote(s));
-  if (pend.length) h += `<p style="color:var(--muted);font-size:12.5px;margin:12px 4px 0">“Waiting for data” means ${J.esc(pend.map(tickerLabel).join(', '))} ${pend.length>1?"aren't":"isn't"} in the market feed yet. Tap ${pend.length>1?'one':'it'} to see how to add it.</p>`;
+  if (pend.length) h += `<p style="color:var(--muted);font-size:var(--fs-xs);margin:12px 4px 0">“Waiting for data” means ${J.esc(pend.map(tickerLabel).join(', '))} ${pend.length>1?"aren't":"isn't"} in the market feed yet. Tap ${pend.length>1?'one':'it'} to see how to add it.</p>`;
   const earn = ((data.earnings)||[]).filter(e=>st.watchlist.includes(e.s));
   if (earn.length){ h += sectionH('Earnings coming up'); h += `<div class="fin-list">${earn.map(earnRowHTML).join('')}</div>`; }
   return h;
 }
 function earnRowHTML(e){
   return `<div class="fin-row" data-fin-open-q="${J.esc(e.s)}"><div class="who"><div class="tk">${J.esc(tickerLabel(e.s))} ${st.watchlist.includes(e.s)?'<span class="fin-tag">★ watchlist</span>':''}</div><div class="nm">${J.esc(e.name||nameOf(e.s))}${e.eps?' · EPS est. '+J.esc(e.eps):''}</div></div>
-    <div class="rt"><b style="font-size:13.5px">${J.esc(J.cap(earnWhen(e)))}</b><span class="fin-wait">${J.esc(e.when||'time not set')}</span></div></div>`;
+    <div class="rt"><b style="font-size:var(--fs-sm)">${J.esc(J.cap(earnWhen(e)))}</b><span class="fin-wait">${J.esc(e.when||'time not set')}</span></div></div>`;
 }
 function calHTML(){
   let evs = ((data.calendar)||[]).slice();
@@ -539,14 +539,14 @@ function calHTML(){
   });
   const earn = (data.earnings||[]).slice().sort((a,b)=>(st.watchlist.includes(b.s)-st.watchlist.includes(a.s)) || a.date.localeCompare(b.date)).slice(0,12);
   if (earn.length){ h += sectionH('Earnings'); h += `<div class="fin-list">${earn.map(earnRowHTML).join('')}</div>`; }
-  h += `<p style="color:var(--faint-ink);font-size:12px;text-align:center;margin:16px 0 0">Times are in your local time. Calendar: Forex Factory.</p>`;
+  h += `<p style="color:var(--faint-ink);font-size:var(--fs-xs);text-align:center;margin:16px 0 0">Times are in your local time. Calendar: Forex Factory.</p>`;
   return h;
 }
 function newsHTML(){
   let h = `<div class="fin-tools"><button class="chip ${st.news==='top'&&!newsSym?'on':''}" data-fin-news="top">Top stories</button><button class="chip ${st.news==='mine'&&!newsSym?'on':''}" data-fin-news="mine">My stocks</button>${newsSym?`<button class="chip on" data-fin-news="top">${J.esc(nameOf(newsSym))} ✕</button>`:''}</div>`;
   const list = newsSym ? allSymbolNews([newsSym]) : st.news==='mine' ? allSymbolNews(st.watchlist) : (data.news||[]);
   h += list.length ? `<div class="fin-list">${list.slice(0,30).map(newsItemHTML).join('')}</div>` : `<div class="empty"><div class="e-ic">${(J.icons && J.icons.notes) || '📰'}</div>${newsSym||st.news==='mine'?'No fresh headlines for your stocks right now.':'No headlines yet.'}</div>`;
-  h += `<p style="color:var(--faint-ink);font-size:12px;text-align:center;margin:16px 0 0">Tap a headline to read it. Sources: CNBC, MarketWatch, Reuters, AP, Bloomberg, WSJ and more via Google News; Yahoo Finance for your stocks.</p>`;
+  h += `<p style="color:var(--faint-ink);font-size:var(--fs-xs);text-align:center;margin:16px 0 0">Tap a headline to read it. Sources: CNBC, MarketWatch, Reuters, AP, Bloomberg, WSJ and more via Google News; Yahoo Finance for your stocks.</p>`;
   return h;
 }
 
@@ -609,8 +609,8 @@ function detailHTML(sym){
   const news = allSymbolNews([sym]).slice(0,4);
   const stat = (l,v)=> v==null ? '' : `<div><span>${l}</span><b>${px({price:v, kind:q.kind})}</b></div>`;
   return `<div class="fin-mbox"><div class="fin-dt-top"><div><h4>${J.esc(nameOf(sym))}</h4><small>${J.esc(tickerLabel(sym))}${q.t?' · '+J.esc(new Date(q.t*1000).toLocaleString([], {weekday:'short', hour:'numeric', minute:'2-digit'})):''}</small></div>${close}</div>
-    <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-top:12px"><div><div style="font-size:32px;font-weight:800;letter-spacing:-1px;font-variant-numeric:tabular-nums;line-height:1.1">${px(q)}</div>
-    <div class="fin-${dir(shown)}" style="font-weight:700;font-size:14px">${chgTxt(shown)} (${pctTxt(shown)}) <span style="color:var(--muted);font-weight:600">${five?'5 days':'today'}</span></div></div>
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-top:12px"><div><div style="font-size:var(--fs-4xl);font-weight:var(--fw-heavy);letter-spacing:-1px;font-variant-numeric:tabular-nums;line-height:1.1">${px(q)}</div>
+    <div class="fin-${dir(shown)}" style="font-weight:var(--fw-bold);font-size:var(--fs-sm)">${chgTxt(shown)} (${pctTxt(shown)}) <span style="color:var(--muted);font-weight:var(--fw-semi)">${five?'5 days':'today'}</span></div></div>
     ${q.d5 && q.d5.length>1 ? `<div class="fin-range">${[['1d','1D'],['5d','5D']].map(([k,l])=>`<button data-fin-drange="${k}" class="${detailRange===k?'on':''}">${l}</button>`).join('')}</div>` : ''}</div>
     ${bigChart(sym, detailRange, 150)}
     <div class="fin-stats">${stat('Prev close', q.prev)}${stat('Day high', q.hi)}${stat('Day low', q.lo)}${stat('52-wk high', q.h52)}${stat('52-wk low', q.l52)}${er?`<div><span>Earnings</span><b>${J.esc(J.cap(earnWhen(er)))}</b></div>`:''}</div>
@@ -666,10 +666,10 @@ function renderHomeCard(el){
   if (!el.__finBound){ el.__finBound = true; el.addEventListener('click', e=>{ if (e.target.closest('[data-go]')) return; if (e.target.closest('.fin-hc')){ st.seg = 'overview'; J.save(); J.go('finance'); paint(); } }); }
   const clk = marketClock();
   let h = `<div class="section-h"><h3>Markets</h3><button class="link" data-go="finance">Open</button></div>`;
-  if (!data){ el.innerHTML = h + (loading||!failed ? `<div class="card fin-hc"><div class="fin-sk" style="height:62px"></div></div>` : `<div class="card fin-hc" style="color:var(--muted);font-size:13.5px">📡 Market data will show here once you're online.</div>`); return; }
+  if (!data){ el.innerHTML = h + (loading||!failed ? `<div class="card fin-hc"><div class="fin-sk" style="height:62px"></div></div>` : `<div class="card fin-hc" style="color:var(--muted);font-size:var(--fs-sm)">📡 Market data will show here once you're online.</div>`); return; }
   const cell = s=>{ const q = quote(s); if (!q) return ''; return `<div><div class="n">${J.esc(s==='BTC-USD'?'Bitcoin':nameOf(s))}</div><div class="v fin-${dir(q)}">${pctTxt(q)}</div><div class="sp">${spark(q,'1d')}</div></div>`; };
   const nb = nextBig();
-  h += `<div class="card fin-hc"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:12px;color:var(--muted);font-weight:600"><span style="display:flex;align-items:center;gap:6px"><i class="fin-dot ${clk.state}"></i>${clk.label}</span>${samplePx()?`<span class="fin-tag fin-sample">${data.sample?'SAMPLE DATA':'SAMPLE PRICES'}</span>`:`<span>${J.esc(isNaN(Date.parse(data.updated))?'':agoTxt(Date.parse(data.updated)))}</span>`}</div>
+  h += `<div class="card fin-hc"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:var(--fs-xs);color:var(--muted);font-weight:var(--fw-semi)"><span style="display:flex;align-items:center;gap:6px"><i class="fin-dot ${clk.state}"></i>${clk.label}</span>${samplePx()?`<span class="fin-tag fin-sample">${data.sample?'SAMPLE DATA':'SAMPLE PRICES'}</span>`:`<span>${J.esc(isNaN(Date.parse(data.updated))?'':agoTxt(Date.parse(data.updated)))}</span>`}</div>
     <div class="fin-strip">${['^GSPC','^IXIC','BTC-USD'].map(cell).join('')}</div>
     ${nb?`<div class="fin-next"><span class="lb">Next</span><span class="ev">${FLAGS[nb.country]||''} ${J.esc(explain(nb).plain)} · ${J.esc(evWhen(nb))}</span><em class="fin-imp High">High</em></div>`:''}</div>`;
   el.innerHTML = h;
