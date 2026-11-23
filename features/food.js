@@ -1916,6 +1916,8 @@ Keep names short (at most 4 words) in plain English. portion is a short everyday
   J.food = {
     addWater(n){ n = +n||0; if (n) addWater(n, todayKey(), {noHabit:true}); return getDay(todayKey()).water||0; },
     snap(){ openPhoto(); },
+    /** delete one entry of the day on screen, with Undo (swipe-left on a food row uses it) */
+    remove(id){ deleteWithUndo(viewKey, id); },
     today(){ const t = dayTotals(todayKey()); return {kcal:t.kcal, p:t.p, c:t.c, f:t.f, goal:F().goal, water:getDay(todayKey()).water||0, waterGoal:F().waterGoal}; }
   };
 

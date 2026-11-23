@@ -79,3 +79,70 @@ test('trend charts draw from saved history and switch 7D / 30D', async ({ app })
   await expect(app.page.locator('[data-trend-id="kcal"]')).toBeVisible();
   expect(app.errors).toEqual([]);
 });
+
+// a real finger swipe through Chrome's touch input
+async function swipe(page, x0, y0, x1, y1, steps = 8) {
+  const cdp = await page.context().newCDPSession(page);
+  const pt = (x, y) => [{ x, y, id: 1 }];
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: pt(x0, y0) });
+  for (let i = 1; i <= steps; i++) {
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: pt(x0 + (x1 - x0) * i / steps, y0 + (y1 - y0) * i / steps) });
+    await page.waitForTimeout(16);
+  }
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await page.waitForTimeout(450);
+}
+
+test('swipe left deletes a payment with Undo; swipe right goes back', async ({ app }) => {
+  await app.say('spent 12 on coffee');
+  await app.go('apps'); await app.go('budget');
+  const row = app.page.locator('#txList [data-edit-exp]').first();
+  await app.page.waitForTimeout(500); await row.scrollIntoViewIfNeeded(); await app.page.waitForTimeout(200);
+  const b = await row.boundingBox();
+  await swipe(app.page, b.x + b.width - 20, b.y + b.height / 2, b.x + 20, b.y + b.height / 2);
+  expect((await app.db()).expenses.length).toBe(0);
+  await expect(app.page.locator('#toast')).toContainText('Deleted');
+  await app.page.locator('#toastUndo').click();
+  expect((await app.db()).expenses.length).toBe(1);
+  // a short swipe only shows the Delete button; nothing is deleted until it is tapped
+  await app.page.waitForTimeout(300); await app.page.locator('#txList [data-edit-exp]').first().scrollIntoViewIfNeeded();
+  const b2 = await app.page.locator('#txList [data-edit-exp]').first().boundingBox();
+  await swipe(app.page, b2.x + b2.width - 20, b2.y + b2.height / 2, b2.x + b2.width - 100, b2.y + b2.height / 2, 4);
+  await expect(app.page.locator('.sw-del')).toBeVisible();
+  expect((await app.db()).expenses.length).toBe(1);
+  // the next touch elsewhere only closes the open row
+  await swipe(app.page, 60, 300, 330, 305);
+  await expect(app.page.locator('.sw-del')).toHaveCount(0);
+  expect(await app.page.evaluate(() => window.Jarvis.current)).toBe('budget');
+  // swipe right goes back to where the page was opened from: More -> Notes, then back to More
+  await app.page.locator('.nav [data-go="apps"]').click();
+  await app.go('notes'); await app.page.waitForTimeout(500);
+  await swipe(app.page, 60, 300, 330, 305);
+  expect(await app.page.evaluate(() => window.Jarvis.current)).toBe('apps');
+  // More is a main tab: swiping right there does nothing (like iPhone apps)
+  await swipe(app.page, 60, 300, 330, 305);
+  expect(await app.page.evaluate(() => window.Jarvis.current)).toBe('apps');
+  expect(app.errors).toEqual([]);
+});
+
+test('swipe left also deletes food entries and reminders, each with Undo', async ({ app }) => {
+  await app.say('I ate a banana');
+  await app.say('remind me to call the bank in 20 minutes');
+  const kcal = () => app.page.evaluate(() => window.Jarvis.food.today().kcal);
+  expect(await kcal()).toBeGreaterThan(0);
+  for (let i = 0; i < 3 && await app.page.locator('.cal-sheet-wrap.open,#modal.open').count(); i++) { await app.page.keyboard.press('Escape'); await app.page.waitForTimeout(400); }
+  await app.page.locator('.nav [data-go="food"]').click(); await app.page.waitForTimeout(500);
+  const it = app.page.locator('#fdMeals [data-entry]').first(); await it.scrollIntoViewIfNeeded(); await app.page.waitForTimeout(200);
+  let b = await it.boundingBox();
+  await swipe(app.page, b.x + b.width - 10, b.y + b.height / 2, b.x + 10, b.y + b.height / 2);
+  expect(await kcal()).toBe(0);
+  await app.page.locator('#toastUndo').click();
+  expect(await kcal()).toBeGreaterThan(0);
+  await app.go('reminders'); await app.page.waitForTimeout(500);
+  const rw = app.page.locator('#remList .jv-rowwrap').first(); b = await rw.boundingBox();
+  await swipe(app.page, b.x + b.width - 10, b.y + b.height / 2, b.x + 10, b.y + b.height / 2);
+  expect((await app.db()).reminders.length).toBe(0);
+  await app.page.locator('#toastUndo').click();
+  expect((await app.db()).reminders.length).toBe(1);
+  expect(app.errors).toEqual([]);
+});

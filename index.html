@@ -793,6 +793,14 @@ body.at-home .toast{bottom:calc(var(--tabbar-h) + 14px + var(--safe-b))}
 @keyframes trGrow{from{transform:scaleY(0)}}
 @keyframes trFade{from{opacity:0}}
 @media (prefers-reduced-motion:reduce){.tr-bar,.tr-line,.tr-area{animation:none}}
+/* ---------- swipe left on a row: red Delete underneath (same delete + Undo as the edit sheet) ---------- */
+.sw-row{position:relative;z-index:1;background:var(--card-solid);transition:transform .26s var(--ease);touch-action:pan-y}
+.sw-under{position:absolute;left:0;right:0;z-index:0;display:flex;justify-content:flex-end;background:var(--bad);overflow:hidden}
+.sw-del{flex:none;width:88px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:0;background:none;color:#fff;font-size:var(--fs-xs);font-weight:var(--fw-semi);cursor:pointer;transition:width .2s var(--ease)}
+.sw-del svg{width:21px;height:21px}
+.sw-under.full .sw-del{width:100%;align-items:flex-end;padding-right:26px}
+.jv-group{position:relative}
+html,body{overscroll-behavior-x:none}
 </style>
 </head>
 <body class="at-home">
@@ -2130,9 +2138,11 @@ function syncTrap(){
     else if (!need && trapped){ trapped = false; selfBack++; history.back(); }
   } catch(e){} }, 40);
 }
+let swipeBackAt = 0;   // v42: set by swipe-right; a browser "back" right after it is the same gesture, not a second one
 window.addEventListener('popstate', ()=>{
   if (selfBack > 0){ selfBack--; return; }
   trapped = false;
+  if (Date.now() - swipeBackAt < 700){ syncTrap(); return; }
   const o = topOverlay();
   if (o){ try { o[1](o[0]); } catch(e){} } else goBack();
   syncTrap();
@@ -2265,7 +2275,7 @@ function openExpModal(e){
   segVal(box, 'fsType', v=>{ type = v; $('fsCatW').hidden = v==='income'; $('fsAmtW').classList.toggle('in', v==='income'); $('fsDesc').placeholder = v==='income'?'Salary, freelance…':'Lunch, groceries…'; });
   $('fsDesc').oninput = ()=>{ if (!catSet && type==='expense'){ const c = categorize($('fsDesc').value); if (c!=='Other' || cat==='Other'){ cat = c; box.querySelectorAll('.fs-cat').forEach(b=>b.classList.toggle('on', b.dataset.cat===cat)); } } };
   box.querySelectorAll('.fs-cat').forEach(b=>b.onclick = ()=>{ cat = b.dataset.cat; catSet = true; haptic(5); box.querySelectorAll('.fs-cat').forEach(x=>x.classList.toggle('on', x===b)); });
-  if (!isNew) $('fsDel').onclick = ()=>{ closeModal(); const idx = db.expenses.indexOf(e); if (idx<0) return; db.expenses.splice(idx,1); expenseEvent('removed', e); save(); renderAll(); toast(`Deleted ${e.desc}`, ()=>{ db.expenses.splice(idx,0,e); expenseEvent('restored', e); save(); renderAll(); }); };
+  if (!isNew) $('fsDel').onclick = ()=>{ closeModal(); delExpense(e); };
   if (isNew && $('fsScan')) $('fsScan').onclick = ()=>{ closeModal(); go('receipts'); };
   if (isNew) setTimeout(()=>{ try { amt.focus(); } catch(x){} }, 80);
 }
@@ -2295,7 +2305,7 @@ function openRemModal(r){
   $('fsQuick').onclick = ev=>{ const b = ev.target.closest('[data-q]'); if (!b) return; $('fsWhen').value = toLocalInput(quick[+b.dataset.q][1]().getTime()); haptic(5); $('fsWhen').dispatchEvent(new Event('input', {bubbles:true})); };
   if (!isNew){
     $('fsDone').onclick = ()=>{ closeModal(); completeReminder(r.id); };
-    $('fsDel').onclick = ()=>{ closeModal(); const idx = db.reminders.indexOf(r); if (idx<0) return; db.reminders.splice(idx,1); save(); renderAll(); toast('Reminder deleted', ()=>{ db.reminders.splice(idx,0,r); save(); renderAll(); }); };
+    $('fsDel').onclick = ()=>{ closeModal(); delReminder(r); };
   } else setTimeout(()=>{ try { $('fsText').focus(); } catch(x){} }, 80);
 }
 /* ---------- edit a note (or write one) ---------- */
@@ -2319,7 +2329,7 @@ function openNoteModal(n){
   if (!isNew){
     $('fsPin').onclick = ()=>{ n.pinned = !n.pinned; save(); renderAll(); closeModal(); toast(n.pinned?'Pinned':'Unpinned'); };
     $('fsSay').onclick = ()=>{ const was = S.speak; S.speak = true; speak(n.text); S.speak = was; };
-    $('fsDel').onclick = ()=>{ closeModal(); const idx = db.notes.indexOf(n); if (idx<0) return; db.notes.splice(idx,1); save(); renderAll(); toast('Note deleted', ()=>{ db.notes.splice(idx,0,n); save(); renderAll(); }); };
+    $('fsDel').onclick = ()=>{ closeModal(); delNote(n); };
   } else setTimeout(()=>{ try { $('mText').focus(); } catch(x){} }, 80);
 }
 function openBudgetModal(){
@@ -2330,6 +2340,10 @@ function openBudgetModal(){
   setTimeout(()=>{ try { a.focus(); a.select(); } catch(x){} }, 80);
 }
 /* ---------- first run: name, currency, city, iPhone (shown as a pill on Home until done or skipped) ---------- */
+/* deleting one item, with Undo in the toast: used by the edit sheets' Delete and by swipe-left on a row */
+function delExpense(e){ const idx = db.expenses.indexOf(e); if (idx<0) return; db.expenses.splice(idx,1); expenseEvent('removed', e); save(); renderAll(); toast(`Deleted ${e.desc}`, ()=>{ db.expenses.splice(idx,0,e); expenseEvent('restored', e); save(); renderAll(); }); }
+function delReminder(r){ const idx = db.reminders.indexOf(r); if (idx<0) return; db.reminders.splice(idx,1); save(); renderAll(); toast('Reminder deleted', ()=>{ db.reminders.splice(idx,0,r); save(); renderAll(); }); }
+function delNote(n){ const idx = db.notes.indexOf(n); if (idx<0) return; db.notes.splice(idx,1); save(); renderAll(); toast('Note deleted', ()=>{ db.notes.splice(idx,0,n); save(); renderAll(); }); }
 function needsSetup(){ const n = String(S.name||'').trim(); return !S.setupDone && (!n || /^there$/i.test(n)); }
 const SETUP_CUR = [['$','$ Dollar'],['L£','L£ Lira'],['€','€ Euro'],['AED','AED']];
 let setupLeft = 0;   // +1 each time the Welcome sheet is finished, skipped or cancelled
@@ -2608,6 +2622,94 @@ Jarvis.mic = { start: startListening, stop: stopListening, cancel: cancelListeni
     if (s && !on){ if (++hits >= 2){ on = true; document.body.classList.add('is-speaking'); } }
     else if (!s){ hits = 0; if (on){ on = false; document.body.classList.remove('is-speaking'); } }
   }, 180);
+})();
+/* ---------- feel (v42): taps you can feel, swipe right to go back, swipe left on a row to delete ----------
+   navigator.vibrate works on Android; iPhone ignores it silently. The mic buttons are left alone on purpose. */
+document.addEventListener('click', e=>{
+  const t = e.target.closest('.hm-card,.hm-lg,.hm-q,.hm-brief,.jv-row,.seg button,.check,.mini,.jv-add,.fs-act,.fd-it,.fd-row,.jv-back');
+  if (t && !t.closest('#heroMic,#orb,#micBtn')) haptic(6);
+}, true);
+const SWIPE_ROWS = '.jv-row[data-edit-exp],.jv-row[data-edit-note],.jv-rowwrap,.fd-it[data-entry]';
+function swipeDelete(row){
+  try {
+    const ex = row.matches('[data-edit-exp]') && db.expenses.find(x=>x.id===row.dataset.editExp);
+    if (ex){ delExpense(ex); return true; }
+    const nt = row.matches('[data-edit-note]') && db.notes.find(x=>x.id===row.dataset.editNote);
+    if (nt){ delNote(nt); return true; }
+    const rb = row.querySelector('[data-edit-rem]'), rm = rb && db.reminders.find(x=>x.id===rb.dataset.editRem);
+    if (rm){ delReminder(rm); return true; }
+    if (row.matches('[data-entry]') && Jarvis.food && Jarvis.food.remove){ Jarvis.food.remove(row.dataset.entry); return true; }
+  } catch(e){ console.error('swipe delete', e); }
+  return false;
+}
+(function(){
+  const standalone = (()=>{ try { return navigator.standalone || matchMedia('(display-mode: standalone)').matches; } catch(e){ return false; } })();
+  let g = null, openRow = null, eatClick = 0;
+  const closeOpen = (instant)=>{ if (!openRow) return; const r = openRow; openRow = null; r.row.style.transition = instant ? 'none' : ''; r.row.style.transform = ''; setTimeout(()=>{ r.under.remove(); r.row.classList.remove('sw-row'); }, instant ? 0 : 260); };
+  const scrollsX = el => { for (let n = el; n && n !== document.body; n = n.parentElement){ if (n.scrollWidth > n.clientWidth + 2){ const o = getComputedStyle(n).overflowX; if (o === 'auto' || o === 'scroll') return true; } } return false; };
+  const canBack = ()=> !topOverlay() && (!!subNav() || (navStack.length > 1 && !navStack[navStack.length-1].tab));   // same rule as the Back button
+  document.addEventListener('touchstart', e=>{
+    if (e.touches.length !== 1){ g = null; return; }
+    const t = e.touches[0], tg = e.target;
+    if (openRow && !openRow.under.contains(tg) && !openRow.row.contains(tg)){ closeOpen(); eatClick = Date.now(); g = null; return; }   // first touch only closes the open row
+    if (tg.closest('input,textarea,select,[contenteditable],input[type=range],.sheet,.modal,.fd-sheet,.cal-sheet-wrap,.nav,.orb') || scrollsX(tg)){ g = null; return; }
+    g = {x:t.clientX, y:t.clientY, t:Date.now(), dir:null, row:tg.closest(SWIPE_ROWS), view:document.querySelector('.view.active'), dx:0};
+    if (g.row && !g.row.closest('.view.active')) g.row = null;
+    // leave the very left edge to Safari's own back swipe (outside the home-screen app)
+    g.back = canBack() && (standalone || t.clientX > 24);
+  }, {passive:true});
+  document.addEventListener('touchmove', e=>{
+    if (!g) return;
+    const t = e.touches[0], dx = t.clientX - g.x, dy = t.clientY - g.y;
+    if (!g.dir){
+      if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+      if (Math.abs(dx) < Math.abs(dy) * 1.4){ g = null; return; }           // a scroll, not a swipe
+      g.dir = dx > 0 ? (openRow ? 'close' : g.back ? 'back' : null) : (g.row ? 'row' : null);
+      if (!g.dir){ g = null; return; }
+      if (g.dir === 'row'){
+        if (openRow && openRow.row !== g.row) closeOpen(true);
+        if (!openRow){ const row = g.row, par = row.parentElement, under = document.createElement('div');
+          under.className = 'sw-under'; under.innerHTML = `<button type="button" class="sw-del" aria-label="Delete">${IC.trash || ''}<span>Delete</span></button>`;
+          if (getComputedStyle(par).position === 'static') par.style.position = 'relative';
+          under.style.top = row.offsetTop + 'px'; under.style.height = row.offsetHeight + 'px';
+          par.insertBefore(under, row); row.classList.add('sw-row'); openRow = {row, under, base:0};
+          under.querySelector('.sw-del').addEventListener('click', ev=>{ ev.stopPropagation(); haptic([8,40,12]); const r = openRow; if (!r) return; openRow = null; r.under.remove(); r.row.classList.remove('sw-row'); r.row.style.transform = ''; swipeDelete(r.row); });
+        }
+        g.base = openRow.base;
+      }
+    }
+    if (e.cancelable) e.preventDefault();
+    g.dx = dx;
+    if (g.dir === 'back' && g.view){ const x = Math.max(0, dx); g.view.style.transition = 'none'; g.view.style.transform = `translateX(${x*0.92}px)`; g.view.style.opacity = String(1 - Math.min(.5, x/700)); }
+    else if (g.dir === 'row' || g.dir === 'close'){
+      const r = openRow; if (!r) return; const w = r.row.offsetWidth;
+      let x = Math.min(0, (g.base || 0) + dx); if (x < -w*.55) x = -w*.55 + (x + w*.55)*.35;          // rubber band
+      r.row.style.transition = 'none'; r.row.style.transform = `translateX(${x}px)`;
+      r.under.classList.toggle('full', x < -w*.45); r.cur = x;
+    }
+  }, {passive:false});
+  const end = ()=>{
+    if (!g || !g.dir){ g = null; return; }
+    const v = g.dx / Math.max(1, Date.now() - g.t), d = g; g = null; eatClick = Date.now();
+    if (d.dir === 'back' && d.view){
+      const go = d.dx > 90 || (d.dx > 40 && v > .45), el = d.view;
+      el.style.transition = 'transform .26s var(--ease),opacity .26s';
+      if (go){ haptic(8); swipeBackAt = Date.now(); el.style.transform = `translateX(${innerWidth}px)`; el.style.opacity = '0';
+        setTimeout(()=>{ el.style.transition = 'none'; el.style.transform = ''; el.style.opacity = ''; goBack(); requestAnimationFrame(()=>{ el.style.transition = ''; }); syncTrap(); }, 200); }
+      else { el.style.transform = ''; el.style.opacity = ''; setTimeout(()=>{ el.style.transition = ''; }, 280); }
+      return;
+    }
+    const r = openRow; if (!r) return; const w = r.row.offsetWidth, x = r.cur || 0;
+    r.row.style.transition = '';
+    if (x < -w*.45){ haptic([8,40,12]); r.row.style.transform = `translateX(${-w}px)`; openRow = null; setTimeout(()=>{ r.under.remove(); r.row.classList.remove('sw-row'); r.row.style.transform = ''; swipeDelete(r.row); }, 180); }
+    else if (x < -44){ r.row.style.transform = 'translateX(-88px)'; r.base = -88; r.under.classList.remove('full'); haptic(5); }
+    else closeOpen();
+  };
+  document.addEventListener('touchend', end, {passive:true});
+  document.addEventListener('touchcancel', end, {passive:true});
+  // the tap that ends a swipe must not also open the row's edit sheet
+  document.addEventListener('click', e=>{ if (Date.now() - eatClick < 350 && !e.target.closest('.sw-del')){ e.stopPropagation(); e.preventDefault(); } }, true);
+  window.addEventListener('scroll', ()=>{ if (openRow && !g) closeOpen(); }, {passive:true});
 })();
 function sendTyped(){ const v = $('textIn').value; $('textIn').value=''; handle(v); }
 $('sendBtn').onclick = sendTyped;
