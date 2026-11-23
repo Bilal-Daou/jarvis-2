@@ -26,7 +26,7 @@ for (const [id, label] of Object.entries(VIEWS)) {
 }
 
 test('bottom menu tabs work', async ({ app }) => {
-  for (const id of ['today', 'budget', 'apps', 'home']) {
+  for (const id of ['food', 'budget', 'health', 'apps', 'home']) {
     await app.page.locator(`.nav [data-go="${id}"]`).first().click();
     await expect(app.page.locator('#v-' + id)).toHaveClass(/active/);
   }
