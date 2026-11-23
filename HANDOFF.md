@@ -512,3 +512,8 @@ The JavaScript tests are back in the repo (replaces "JS suites are lost" in sect
 - Tested: sign-in from the app → all 12 namespaces uploaded. Test user `jarvis.synctest.a@example.com` exists in Auth → Users; the owner can delete it.
 - The owner accidentally pasted the **secret** key in chat; told him to create a new secret key and delete the old one. It is not used anywhere in the code.
 - Next: the owner turns on sync on both copies (Action Button Safari + home-screen app) with the same email/password and confirms they match.
+
+### v40 (23 Nov 2026): food AI models + talk on silent (experiment)
+- Merged `claude/food-ai-models-34df64` (current Gemini models; a remembered retired model is skipped).
+- `speak()` now calls `setAudioSession('playback')` when the mic isn't active, so the brief and typed replies may play with the ring/silent switch on. The owner said the voice and brief are silent on Silent/DND. If WebKit speechSynthesis ignores audioSession, there's no web fix and the native app is needed. Ask for a Debug report after he tests with Silent on.
+- Waiting on the owner: daily Supabase keep-alive (GitHub Action signing in the test user; the classifier blocked it without his OK), and what to do with old remote branches `audit-wip`, `wf-test`, `claude/project-thread-qyf2gi` (unmerged, from 15 to 17 Nov). Leftover worktrees for tests/receipts are released when those sessions are archived.
