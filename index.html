@@ -638,6 +638,73 @@ body .cal-hero-empty h3,body .hl-empty h3{font-size:var(--fs-xl);font-weight:var
   .hm-glow,.hm-ring,.hm-core::before,.orb::before,.hm-wave i,.hm-brief .eq i,.t-skel{animation:none!important}
   .hm-ring{opacity:0}.view.active,.view.active.v-push,.view.active.v-back,.msg,.modal .box,.modal.open{animation:none!important}.nav,.orb{transition:none}
 }
+/* =====================================================================
+   v42 VISUAL UPGRADE: Home "Today", living mic, tab bar, charts, gestures.
+   Look only: no voice, mic, alarm or storage logic lives in these rules.
+   ===================================================================== */
+/* ---------- Home: mic on top, then today at a glance ---------- */
+.hm{min-height:0}
+.hm-stage{flex:none;padding:var(--sp-5) 0 var(--sp-2)}
+.hm-orb{--sz:clamp(104px,calc(100svh - 708px),136px);margin-top:var(--sp-3)}
+.hm-hint{margin:var(--sp-4) 0 0}
+.hm-quick{margin-top:var(--sp-3)}
+.hm-sec{display:flex;align-items:baseline;justify-content:space-between;gap:var(--sp-3);margin:var(--sp-5) var(--sp-1) var(--sp-3)}
+.hm-sec h3{margin:0;font-size:var(--fs-xl);font-weight:var(--fw-bold);letter-spacing:-.024em}
+.hm-today{display:flex;flex-direction:column;gap:var(--sp-3)}
+.hm-today:empty{display:none}
+.hm-after{display:flex;flex-direction:column;gap:var(--sp-2);margin-top:var(--sp-3)}
+.hm-after .hm-brief{margin:0}
+.hm-card{--ink:color-mix(in srgb,var(--c,var(--accent)) 76%,var(--text));position:relative;display:flex;min-width:0;width:100%;margin:0;border:1px solid var(--card-border);background:var(--card);box-shadow:var(--card-shadow);border-radius:var(--r-xl);color:var(--text);text-align:left;font:inherit;cursor:pointer;overflow:hidden}
+.hm-chip{display:inline-flex;align-items:center;gap:1px;align-self:flex-start;margin-top:var(--sp-2);padding:5px 7px 5px 11px;border-radius:var(--r-pill);background:var(--accent-soft);color:var(--accent-ink);font-size:var(--fs-xs);font-weight:var(--fw-semi);white-space:nowrap}
+.hm-chip svg{width:13px;height:13px}
+/* the rings card */
+.hm-day{align-items:center;gap:var(--sp-4);padding:var(--sp-4) var(--sp-4) var(--sp-4) var(--sp-3);cursor:default;background:radial-gradient(120% 90% at 0% 0%,color-mix(in srgb,var(--accent) 9%,transparent),transparent 60%),var(--card)}
+.hm-rings{flex:none;width:136px;height:136px;overflow:visible}
+.hr-track{fill:none;stroke-width:12.5;opacity:.17}
+.hr-fill{fill:none;stroke-width:12.5;stroke-linecap:round;animation:hrIn 1.2s var(--ease) both;filter:drop-shadow(0 0 3px color-mix(in srgb,currentColor 0%,transparent))}
+@keyframes hrIn{from{stroke-dashoffset:var(--c0)}}
+.hm-legend{flex:1;min-width:0;display:flex;flex-direction:column;gap:var(--sp-3)}
+.hm-lg{display:flex;flex-direction:column;align-items:flex-start;min-width:0;width:100%;padding:0;margin:0;border:0;background:none;text-align:left;cursor:pointer;color:var(--text)}
+.hm-lg-l{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:var(--fs-xs);font-weight:var(--fw-semi);letter-spacing:-.005em}
+.hm-lg-l i{width:8px;height:8px;border-radius:50%;background:var(--c);box-shadow:0 0 0 3px color-mix(in srgb,var(--c) 20%,transparent)}
+.hm-lg-v{font-size:var(--fs-2xl);font-weight:var(--fw-heavy);letter-spacing:-.032em;line-height:1.15;font-variant-numeric:tabular-nums;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.hm-lg-v small{font-size:var(--fs-sm);font-weight:var(--fw-semi);color:var(--muted);margin-left:4px;letter-spacing:0}
+.hm-lg-s{font-size:var(--fs-xs);color:var(--muted);font-weight:var(--fw-med);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.hm-lg-s.bad{color:var(--bad-ink);font-weight:var(--fw-semi)}.hm-lg-s.warn{color:var(--warn-ink);font-weight:var(--fw-semi)}.hm-lg-s.good{color:var(--good-ink);font-weight:var(--fw-semi)}
+.hm-lg .hm-chip{margin-top:3px}
+/* next up + sleep */
+.hm-two{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3)}
+.hm-mini{flex-direction:column;align-items:flex-start;padding:var(--sp-3) var(--sp-4) var(--sp-4) var(--sp-3);min-height:138px}
+.hm-mh{display:flex;align-items:center;gap:var(--sp-2);width:100%;min-width:0}
+.hm-ic{flex:none;width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:color-mix(in srgb,var(--c) 15%,transparent);color:var(--ink)}
+.hm-ic svg{width:17px;height:17px}
+.hm-ml{flex:1;min-width:0;color:var(--muted);font-size:var(--fs-xs);font-weight:var(--fw-semi);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hm-pill{flex:none;padding:3px 8px;border-radius:var(--r-pill);background:color-mix(in srgb,var(--c) 14%,transparent);color:var(--ink);font-size:var(--fs-2xs);font-weight:var(--fw-bold)}
+.hm-mt{margin-top:auto;padding-top:var(--sp-3);font-size:var(--fs-lg);font-weight:650;letter-spacing:-.022em;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.hm-ms{margin-top:3px;color:var(--muted);font-size:var(--fs-xs);font-weight:var(--fw-med);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.hm-next.late .hm-ms{color:var(--bad-ink);font-weight:var(--fw-semi)}
+.hm-big{margin-top:auto;padding-top:var(--sp-3);font-size:var(--fs-4xl);font-weight:var(--fw-heavy);letter-spacing:-.04em;line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap}
+.hm-big small{font-size:var(--fs-base);color:var(--muted);font-weight:var(--fw-semi);margin:0 3px 0 1px;letter-spacing:0}
+.hm-big.na{color:var(--faint-ink)}
+.hm-bars{display:flex;align-items:flex-end;gap:4px;width:100%;height:24px;margin-top:var(--sp-3)}
+.hm-bars i{flex:1;min-height:3px;border-radius:3px;background:color-mix(in srgb,var(--c) 28%,transparent)}
+.hm-bars i.on{background:var(--c)}
+/* weather strip */
+.hm-wx{align-items:center;gap:var(--sp-3);padding:var(--sp-3) var(--sp-4) var(--sp-3) var(--sp-3);min-height:66px;--c:var(--info)}
+.hm-wx-g{flex:none;width:42px;height:42px;display:grid;place-items:center}
+.hm-wx-g svg{width:100%;height:100%}
+.hm-wx-g.sm{width:30px;height:30px;border-radius:9px;background:color-mix(in srgb,var(--c) 15%,transparent);color:var(--ink);margin:0 6px}
+.hm-wx-g.sm svg{width:17px;height:17px}
+.hm-wx-t{flex:none;font-size:var(--fs-3xl);font-weight:var(--fw-heavy);letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.hm-wx-b{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.3}
+.hm-wx-b b,.hm-wx-b small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hm-wx-b b{font-weight:var(--fw-semi);font-size:var(--fs-base);letter-spacing:-.015em}
+.hm-wx-b small{color:var(--muted);font-size:var(--fs-xs);font-weight:var(--fw-med)}
+.hm-wx>svg:last-child{flex:none;width:18px;height:18px;color:var(--faint-ink)}
+.hm-wx .hm-chip{margin:0}
+@media (max-width:360px){.hm-rings{width:116px;height:116px}.hm-day{gap:var(--sp-3)}.hm-lg-v{font-size:var(--fs-xl)}.hm-big{font-size:var(--fs-3xl)}}
+@media (max-height:760px){.hm-orb{--sz:clamp(96px,calc(100svh - 680px),124px)}.hm-stage{padding-top:var(--sp-3)}}
+@media (prefers-reduced-motion:reduce){.hr-fill{animation:none}}
 </style>
 </head>
 <body class="at-home">
@@ -670,9 +737,14 @@ body .cal-hero-empty h3,body .hl-empty h3{font-size:var(--fs-xl);font-weight:var
     </div>
 
     <button class="hm-brief hm-setup" id="heroSetup" hidden><span class="pb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 3.5 12.9 8l4.6 1.9-4.6 1.9L11 16.3l-1.9-4.5L4.5 9.9 9.1 8z"/><path d="M18.5 14.5l.8 1.9 1.9.8-1.9.8-.8 1.9-.8-1.9-1.9-.8 1.9-.8z"/></svg></span><span class="bt"><b>Set up Jarvis · 1 minute</b><small>Your name, currency, city and iPhone</small></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+    <!-- v42: today at a glance (homeToday() fills it) -->
+    <div class="hm-sec"><h3>Today</h3><button class="link" data-go="today">Full day</button></div>
+    <div class="hm-today" id="hmToday"></div>
+    <!-- the brief and the backup nudge sit under today's numbers -->
+    <div class="hm-after">
     <button class="hm-brief" id="heroBrief" hidden><span class="pb"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l11-6.5a1 1 0 0 0 0-1.72l-11-6.5A1 1 0 0 0 8 5.5z"/></svg><span class="eq"><i></i><i></i><i></i></span></span><span class="bt"><b id="heroBriefTxt">Play my morning brief</b><small id="heroBriefSub">Weather, plans and money, read aloud</small></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button>
     <button class="hm-brief hm-setup" id="heroBackup" hidden><span class="pb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5v11"/><path d="m7.5 10 4.5 4.5 4.5-4.5"/><path d="M4.5 16.5v2a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-2"/></svg></span><span class="bt"><b>Save a backup</b><small id="heroBackupSub">Your data lives only on this phone</small></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
-    <div class="hm-tiles" id="heroTiles"></div>
+    </div>
   </section>
 
   <!-- ============ TODAY: the full overview (weather, habits, food, money, what's next, markets, notes) ============ -->
@@ -1586,18 +1658,6 @@ function soonText(ts){
   if (d.toDateString() === new Date().toDateString()) return `Today at ${t}`;
   return whenText(ts).replace(', ', ' at ');
 }
-/* each tile's icon is tinted with the colour of the screen it opens (look only) */
-const TILE_C = {wx:'var(--info)', today:'var(--info)', calendar:'var(--c-calendar)', reminders:'var(--c-reminders)', budget:'var(--c-money)', food:'var(--c-food)', habits:'var(--c-habits)', health:'var(--c-health)'};
-function tileHTML(o){
-  const c = TILE_C[o.act] || TILE_C[o.go];
-  return `<button class="tile" ${o.go?`data-go="${o.go}"`:''} ${o.act?`data-tile="${o.act}"`:''}${c?` style="--c:${c}"`:''}>
-    <div class="t-top"><span class="t-lbl">${esc(o.lbl)}</span><span class="t-ic${o.icSm?' sm':''}">${o.ic}</span></div>
-    ${o.skel?'<span class="t-skel"></span>':`<div class="t-val${o.txt?' txt':valSize(o.val)}">${o.val}</div>`}
-    ${o.bar!=null?`<div class="t-bar"><i class="${o.barCls||''}" style="width:${Math.max(0,Math.min(100,o.bar))}%"></i></div>`:''}
-    <div class="t-sub ${o.subCls||''}">${o.sub}</div></button>`;
-}
-/* big numbers ($12,450, "1,250 AED") step down a size instead of being cut off */
-function valSize(v){ const n = String(v).replace(/<small>.*?<\/small>|<[^>]+>/g,'').length; return n > 9 ? ' xs' : n > 7 ? ' sm' : ''; }
 const N0 = new Intl.NumberFormat('en-US',{maximumFractionDigits:0});
 /* the next calendar event (synced iPhone calendar or added by Jarvis), as {title, start, end}; all-day events are skipped */
 function calNext(){
@@ -1612,54 +1672,109 @@ function calNext(){
   const end = isFinite(+n.end) && +n.end > start ? +n.end : start + 36e5;
   return end > Date.now() ? {title:String(n.title), start, end} : null;
 }
-function homeTiles(){
-  const tiles = [];
-  // weather (from the morning-brief feature)
+/* =====================================================================
+   v42 HOME "TODAY": one glanceable card stack under the mic.
+   Rings for calories, steps and money this month, then the next event,
+   last night's sleep and the weather. It only READS the features' data.
+   A feature that isn't set up shows a gentle "Set up" chip instead of an empty box.
+   ===================================================================== */
+const HM_IC = {
+  moon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>',
+  chev:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>'
+};
+const hmN = n => N0.format(Math.round(n));
+/* one ring of the "Your day" rings: r = radius inside a 140 x 140 box, p = 0..1 */
+function hmRing(r, p, c){
+  const C = 2*Math.PI*r, f = Math.max(0, Math.min(1, +p || 0));
+  return `<circle class="hr-track" cx="70" cy="70" r="${r}" style="stroke:${c}"/>` +
+    (f > 0 ? `<circle class="hr-fill" cx="70" cy="70" r="${r}" transform="rotate(-90 70 70)" style="stroke:${c};stroke-dasharray:${C.toFixed(1)};stroke-dashoffset:${(C*(1-f)).toFixed(1)};--c0:${C.toFixed(1)}"/>` : '');
+}
+/* a "Set up" chip: tapping the row it sits in opens that feature's setup */
+const hmChip = (t) => `<span class="hm-chip">${t||'Set up'}${HM_IC.chev}</span>`;
+function hmLegend(o){
+  return `<button class="hm-lg" ${o.attr} style="--c:${o.c}" aria-label="${esc(o.aria)}">
+    <span class="hm-lg-l"><i></i>${o.lbl}</span>
+    ${o.val!=null?`<span class="hm-lg-v">${o.val}</span>`:''}
+    ${o.chip?hmChip(o.chip):`<span class="hm-lg-s${o.subCls?' '+o.subCls:''}">${o.sub}</span>`}</button>`;
+}
+function hmCountdown(ts){
+  const m = Math.round((ts - Date.now())/6e4); if (m <= 0) return 'now';
+  if (m < 60) return `in ${m} min`; const h = Math.round(m/60); return h < 24 ? `in ${h} h` : '';
+}
+function homeToday(){
+  const has = id => plugins.views.some(v=>v.id===id);
+  const rings = [], legend = [];
+  // 1. calories (Food)
+  let food = null; try { if (Jarvis.food && typeof Jarvis.food.today==='function') food = Jarvis.food.today(); } catch(e){}
+  if (food && food.goal > 0){
+    const eaten = food.kcal || 0, left = food.goal - eaten, over = left < 0;
+    rings.push({p:eaten/food.goal, c:over?'var(--warn)':'var(--c-food)'});
+    legend.push({lbl:'Calories', c:over?'var(--warn)':'var(--c-food)', attr:'data-go="food"', aria:`Calories: ${hmN(Math.abs(left))} ${over?'over':'left'}`,
+      val:`${hmN(Math.abs(left))}<small>${over?'over':'left'}</small>`, sub: eaten ? `${hmN(eaten)} of ${hmN(food.goal)} eaten` : 'Nothing logged yet', subCls: over?'warn':''});
+  } else if (has('food')) { rings.push({p:0, c:'var(--c-food)'}); legend.push({lbl:'Calories', c:'var(--c-food)', attr:'data-go="food"', aria:'Calories: set up', chip:'Set up'}); }
+  // 2. steps (iPhone Health)
+  let H = null; try { H = Jarvis.health || null; } catch(e){}
+  if (H){
+    let s = null; try { s = H.syncedAt && H.stepsToday ? H.stepsToday() : null; } catch(e){}
+    const goal = (H.store && H.store.goal) || 8000;
+    if (s){ rings.push({p:s.v/goal, c:'var(--c-health)'});
+      legend.push({lbl:'Steps', c:'var(--c-health)', attr:'data-go="health"', aria:`Steps: ${hmN(s.v)} of ${hmN(goal)}`, val:hmN(s.v), sub: s.v >= goal ? 'Goal reached 🎉' : `${hmN(goal - s.v)} to go`, subCls: s.v >= goal ? 'good' : ''}); }
+    else { rings.push({p:0, c:'var(--c-health)'});
+      legend.push({lbl:'Steps', c:'var(--c-health)', attr:'data-go="health"', aria: H.syncedAt ? 'Steps: not synced today' : 'Steps: set up', val: H.syncedAt ? '—' : null, sub:'Not synced today', chip: H.syncedAt ? '' : 'Set up'}); }
+  }
+  // 3. money this month (whole numbers so they always add up)
+  const spent = sum(inMonth(monthKey(Date.now()))), sp0 = Math.round(spent), b0 = Math.round(S.budget||0);
+  if (b0 > 0){ const over = sp0 > b0, warn = spent/b0 > .8;
+    rings.push({p:spent/b0, c:over?'var(--bad)':'var(--c-money)'});
+    legend.push({lbl:'Spent', c:over?'var(--bad)':'var(--c-money)', attr:'data-go="budget"', aria:`Spent this month: ${fmt(sp0)} of ${fmt(b0)}`, val:fmt(sp0),
+      sub: over ? `${fmt(Math.max(1, sp0-b0))} over budget` : `${fmt(b0-sp0)} left of ${fmt(b0)}`, subCls: over?'bad':warn?'warn':''}); }
+  else { rings.push({p:0, c:'var(--c-money)'});
+    legend.push({lbl:'Spent', c:'var(--c-money)', attr:'data-set-budget', aria:`Spent this month: ${fmt(sp0)}. Set a budget`, val:fmt(sp0), chip:'Set budget'}); }
+
+  const R = [58, 43, 28];
+  const ringSvg = `<svg class="hm-rings" viewBox="0 0 140 140" aria-hidden="true">${rings.slice(0,3).map((x,i)=>hmRing(R[i], x.p, x.c)).join('')}</svg>`;
+  let html = `<div class="hm-card hm-day">${ringSvg}<div class="hm-legend">${legend.map(hmLegend).join('')}</div></div>`;
+
+  // 4. next up: the soonest reminder or calendar event (an event on right now counts as now)
+  let next = '';
+  try {
+    const r = upcoming()[0], od = overdue()[0], ev = calNext(), now = Date.now(), hasCal = has('calendar');
+    const calSet = hasCal && Jarvis.calendar && Jarvis.calendar.store && (Jarvis.calendar.store.syncedAt || (Jarvis.calendar.store.local||[]).length);
+    const card = (lbl, title, sub, go, pill, chip, cls) => `<button class="hm-card hm-mini hm-next${cls?' '+cls:''}" data-go="${go}" style="--c:var(--c-calendar)">
+      <span class="hm-mh"><span class="hm-ic">${TI.cal}</span><span class="hm-ml">${lbl}</span>${pill?`<span class="hm-pill">${pill}</span>`:''}</span>
+      <span class="hm-mt">${title}</span>${chip?hmChip(chip):`<span class="hm-ms">${sub}</span>`}</button>`;
+    if (ev && (!r || Math.max(ev.start, now) <= r.at)){ const live = ev.start <= now;
+      next = card(live?'Happening now':'Next up', esc(ev.title), live ? 'Until '+timeOf(ev.end) : soonText(ev.start), hasCal?'calendar':'reminders', live?'now':hmCountdown(ev.start)); }
+    else if (r) next = card('Next up', esc(r.text), soonText(r.at), 'reminders', hmCountdown(r.at));
+    else if (od) next = card('Next up', esc(od.text), 'Overdue · '+whenText(od.at), 'reminders', '', '', 'late');
+    else next = card('Next up', 'All clear', 'Nothing coming up', hasCal?'calendar':'reminders', '', hasCal && !calSet ? 'Connect calendar' : '');
+  } catch(e){}
+
+  // 5. last night's sleep with the past week as small bars
+  let sleep = '';
+  if (H){
+    let n = null; try { n = H.syncedAt && H.lastNight ? H.lastNight() : null; } catch(e){}
+    const hist = (H.store && H.store.history) || {}, bars = [];
+    for (let i = 6; i >= 0; i--){ const d = new Date(); d.setHours(12,0,0,0); d.setDate(d.getDate()-i); const k = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; bars.push(hist[k] && hist[k].sleep > 0 ? hist[k].sleep : 0); }
+    const mx = Math.max(540, ...bars), any = bars.some(Boolean);
+    const barsHtml = any ? `<span class="hm-bars" aria-hidden="true">${bars.map((v,i)=>`<i style="height:${v?Math.max(12, v/mx*100):6}%"${i===6?' class="on"':''}></i>`).join('')}</span>` : '';
+    const tot = n ? (n.asleep || n.inBed) : 0;
+    sleep = `<button class="hm-card hm-mini hm-sleep" data-go="health" style="--c:#7c6cf6">
+      <span class="hm-mh"><span class="hm-ic">${HM_IC.moon}</span><span class="hm-ml">Sleep</span></span>
+      ${n ? `<span class="hm-big">${Math.floor(tot/60)}<small>h</small> ${String(Math.round(tot)%60).padStart(2,'0')}<small>m</small></span>${barsHtml||`<span class="hm-ms">Last night</span>`}`
+          : H.syncedAt ? `<span class="hm-big na">—</span><span class="hm-ms">No sleep data last night</span>` : `<span class="hm-mt">See your sleep</span>${hmChip('Set up')}`}</button>`;
+  }
+  html += `<div class="hm-two">${next}${sleep}</div>`;
+
+  // 6. weather (from the morning-brief feature)
   try { const W = Jarvis.weather; if (W){
     const unitF = (db.brief && db.brief.unit) === 'F', T = c => Math.round(unitF ? c*9/5+32 : c);
     const loc = W.location, v = loc ? W.now() : null;
-    if (!loc) tiles.push({lbl:'Weather', ic:TI.pin, icSm:true, val:'Set your city', txt:true, sub:'For your daily forecast', act:'wx'});
-    else if (v) tiles.push({lbl:loc.name, ic:wxGlyph(v.code, v.day), val:`${T(v.t)}°`, sub:`${W.describe(v.code, v.day)}${typeof v.max==='number'?` · ${T(v.max)}° / ${T(v.min)}°`:''}`, go:'today'});
-    else tiles.push({lbl:loc.name, ic:TI.pin, icSm:true, skel:true, sub:navigator.onLine===false?'Offline · no forecast yet':'Getting the weather…', go:'today'});
+    if (!loc) html += `<button class="hm-card hm-wx" data-tile="wx"><span class="hm-wx-g sm">${TI.pin}</span><span class="hm-wx-b"><b>Weather</b><small>Your daily forecast</small></span>${hmChip('Set your city')}</button>`;
+    else if (v) html += `<button class="hm-card hm-wx" data-go="today"><span class="hm-wx-g">${wxGlyph(v.code, v.day)}</span><span class="hm-wx-t">${T(v.t)}°</span><span class="hm-wx-b"><b>${esc(loc.name)}</b><small>${esc(W.describe(v.code, v.day))}${typeof v.max==='number'?` · H ${T(v.max)}° L ${T(v.min)}°`:''}</small></span>${HM_IC.chev}</button>`;
+    else html += `<button class="hm-card hm-wx" data-go="today"><span class="hm-wx-g sm">${TI.pin}</span><span class="hm-wx-b"><b>${esc(loc.name)}</b><small>${navigator.onLine===false?'Offline · no forecast yet':'Getting the weather…'}</small></span></button>`;
   } } catch(e){}
-  // next up: the soonest reminder or calendar event
-  try {
-    const r = upcoming()[0], od = overdue()[0], ev = calNext(), now = Date.now();
-    const hasCal = plugins.views.some(x=>x.id==='calendar');
-    // whichever happens first; an event that is on right now counts as now
-    const pickEv = ev && (!r || Math.max(ev.start, now) <= r.at);
-    if (pickEv){ const live = ev.start <= now;
-      tiles.push({lbl:live?'Happening now':'Next up', ic:TI.cal, icSm:true, val:esc(ev.title), txt:true, sub:live?'Until '+new Date(ev.end).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}):soonText(ev.start), go:hasCal?'calendar':'reminders'}); }
-    else if (r) tiles.push({lbl:'Next up', ic:TI.clock, icSm:true, val:esc(r.text), txt:true, sub:soonText(r.at), go:'reminders'});
-    else if (od) tiles.push({lbl:'Next up', ic:TI.clock, icSm:true, val:esc(od.text), txt:true, sub:'Overdue · '+whenText(od.at), subCls:'bad', go:'reminders'});
-    else tiles.push({lbl:'Next up', ic:TI.clock, icSm:true, val:'All clear', txt:true, sub:'Nothing coming up', go:hasCal?'calendar':'reminders'});
-  } catch(e){}
-  // money: this month vs budget
-  try {
-    const spent = sum(inMonth(monthKey(Date.now())));
-    const d0 = new Date(); d0.setHours(0,0,0,0); const today = sum(db.expenses.filter(e=>e.type==='expense' && e.at>=+d0));
-    // whole numbers on the tile, and they always add up ($497 spent + $1,003 left = $1,500)
-    const sp0 = Math.round(spent), b0 = Math.round(S.budget||0);
-    const o = {lbl:'Spent this month', ic:TI.wallet, icSm:true, val:fmt(sp0), go:'budget'};
-    if (S.budget){ const pct = spent/S.budget*100, over = spent > S.budget;
-      o.bar = pct; o.barCls = over?'bad':pct>80?'warn':''; o.sub = over ? `Over by ${fmt(Math.max(1, sp0-b0))}` : `${fmt(Math.max(0, b0-sp0))} left of ${fmt(b0)}`; if (over) o.subCls = 'bad'; }
-    else o.sub = today ? `${fmt(today)} today` : 'Tap to set a budget';
-    tiles.push(o);
-  } catch(e){}
-  // the 4th spot: iPhone Health when it matters most (he picked Steps/Sleep for Home, or last night's sleep
-  // in the morning right after a sync), otherwise calories left, else today's habits, else Health
-  let ht = null, hFirst = false;
-  try { const H = Jarvis.health; ht = H && typeof H.tile==='function' ? H.tile() : null;
-    if (ht){ const pref = (H.store && H.store.tile) || 'auto'; hFirst = pref==='steps' || pref==='sleep' || (pref==='auto' && ht.lbl==='Last night' && Date.now() - (H.syncedAt||0) < 12*36e5); } } catch(e){ ht = null; }
-  let food = null; try { if (Jarvis.food && typeof Jarvis.food.today==='function') food = Jarvis.food.today(); } catch(e){}
-  if (hFirst) tiles.push(ht);
-  else if (food && food.goal > 0){
-    const left = food.goal - (food.kcal||0), over = left < 0;
-    tiles.push({lbl: over?'Calories over':'Calories left', ic:TI.flame, icSm:true, val:N0.format(Math.abs(Math.round(left))), bar:(food.kcal||0)/food.goal*100, barCls:over?'bad':'good', sub:food.kcal?`${N0.format(Math.round(food.kcal))} of ${N0.format(food.goal)} eaten`:'Nothing logged yet', subCls:over?'warn':'', go:'food'});
-  } else { try { const h = Jarvis.habits && typeof Jarvis.habits.today==='function' && Jarvis.habits.today(); if (h && h.total) tiles.push({lbl:'Habits today', ic:TI.habit, icSm:true, val:`${h.done}<small>/ ${h.total}</small>`, bar:h.done/h.total*100, barCls:'good', sub:h.done>=h.total?'All done today':`${h.total-h.done} to go`, go:'habits'}); } catch(e){} }
-  // iPhone Health (features/health.js): otherwise it fills the last spot when there's room
-  if (!hFirst && ht && tiles.length < 4) tiles.push(ht);
-  return tiles;
+  return html;
 }
 let lastReply = '';
 function renderHome(){
@@ -1682,9 +1797,8 @@ function renderHome(){
   // weekly backup nudge: data lives only on this phone
   const bk = backupDue(); $('heroBackup').hidden = !bk || setup;
   if (bk) $('heroBackupSub').textContent = bk === 'never' ? 'Your data lives only on this phone' : `${bk} days since your last one`;
-  const tiles = homeTiles(); if (tiles.length % 2) tiles[tiles.length-1].wide = true;
-  const html = tiles.map(t=>tileHTML(t).replace('class="tile"', t.wide?'class="tile wide"':'class="tile"')).join('');
-  if ($('heroTiles').dataset.h !== html){ $('heroTiles').innerHTML = html; $('heroTiles').dataset.h = html; }
+  const html = homeToday();
+  if ($('hmToday').dataset.h !== html){ $('hmToday').innerHTML = html; $('hmToday').dataset.h = html; }
 }
 /* the Today screen: everything that used to crowd Home */
 function renderToday(){
