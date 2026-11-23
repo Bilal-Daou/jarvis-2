@@ -57,3 +57,25 @@ test('voice still opens pages through the tab bar screens', async ({ app }) => {
   await expect(app.page.locator('.nav .tab.active')).toHaveText('Food');
   expect(app.errors).toEqual([]);
 });
+
+test('trend charts draw from saved history and switch 7D / 30D', async ({ app }) => {
+  await app.say('spent 25 on lunch');
+  await app.page.evaluate(() => {
+    const H = window.Jarvis.health.store, p = n => String(n).padStart(2, '0');
+    for (let i = 0; i < 20; i++) { const d = new Date(); d.setDate(d.getDate() - i); H.history[`${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`] = { steps: 5000 + i * 100, sleep: 420, weight: 80 - i * 0.1 }; }
+    H.syncedAt = Date.now();
+  });
+  const before = await app.page.evaluate(() => JSON.stringify(window.Jarvis.health.store.history));
+  await app.go('health');
+  const steps = app.page.locator('[data-trend-id="steps"]');
+  await expect(steps.locator('.tr-bar:not(.none)')).toHaveCount(7);
+  await steps.locator('[data-trend="steps:30"]').click();
+  await expect(app.page.locator('[data-trend-id="steps"] .tr-bar:not(.none)')).toHaveCount(20);
+  await expect(app.page.locator('[data-trend-id="weight"] .tr-line')).toBeVisible();
+  expect(await app.page.evaluate(() => JSON.stringify(window.Jarvis.health.store.history))).toBe(before);   // read only
+  await app.go('budget');
+  await expect(app.page.locator('[data-trend-id="spend"]')).toContainText('$25');
+  await app.go('food');
+  await expect(app.page.locator('[data-trend-id="kcal"]')).toBeVisible();
+  expect(app.errors).toEqual([]);
+});

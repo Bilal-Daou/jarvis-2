@@ -1787,8 +1787,8 @@ Keep names short (at most 4 words) in plain English. portion is a short everyday
       <div id="fdMeals"></div>
       <div class="section-h"><h3>Water</h3><span id="fdWaterTxt" style="color:var(--muted);font-size:var(--fs-sm);font-weight:var(--fw-semi)"></span></div>
       <div class="card" id="fdWater"></div>
-      <div class="section-h"><h3>Last 7 days</h3><span id="fdWeekAvg" style="color:var(--muted);font-size:var(--fs-sm);font-weight:var(--fw-semi)"></span></div>
-      <div class="card" id="fdWeek"></div>
+      <div class="section-h"><h3>Trend</h3><span id="fdWeekAvg" style="color:var(--muted);font-size:var(--fs-sm);font-weight:var(--fw-semi)"></span></div>
+      <div id="fdWeek"></div>
       <details class="fdp-adv"><summary>Advanced: use your own Google AI key</summary><div class="card" id="fdAI"></div></details>
       <p class="fd-note">Product data from Open Food Facts (free and open). Common-food values are typical estimates. Photo estimates by Google Gemini.</p>`;
     const q = s => el.querySelector(s);
@@ -1871,16 +1871,16 @@ Keep names short (at most 4 words) in plain English. portion is a short everyday
     q('#fdWater').innerHTML = `<div class="fd-water"><div class="fd-glasses ${Math.max(wg,w)>10?'many':''}">${Array.from({length:Math.max(wg, w)}, (_,i)=>`<button class="fd-glass" data-glass="${i}" aria-label="Glass ${i+1}">${glassSVG(i<w)}</button>`).join('')}</div>
       <button class="fd-wbtn m" data-water="-1" aria-label="Remove a glass" ${w?'':'disabled style="opacity:.4"'}>${I.minus}</button><button class="fd-wbtn" data-water="1" aria-label="Add a glass">${I.plus}</button></div>
       <div style="font-size:var(--fs-xs);color:var(--muted);margin-top:10px">${w>=wg?'🎉 Water goal reached. Nice work!':`💧 ${wg-w} more glass${wg-w>1?'es':''} to go · say “I drank a glass of water”`}</div>`;
-    // week chart
-    const days = Array.from({length:7}, (_,i)=>shiftKey(viewKey, i-6));
-    const vals = days.map(k=>dayTotals(k).kcal);
-    const mx = Math.max(goal*1.15, ...vals, 1);
-    const logged = vals.filter(v=>v>0);
-    q('#fdWeekAvg').textContent = logged.length ? `avg ${N(logged.reduce((a,b)=>a+b,0)/logged.length)} kcal` : '';
-    q('#fdWeek').innerHTML = `<div class="fd-chart" role="img" aria-label="Calories for the last 7 days">
-      <div class="fd-goal-line" style="bottom:${22 + (goal/mx)*(150-22-18)}px"><span>Goal ${N(goal)}</span></div>
-      ${days.map((k,i)=>{ const v = vals[i]; const dd = keyDate(k); const sel = k===viewKey; return `<button class="fd-col ${sel?'sel':''} ${v>goal?'over':''} ${v?'':'zero'}" data-day="${k}" aria-label="${dateLabel(k)}: ${N(v)} kcal">${sel&&v?`<em>${N(v)}</em>`:''}<i style="height:${v?Math.max(v/mx*(150-22-18), 4):3}px"></i><span>${dd.toLocaleDateString([], {weekday:'short'})}</span></button>`; }).join('')}
-    </div>${vals.every(v=>!v)?`<div style="text-align:center;color:var(--muted);font-size:var(--fs-sm);margin-top:6px">Log food to see your week take shape.</div>`:''}`;
+    // calorie trend (v42): 7 or 30 days, drawn by index.html's Jarvis.trend; tap a day's bar to open that day
+    if (J.trend){
+      const h = J.trend({id:'kcal', title:'Calories', color:'var(--c-food)', kind:'bar', goal, overBad:true, tap:'data-day',
+        points: n => J.trendDays(n).map(d=>({t:d.t, key:d.key, v: dayTotals(d.key).kcal || null, sel: d.key===viewKey})),
+        axis: v => v >= 1000 ? +(v/1000).toFixed(1)+'k' : String(Math.round(v)),
+        head: v => ({big:`${N(J.trendAvg(v))}<small>kcal a day</small>`, sub:`average on ${v.length} logged day${v.length>1?'s':''} · goal ${N(goal)}`}),
+        empty:'Log food to see your calories take shape.'});
+      q('#fdWeekAvg').textContent = '';
+      const wk = q('#fdWeek'); if (wk.dataset.h !== h){ wk.innerHTML = h; wk.dataset.h = h; }
+    }
   }
 
   J.addView({id:'food', label:'Food', icon:'🥗', color:'#22c55e', order:20, render:renderDynamic});

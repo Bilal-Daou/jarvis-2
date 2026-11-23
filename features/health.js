@@ -711,6 +711,8 @@ function viewHTML(){
   else h += `<div class="hl-miss">Optional. <button class="link" data-hl-connect="workouts" style="padding:0">Add workouts</button></div>`;
   h += `</div>`;
   h += `</div>`; // grid
+  // trends (v42): 7 or 30 days from the saved history, drawn by index.html's Jarvis.trend
+  if (J.trend) h += `<div class="section-h"><h3>Trends</h3></div>` + trendsHTML();
   // Clock alarms
   if (st.alarms){
     const list = iphoneAlarms(), flags = list.some(a => a.on != null);
@@ -727,6 +729,20 @@ function viewHTML(){
   </div>`;
   h += `<p class="hl-note">Jarvis can't read Health in the background. These numbers come from your shortcut each time it runs: your Action Button, or an automation. Everything stays on this phone.</p>`;
   return h;
+}
+/* steps, sleep and weight over the last 7 or 30 days (read-only: st.history is never changed here) */
+function trendsHTML(){
+  const pts = (n, k) => J.trendDays(n).map(d => { const x = st.history[d.key]; return {t: d.t, v: x && x[k] != null && x[k] > 0 ? +x[k] : null}; });
+  const lb = st.weight && st.weight.unit === 'lb', wv = v => lb ? v / 0.45359237 : v, wu = lb ? 'lb' : 'kg';
+  return J.trend({id: 'steps', title: 'Steps', color: C.steps[1], kind: 'bar', goal: st.goal, points: n => pts(n, 'steps'),
+      axis: v => v >= 1000 ? +(v/1000).toFixed(1) + 'k' : String(v),
+      head: v => ({big: `${N0.format(J.trendAvg(v))}<small>a day</small>`, sub: `average · goal ${N0.format(st.goal)} · ${v.filter(x => x >= st.goal).length} of ${v.length} days hit it`})})
+    + J.trend({id: 'sleep', title: 'Sleep', color: C.sleep[1], kind: 'bar', unit: 60, points: n => pts(n, 'sleep'),
+      axis: v => +(v/60).toFixed(1) + 'h',
+      head: v => ({big: `${J.trendHM(J.trendAvg(v))}<small>a night</small>`, sub: `average · longest ${J.trendHM(Math.max(...v))}`})})
+    + J.trend({id: 'weight', title: 'Weight', color: C.weight[1], kind: 'line', points: n => pts(n, 'weight').map(p => ({...p, v: p.v != null ? wv(p.v) : null})),
+      axis: v => N1.format(v),
+      head: v => { const d = v[v.length-1] - v[0]; return {big: `${N1.format(v[v.length-1])}<small>${wu}</small>`, sub: v.length > 1 ? `${Math.abs(d) < .05 ? 'steady' : (d < 0 ? '▼ ' : '▲ ') + N1.format(Math.abs(d)) + ' ' + wu} over ${v.length} readings` : 'one reading so far'}; }});
 }
 function bind(root){
   if (root._hlBound) return; root._hlBound = true;
