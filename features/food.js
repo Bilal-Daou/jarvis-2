@@ -1047,9 +1047,11 @@
   const AI_LS = 'jarvis2-ai';
   const AI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models/';
   const AI_STUDIO = 'https://aistudio.google.com/apikey';
-  // newest alias first; then the free-tier Flash models listed on ai.google.dev (Nov 2026). A model that is gone (404) or out of
-  // free quota (429) falls through to the next. 2.5 models are last: since Sep 2026 Google only serves them to keys that used them before.
-  const AI_MODELS = ['gemini-flash-latest', 'gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-2.5-flash', 'gemini-2.5-flash-lite'];
+  // newest alias first; then the free-tier Flash models on ai.google.dev models/pricing/deprecations pages (checked 23 Nov 2026).
+  // A model that is gone (404) or out of free quota (429) falls through to the next; a gone model is also forgotten if it was remembered.
+  // gemini-3.1-flash-lite shuts down 7 May 2027; gemini-2.5-flash-lite only works for keys that used it before (2.5-flash removed: shut down 1 Dec 2026).
+  // Not used on purpose: gemini-4-* (paid, except 4-hydrogen whose free tier lets Google train on your photos) and preview models.
+  const AI_MODELS = ['gemini-flash-latest', 'gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-2.5-flash-lite'];
   let aiMem = null;
   function aiState(){ if (aiMem) return aiMem; try { aiMem = JSON.parse(localStorage.getItem(AI_LS) || '{}') || {}; } catch(e){ aiMem = {}; } return aiMem; }
   function aiSave(){ try { localStorage.setItem(AI_LS, JSON.stringify(aiMem || {})); } catch(e){} }
@@ -1139,6 +1141,7 @@
           return res;
         } catch(e){
           last = e;
+          if (e.kind==='model' && st.model===model && !opts.key){ delete st.model; aiSave(); } // retired: don't try it first next time
           if (['abort','badkey','denied','project','region','offline','safety','nokey','timeout'].includes(e.kind)) throw e;
           if (e.kind==='schema' && opts.schema && !noSchema){ noSchema = true; continue; }
           if ((e.kind==='server' || e.kind==='parse') && attempt===0){ await sleep(800); continue; }
