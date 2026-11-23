@@ -1,0 +1,31 @@
+# Keeps the free Supabase project (cloud sync) awake: free projects pause after ~1 week with no activity.
+# Once a day it signs in a test user (no real data) and reads one of its rows. Values are repository secrets.
+name: Supabase keep-alive
+
+on:
+  schedule:
+    - cron: "17 6 * * *"   # every day, 06:17 UTC
+  workflow_dispatch: {}
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Sign in the test user and read a row
+        env:
+          SB_URL: ${{ secrets.SB_URL }}
+          SB_KEY: ${{ secrets.SB_KEY }}
+          SB_EMAIL: ${{ secrets.SB_PING_EMAIL }}
+          SB_PASSWORD: ${{ secrets.SB_PING_PASSWORD }}
+        run: |
+          set -euo pipefail
+          body=$(jq -n --arg e "$SB_EMAIL" --arg p "$SB_PASSWORD" '{email:$e,password:$p}')
+          token=$(curl -sf -X POST "$SB_URL/auth/v1/token?grant_type=password" \
+            -H "apikey: $SB_KEY" -H "Content-Type: application/json" -d "$body" | jq -r .access_token)
+          test -n "$token" && test "$token" != "null"
+          curl -sf "$SB_URL/rest/v1/jarvis_data?select=ns&limit=1" \
+            -H "apikey: $SB_KEY" -H "Authorization: Bearer $token" > /dev/null
+          echo "Supabase is awake."
