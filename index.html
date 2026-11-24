@@ -909,6 +909,7 @@ html,body{overscroll-behavior-x:none}
     <div class="tip" id="voiceTip"></div>
     <div class="set-group">
       <div class="set-row"><div class="set-ic" style="background:#ff2d55"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg></div><div class="lbl"><b>Speak replies</b><small>Jarvis talks back</small></div><label class="switch"><input type="checkbox" id="sSpeak" aria-label="Speak replies"><span></span></label></div>
+      <div class="set-row"><div class="set-ic" style="background:#34c759"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.6A8 8 0 1 1 21 12z"/><path d="M9 12h.01M12 12h.01M15 12h.01"/></svg></div><div class="lbl"><b>Conversation mode</b><small>After answering, Jarvis listens again. Tap the mic or say “stop” to end.</small></div><label class="switch"><input type="checkbox" id="sConvo" aria-label="Conversation mode"><span></span></label></div>
       <div class="set-row"><div class="set-ic" style="background:#0a84ff"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.6 17.5a8.5 8.5 0 1 1 14.8 0"/><path d="m12 13.5 4-4.5"/><circle cx="12" cy="13.5" r="1.2" fill="currentColor"/></svg></div><div class="lbl"><b>Speed</b></div><input type="range" id="sRate" min="0.7" max="1.4" step="0.05" aria-label="Speaking speed"></div>
       <div class="set-row"><div class="set-ic" style="background:#ff9500"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg></div><div class="lbl"><b>Pitch</b></div><input type="range" id="sPitch" min="0.6" max="1.4" step="0.05" aria-label="Voice pitch"></div>
     </div>
@@ -977,7 +978,7 @@ window.jvLog = function(m){ try { const k='jarvis2-debuglog', a=JSON.parse(local
    DATA (saved only on this device)
    ========================================================= */
 const KEY = 'jarvis2';
-const DEFAULT_SETTINGS = {name:'there', currency:'$', budget:0, speak:true, rate:1, pitch:1, voice:'', theme:'dark', accent:'#6d5dfc'};
+const DEFAULT_SETTINGS = {name:'there', currency:'$', budget:0, speak:true, rate:1, pitch:1, voice:'', theme:'dark', accent:'#6d5dfc', convo:true};
 let db = {notes:[], reminders:[], expenses:[], settings:{...DEFAULT_SETTINGS}};
 try {
   const saved = JSON.parse(localStorage.getItem(KEY) || '{}');
@@ -1022,15 +1023,24 @@ let deadVoices = {}; try { ['jarvis2-deadvoices','jarvis2-deadvoices2'].forEach(
 let voiceMisses = 0;
 function currentVoice(){ return voices.find(v=>v.name===S.voice && !deadVoices[v.name]) || voices.find(v=>!deadVoices[v.name]) || null; }
 let speakSeq = 0;
+/* v43 conversation mode state (the logic lives next to the microphone code, see "conversation mode").
+   on: a back-and-forth is running; speakId: the answer we wait to finish; waitLate: that answer was only "One moment…";
+   windowEnd: when the follow-up mic gives up; noise: noise restarts in this window; autos: follow-up rounds so far */
+const convo = {on:false, timer:null, speakId:0, waitLate:false, windowEnd:0, noise:0, autos:0};
+let nextSpeakIsTurn = false, handling = 0, voiceTurn = false;
 /* iPhone needs a moment after the mic stops before it can talk: speaking right away was silent every time (debug report, v23).
    So a reply waits until AFTER_MIC_MS have passed since the mic ended. */
 const AFTER_MIC_MS = 0; let lastMicEnd = 0;   // v24 tried 1000: no difference, so 0 (fast)
 let nowSayingText = '';
 function speak(text){
-  if (!S.speak) return;
+  const turn = nextSpeakIsTurn; nextSpeakIsTurn = false;   // v43 conversation mode: is this the answer to a spoken question?
+  if (!S.speak){ if (turn) convoEnd('Speak replies is off'); return; }
+  if (convo.on && !turn && !handling) convoEnd('other speech (alarm, brief...)');   // something else talks: stop the back-and-forth
+  if (turn && rec && rec._jvConvo && !(finalText || interimText)){ rec._jvKeepConvo = true; jvLog('convo: answer arrived, follow-up mic paused'); finish(rec, false); }
   if (!rec) setAudioSession('playback');   // v40: ask iPhone to talk even on silent (brief, typed replies); the mic switches back to 'auto' itself
   nowSayingText = text;
   const id = ++speakSeq, said = text.replace(/[•·]/g,',');
+  if (turn && convo.on){ convo.speakId = id; convo.waitLate = PLACEHOLDER.test(text); clearTimeout(convo.timer); convo.timer = null; }
   const say = (tries)=>{
     let started = false, stopped = false;
     try {
@@ -1039,7 +1049,7 @@ function speak(text){
       const v = currentVoice(); if (v){ u.voice = v; u.lang = v.lang; }
       u.rate = +S.rate; u.pitch = +S.pitch;
       u.onstart = ()=>{ jvLog('voice started'); started = true; voiceMisses = 0; speechEverStarted = true; };
-      u.onend = ()=>jvLog('voice ended');
+      u.onend = ()=>{ jvLog('voice ended'); if (convo.on && started && id === convo.speakId && id === speakSeq && !stopped) convoAfterSpeech(id); };
       u.onerror = ev=>{ jvLog('voice error: '+(ev&&ev.error)); if (ev && /interrupted|canceled/.test(ev.error || '')) stopped = true; };
       jvLog('speak (try '+tries+', voice '+(v?v.name:'default')+')'); speechSynthesis.speak(u);
       if (!v) return;
@@ -1047,6 +1057,7 @@ function speak(text){
         if (started || stopped || id !== speakSeq || (typeof rec !== 'undefined' && rec)) return;
         try { if (speechSynthesis.speaking) return; } catch(e){}
         if (tries < 1) return say(tries + 1);          // one retry, same voice
+        if (convo.on && id === convo.speakId) convoEnd('answer was not spoken');
         try { if (typeof lastAiEl !== 'undefined' && lastAiEl && lastAiEl.dataset.say === text){ lastAiEl.classList.add('tap-hear'); jvLog('reply not spoken: marked Tap to hear'); } } catch(e){}
         if (Date.now() - lastMicEnd < 20000) return;   // silent right after the mic is the iPhone, not the voice: never switch voices for it
         if (++voiceMisses >= 3){ voiceMisses = 0; deadVoices[v.name] = 1;
@@ -1263,13 +1274,17 @@ function handle(raw){
   const shown = String(raw||'').trim(); if (!shown) return;
   const said = normalizeSpeech(shown) || 'hello';
   addMsg('me', shown);
-  let reply; renderHold++; turnKind = 'feature';
+  let reply; renderHold++; turnKind = 'feature'; handling++;   // handling: a feature speaking during think() doesn't end conversation mode
+  const fromVoice = voiceTurn; voiceTurn = false;
   const id = ++turnSeq; brainHook('before', id);
-  try { reply = think(said); } catch(e){ console.error(e); reply = null; } finally { renderHold--; renderWanted = false; }
+  try { reply = think(said); } catch(e){ console.error(e); reply = null; } finally { renderHold--; renderWanted = false; handling--; }
   if (!reply){ reply = fallbackReply(String(said).toLowerCase()); }
   lastTurn = {id, said, reply, kind: turnKind};
   brainHook('after', lastTurn);
-  addMsg('ai', reply); lastAiEl = $('chat').lastElementChild; speak(reply); renderAll();
+  addMsg('ai', reply); lastAiEl = $('chat').lastElementChild;
+  if (fromVoice && convo.on) nextSpeakIsTurn = true;   // conversation mode: when this answer has been spoken, listen again
+  else if (convo.on) convoEnd('typed or tapped instead');
+  speak(reply); renderAll();
 }
 /* a reply that arrives later (after a weather or Wikipedia lookup): shown in chat, and "save that" will save it.
    opts.turn: the turn it answers (its "One moment…" placeholder is replaced when it is still the last message); opts.speak: say it aloud */
@@ -1281,7 +1296,7 @@ function addLateReply(text, opts){
   if (t && PLACEHOLDER.test(t.reply || '') && lastAiEl && chat && chat.lastElementChild === lastAiEl){ try { lastAiEl.remove(); } catch(e){} }
   addMsg('ai', text); lastAiEl = chat ? chat.lastElementChild : null;
   if (t && PLACEHOLDER.test(t.reply || '')){ t.reply = text; if (opts.kind) t.kind = opts.kind; }
-  if (opts.speak){ let tries = 0; (function waitTurn(){ let busy = false; try { busy = speechSynthesis.speaking; } catch(e){} if (busy && ++tries < 24) return setTimeout(waitTurn, 250); speak(text); })(); }
+  if (opts.speak){ let tries = 0; (function waitTurn(){ let busy = false; try { busy = speechSynthesis.speaking; } catch(e){} if (busy && ++tries < 24) return setTimeout(waitTurn, 250); if (t && convo.on && convo.waitLate) nextSpeakIsTurn = true; speak(text); })(); }
 }
 /* =========================================================
    PLUGIN API: each feature file (features/*.js) registers here
@@ -2496,7 +2511,7 @@ function flushMic(){
   try { f.start(); jvLog('dot flush: start'); } catch(e){ jvLog('dot flush: start failed'); flushRec = null; setAudioSession('playback'); return; }
   setTimeout(()=>{ if (flushRec === f) killFlush('2.5 s timeout'); }, 2500);
 }
-function closeSheet(){ jvLog('X: close chat'); const used = micUsedSinceOpen && !rec; micUsedSinceOpen = false; setTimeout(watchAfterX,0); $('sheet').classList.remove('open'); $('sheetBg').classList.remove('open'); stopListening(); stopSpeaking(); if (used) flushMic(); else jvLog('dot flush: not needed'); }   // X also stops Jarvis talking
+function closeSheet(){ jvLog('X: close chat'); const used = micUsedSinceOpen && !rec; micUsedSinceOpen = false; convoEnd('chat closed'); setTimeout(watchAfterX,0); $('sheet').classList.remove('open'); $('sheetBg').classList.remove('open'); stopListening(); stopSpeaking(); if (used) flushMic(); else jvLog('dot flush: not needed'); }   // X also stops Jarvis talking
 $('orb').onclick = ()=>openSheet(true);
 $('heroMic').onclick = ()=>openSheet(!!SR);
 $('heroHint').onclick = ()=>openSheet(!lastReply && !!SR);
@@ -2543,41 +2558,130 @@ function releaseRec(r){
 }
 /** ends a session exactly once. deliver: true = act on what was heard, false = throw it away */
 function finish(r, deliver){
-  if (!r || r._jvDone) return; r._jvDone = true; jvLog('mic finish (deliver='+deliver+', heard '+((finalText || interimText || '').trim().length)+' letters)');
-  const text = (finalText || interimText || '').replace(/\s+/g,' ').trim();
+  if (!r || r._jvDone) return; r._jvDone = true; jvLog('mic finish (deliver='+deliver+', heard '+((finalText || interimText || '').trim().length)+' letters'+(r._jvConvo?', follow-up':'')+')');
+  const text = (finalText || interimText || '').replace(/\s+/g,' ').trim(), conf = r._jvConf || 0;
   clearRecTimers(); releaseRec(r); micUI(false); jvLog('after mic '+micStateLine());
   // after the mic, leave the "play and record" audio session so Safari lets go of the microphone (and the volume is normal again)
   setAudioSession('playback');   // back to 'auto' when the mic starts again
   lastMicEnd = Date.now();
   finalText = interimText = '';
-  if (deliver && text){ $('live').textContent = 'Tap the mic to talk again.'; handle(text); }
-  else if (/^(Listening|Finishing)/.test($('live').textContent)) $('live').textContent = deliver ? "I didn't catch that. Tap the mic and try again." : 'Tap the mic and talk, or type below.';
+  const quietTxt = 'Tap the mic to talk again.';
+  // conversation mode: noise, "um", a cough or Jarvis's own echo on a follow-up is ignored, never answered
+  if (deliver && text && r._jvConvo && !convoRealWords(text, conf)){ jvLog('convo: ignored noise ('+text.length+' letters, confidence '+(Math.round(conf*100)/100)+')'); $('live').textContent = quietTxt; convoNoise(); return; }
+  if (deliver && text){
+    const notePending = pendingNote && Date.now() - pendingNote < 60e3;   // "never mind" to "What should the note say?" still gets "Okay, no note."
+    const endKind = convo.on ? convoEndWord(text) : '';
+    if (endKind === 'quiet' && r._jvConvo && !notePending){ convoEnd('user said stop'); $('live').textContent = 'Okay. Tap the mic when you need me.'; return; }
+    if (endKind) convoEnd(endKind === 'reply' ? 'user said thanks' : 'user said stop');   // the words still get their usual short answer, then the mic stays off
+    $('live').textContent = quietTxt; voiceTurn = true; try { handle(text); } finally { voiceTurn = false; }
+    return;
+  }
+  if (r._jvConvo){ $('live').textContent = quietTxt;   // silent: no reply, no error
+    if (r._jvKeepConvo) return;
+    if (deliver && !r._jvWhy){ jvLog('convo: mic ended with nothing heard'); convoNoise(); return; }   // iPhone ended it early: same as noise (listen again inside the window)
+    convoEnd(r._jvWhy || 'nothing heard'); return; }
+  if (convo.on) convoEnd(r._jvWhy || 'nothing heard');
+  if (/^(Listening|Finishing)/.test($('live').textContent)) $('live').textContent = deliver ? "I didn't catch that. Tap the mic and try again." : 'Tap the mic and talk, or type below.';
 }
-function startListening(){
-  killFlush('real mic start'); jvLog('mic tap: start'); if (!SR){ $('live').textContent = 'Voice is not supported in this browser. Type below instead.'; return; }
+/* =========================================================
+   CONVERSATION MODE (v43): after Jarvis has SPOKEN an answer to a spoken question, the mic opens again by itself.
+   - It waits CONVO.gap ms after the voice ends (iPhone can fail to start the mic right after speech, or hear the tail of it).
+   - Nothing real within CONVO.quiet ms → it stops quietly: no reply, no error, the mic goes back to idle.
+   - Noise / "um" / one letter / low confidence / Jarvis's own echo is ignored (re-listens in the same window, at most twice).
+   - Ends on: mic tap while listening, "stop" / "that's all" / "thanks Jarvis", X, leaving the app, silence, another voice
+     (alarm, brief), typing, the setting off, or CONVO.max rounds. Never listens while Jarvis talks (no barge-in on iPhone).
+   Every step is in the Debug report as "convo: ..." (never the words themselves).
+   ========================================================= */
+const CONVO = {gap: 450, quiet: 8000, max: 30};
+function convoEnd(why){
+  clearTimeout(convo.timer); convo.timer = null;
+  if (!convo.on) return;
+  convo.on = false; convo.waitLate = false; convo.speakId = 0;
+  jvLog('convo: off ('+why+')');
+  const r = rec; if (r && r._jvConvo && !r._jvDone && !(finalText || interimText)){ r._jvWhy = why; finish(r, false); }   // a follow-up mic that heard nothing just closes
+}
+/** the answer has been spoken: listen again after a short gap (or wait for the real answer after "One moment…") */
+function convoAfterSpeech(id){
+  clearTimeout(convo.timer);
+  if (convo.waitLate){ jvLog('convo: waiting for the full answer');
+    convo.timer = setTimeout(()=>{ if (convo.on && convo.waitLate) convoEnd('the full answer never came'); }, 20000); return; }
+  jvLog('convo: voice ended, mic again in '+CONVO.gap+' ms');
+  convo.timer = setTimeout(()=>convoListen(false), CONVO.gap);
+}
+/** open the follow-up mic. again = a restart after noise, inside the same quiet window */
+function convoListen(again, tries){
+  convo.timer = null;
+  if (!convo.on) return;
+  let talking = false; try { talking = speechSynthesis.speaking; } catch(e){}
+  if (talking && (tries || 0) < 4){ convo.timer = setTimeout(()=>convoListen(again, (tries || 0) + 1), 300); return; }   // the voice may report "speaking" a moment after it ended
+  const ring = window.Jarvis && Jarvis.calendar && Jarvis.calendar.ring && Jarvis.calendar.ring.active;
+  const stopWhy = S.convo === false ? 'setting is off' : !$('sheet').classList.contains('open') ? 'chat closed' : document.hidden ? 'app hidden'
+    : ring ? 'an alarm is ringing' : talking ? 'Jarvis is still talking' : !SR ? 'no speech recognition' : '';
+  if (stopWhy) return convoEnd(stopWhy);
+  if (rec){ jvLog('convo: mic already on, no second start'); return; }
+  if (!again){ if (++convo.autos > CONVO.max) return convoEnd('too many rounds in a row'); convo.windowEnd = Date.now() + CONVO.quiet; convo.noise = 0; }
+  jvLog('convo: listening again (round '+convo.autos+(again?', after noise':'')+')');
+  startListening({auto: true});
+}
+/** a follow-up heard only noise: try again if there's time left in the quiet window, else stop quietly */
+function convoNoise(){
+  if (!convo.on) return;
+  if (convo.windowEnd - Date.now() > 2500 && convo.noise < 2){ convo.noise++; clearTimeout(convo.timer); convo.timer = setTimeout(()=>convoListen(true), CONVO.gap); }
+  else convoEnd('only noise');
+}
+const CONVO_FILLER = /^(?:(?:u+h+|u+m+|h+m+|m+h*m*|a+h+|o+h+|e+r+|e+h+|huh|ha+|uh huh|mhm|hmm+|oops|ok|okay|the|a|an|and|i|so|but|yeah ok)\s*)+$/;
+/** real words? (not noise, a filler, one letter, a low-confidence scrap, or the end of Jarvis's own answer) */
+function convoRealWords(text, conf){
+  const t = String(text||'').toLowerCase().replace(/[’‘]/g,"'").replace(/[^a-z0-9' ]+/g,' ').replace(/\s+/g,' ').trim();
+  if (t.replace(/[^a-z0-9]/g,'').length < 2) return false;
+  if (CONVO_FILLER.test(t)) return false;
+  const words = t.split(' ').length;
+  if (conf > 0 && conf < 0.4 && words <= 3) return false;   // iPhone may report 0 (= unknown): only a real low score counts
+  const said = String(nowSayingText||'').toLowerCase().replace(/[’‘]/g,"'").replace(/[^a-z0-9' ]+/g,' ').replace(/\s+/g,' ');
+  if (words >= 2 && said.includes(t)) return false;           // the tail of Jarvis's own voice
+  return true;
+}
+/** "stop" / "that's all" → 'quiet' (no answer); "thanks Jarvis" → 'reply' (short answer, then the mic stays off); else '' */
+function convoEndWord(text){
+  let t = String(text||'').toLowerCase().replace(/[’‘]/g,"'").replace(/[^a-z' ]+/g,' ').replace(/\s+/g,' ').trim();
+  for (let i = 0; i < 3; i++) t = t.replace(/^(?:hey|ok|okay|oh|um|uh|jarvis)\s+/,'').replace(/\s+(?:jarvis|please|now|then)$/,'').trim();
+  if (/^(?:stop|stop it|stop listening|stop talking|that's all|that is all|that's it|that'll be all|that will be all|i'm done|i am done|we're done|all done|done|nothing else|never ?mind|enough|be quiet|quiet|no more|bye|bye bye|goodbye|good bye|see you|see you later)$/.test(t)) return 'quiet';
+  if (/^(?:(?:ok|okay|great|perfect|cool|nice|that's all|that's it|that is all|no)\s+)?(?:thanks|thank you|thx|cheers)(?:\s+(?:so much|a lot|very much))?(?:\s+(?:that's all|that's it|bye|goodbye))?$/.test(t)) return 'reply';
+  return '';
+}
+function startListening(opts){
+  const auto = !!(opts && opts.auto === true);   // true = conversation mode's follow-up mic (not a tap)
+  killFlush('real mic start'); jvLog(auto ? 'mic start: follow-up' : 'mic tap: start'); if (!SR){ $('live').textContent = 'Voice is not supported in this browser. Type below instead.'; return; }
   if (rec && !rec._jvStopping) return;        // already listening (or about to start)
   if (rec) finish(rec, true);                  // a stop still finishing: wrap it up first, then start fresh
+  if (!auto){ clearTimeout(convo.timer); convo.timer = null;
+    if (S.convo !== false){ if (!convo.on) jvLog('convo: on'); convo.on = true; convo.autos = 0; convo.waitLate = false; convo.speakId = 0; } }
   if (speechUnlocked && !speechEverStarted) jvLog('mic start: cancels a pending voice unlock');
   try { speechSynthesis.cancel(); } catch(e){}
   clearRecTimers(); setAudioSession('auto');
   let r;
-  try { r = new SR(); } catch(e){ $('live').textContent = 'Voice is not available right now. Type below instead.'; return; }
-  rec = r; micUsedSinceOpen = true; finalText = ''; interimText = '';
+  try { r = new SR(); } catch(e){ $('live').textContent = 'Voice is not available right now. Type below instead.'; if (auto) convoEnd('mic could not start'); return; }
+  rec = r; micUsedSinceOpen = true; finalText = ''; interimText = ''; r._jvConvo = auto;
   // Jarvis understands English: use the phone's English variant when it has one Siri dictation knows, else US English
   const nl = String(navigator.language || '');
   r.lang = /^en-(US|GB|AU|CA|IN|IE|NZ|ZA|SG|AE|SA|PH|MY)$/i.test(nl) ? nl : 'en-US'; r.interimResults = true; r.continuous = false; r.maxAlternatives = 1;
   const mine = ()=> rec === r && !r._jvDone;  // events from an old recognizer are ignored
-  r.onstart = ()=>{ jvLog('mic onstart'); if (!mine()) return; clearTimeout(recTimers.nostart); micUI(true); if (!interimText) $('live').textContent = 'Listening…';
-    recTimer('quiet', 8000, ()=>{ if (mine() && !(finalText || interimText)) { $('live').textContent = "I didn't catch that. Tap the mic and try again."; finish(r, false); } }); // nothing heard
+  const listenTxt = auto ? 'Listening for a follow-up… (tap the mic to stop)' : 'Listening…';
+  r.onstart = ()=>{ jvLog('mic onstart'); if (!mine()) return; clearTimeout(recTimers.nostart); micUI(true); if (!interimText) $('live').textContent = listenTxt;
+    // nothing heard: a tapped mic says so; a follow-up mic just closes when its quiet window is over
+    recTimer('quiet', auto ? Math.max(2000, convo.windowEnd - Date.now()) : 8000, ()=>{ if (mine() && !(finalText || interimText)) {
+      if (auto) r._jvWhy = 'silence'; else $('live').textContent = "I didn't catch that. Tap the mic and try again."; finish(r, false); } });
     recTimer('max', 25000, ()=>{ if (mine()) stopListening(); }); };                    // never more than 25 s
   r.onresult = ev=>{ if (!r._jvHeard){ r._jvHeard = 1; jvLog('mic heard words'); } if (!mine()) return; let fin = '', interim = '';
-    for (let i = 0; i < ev.results.length; i++){ const x = ev.results[i]; if (x.isFinal) fin += x[0].transcript; else interim += x[0].transcript; }
+    for (let i = 0; i < ev.results.length; i++){ const x = ev.results[i]; if (x.isFinal){ fin += x[0].transcript; const c = +x[0].confidence; if (c > 0) r._jvConf = Math.max(r._jvConf || 0, c); } else interim += x[0].transcript; }
     finalText = fin; interimText = fin + interim;
-    $('live').textContent = interimText || 'Listening…';
+    $('live').textContent = interimText || listenTxt;
     clearTimeout(recTimers.quiet);
     // iPhone sometimes keeps the mic open after you stop talking: 2.5 s of silence ends it
     recTimer('pause', fin && !interim ? 1500 : 2500, ()=>{ if (mine()) stopListening(); }); };
   r.onerror = ev=>{ jvLog('mic error: '+(ev&&ev.error)); if (!mine()) return; const e = ev && ev.error;
+    // follow-up: stop quietly, whatever the error (iPhone may refuse a mic start that wasn't a tap: "not-allowed" here doesn't mean the permission is off)
+    if (auto && !(finalText || interimText)){ r._jvWhy = 'mic error: '+e; finish(r, false); return; }
     if (e === 'not-allowed' || e === 'service-not-allowed') $('live').textContent = 'Please allow the microphone for this page, then tap the mic again.';
     else if (e === 'no-speech') $('live').textContent = "I didn't catch that. Tap the mic and try again.";
     else if (e === 'audio-capture') $('live').textContent = 'Another app is using the microphone. Close it and tap the mic again.';
@@ -2588,9 +2692,9 @@ function startListening(){
     finish(r, !/not-allowed|service-not-allowed|audio-capture/.test(e || '')); };
   r.onaudiostart = ()=>jvLog('mic audiostart'); r.onaudioend = ()=>jvLog('mic audioend');
   r.onend = ()=>{ jvLog('mic onend'); if (!mine()) return; finish(r, true); };
-  try { r.start(); } catch(e){ finish(r, false); $('live').textContent = 'Tap the mic again to talk.'; return; }
-  micUI(true); $('live').textContent = 'Listening…';   // show it right away; onstart confirms
-  recTimer('nostart', 6000, ()=>{ if (mine() && !finalText && !interimText) finish(r, false); }); // never started (iPhone glitch)
+  try { r.start(); } catch(e){ r._jvWhy = 'mic could not start'; finish(r, false); $('live').textContent = 'Tap the mic again to talk.'; return; }
+  micUI(true); $('live').textContent = listenTxt;   // show it right away; onstart confirms
+  recTimer('nostart', 6000, ()=>{ if (mine() && !finalText && !interimText){ r._jvWhy = 'mic never started'; finish(r, false); } }); // never started (iPhone glitch)
 }
 /** stop listening and use what was heard. If the sheet was closed, or nothing was heard, just cut the mic. */
 function stopListening(){
@@ -2604,12 +2708,21 @@ function stopListening(){
 }
 /** cut the mic right now and throw away anything half-heard */
 function cancelListening(){ if (rec) finish(rec, false); }
-$('micBtn').onclick = ()=>{ if (rec && !rec._jvStopping){ jvLog('mic tap: stop'); stopListening(); } else startListening(); };
-// leaving the app (home screen, another app, lock, tab switch, closing): the mic goes off at once
-document.addEventListener('visibilitychange', ()=>{ if (document.visibilityState === 'hidden') cancelListening(); });
-window.addEventListener('pagehide', cancelListening);
-document.addEventListener('freeze', cancelListening);
-Jarvis.mic = { start: startListening, stop: stopListening, cancel: cancelListening, get listening(){ return !!rec && !rec._jvDone && !rec._jvStopping; }, get active(){ return !!rec; } };
+/* mic button: listening → stop (and end conversation mode). Jarvis talking → v43 tap to interrupt: stop the voice at once and listen. */
+$('micBtn').onclick = ()=>{
+  if (rec && !rec._jvStopping){ jvLog('mic tap: stop'); convoEnd('mic tapped while listening'); stopListening(); return; }
+  let talking = false; try { talking = speechSynthesis.speaking || speechSynthesis.pending; } catch(e){}
+  if (talking){ jvLog('mic tap: interrupts Jarvis'); stopSpeaking(); }
+  startListening();
+};
+// leaving the app (home screen, another app, lock, tab switch, closing): the mic goes off at once, and so does conversation mode
+function leaveApp(why){ convoEnd(why); cancelListening(); }
+document.addEventListener('visibilitychange', ()=>{ if (document.visibilityState === 'hidden') leaveApp('app hidden or screen locked'); });
+window.addEventListener('pagehide', ()=>leaveApp('page closed'));
+document.addEventListener('freeze', ()=>leaveApp('app frozen'));
+Jarvis.mic = { start: ()=>startListening(), stop: stopListening, cancel: cancelListening, get listening(){ return !!rec && !rec._jvDone && !rec._jvStopping; }, get active(){ return !!rec; }, get conversation(){ return convo.on; } };
+/* for the automatic tests only: read the conversation-mode state and shorten its timings */
+Jarvis._convo = { get state(){ return {on: convo.on, autos: convo.autos, waitLate: convo.waitLate, followUp: !!(rec && rec._jvConvo)}; }, cfg: CONVO, end: convoEnd, realWords: convoRealWords, endWord: convoEndWord };
 /* ---------- living mic (v42, look only) ----------
    Jarvis's own voice code is not touched: this only READS speechSynthesis.speaking a few times a second
    and sets body.is-speaking so the mic can animate while Jarvis talks. It must be "speaking" on two
@@ -2759,7 +2872,7 @@ function applyTheme(){
   if (ink) document.documentElement.style.setProperty('--hero-k', '72%'); else document.documentElement.style.removeProperty('--hero-k');
 }
 function syncSettings(){
-  $('sSpeak').checked = S.speak; $('sRate').value = S.rate; $('sPitch').value = S.pitch; $('sName').value = /^there$/i.test(S.name||'') ? '' : S.name; if (![...$('sCur').options].some(o=>o.value===S.currency)) $('sCur').add(new Option(S.currency, S.currency)); $('sCur').value = S.currency; $('sBudget').value = S.budget||''; $('sTheme').value = S.theme;
+  $('sSpeak').checked = S.speak; $('sConvo').checked = S.convo !== false; $('sRate').value = S.rate; $('sPitch').value = S.pitch; $('sName').value = /^there$/i.test(S.name||'') ? '' : S.name; if (![...$('sCur').options].some(o=>o.value===S.currency)) $('sCur').add(new Option(S.currency, S.currency)); $('sCur').value = S.currency; $('sBudget').value = S.budget||''; $('sTheme').value = S.theme;
   $('swatches').innerHTML = ACCENTS.map(c=>`<button style="background:${c};color:${c}" class="${c===S.accent?'on':''}" data-accent="${c}" aria-label="Accent color ${['purple','blue','green','orange','red','pink'][ACCENTS.indexOf(c)]}"></button>`).join('');
   document.querySelectorAll('[data-accent]').forEach(b=>b.onclick=()=>{ S.accent=b.dataset.accent; save(); applyTheme(); syncSettings(); });
   const p = ('Notification' in window) ? Notification.permission : 'unsupported';
@@ -2767,6 +2880,7 @@ function syncSettings(){
   $('notifBtn').style.display = p==='default' ? '' : 'none';
 }
 $('sSpeak').onchange = e=>{ S.speak = e.target.checked; save(); };
+$('sConvo').onchange = e=>{ S.convo = e.target.checked; save(); jvLog('convo setting: '+(S.convo?'on':'off')); if (!S.convo) convoEnd('setting turned off'); };
 $('sRate').oninput = e=>{ S.rate = +e.target.value; save(); };
 $('sRate').onchange = ()=>{ const w=S.speak; S.speak=true; speak('This is my speed.'); S.speak=w; };
 $('sPitch').oninput = e=>{ S.pitch = +e.target.value; save(); };
